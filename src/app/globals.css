@@ -10,7 +10,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-poppins: "Poppins", sans-serif;
+  --font-lato: "Lato", sans-serif;
+  --font-comfortaa: "Comfortaa", cursive;
+  --font-delius: "Delius", cursive;
+  --font-funnel: "Funnel Display", sans-serif;
+  --font-bitcount: "Bitcount Grid Single", monospace;
+  --font-hindi: "Noto Sans Devanagari", sans-serif;
 }
+
+  
 
 @media (prefers-color-scheme: dark) {
   :root {
