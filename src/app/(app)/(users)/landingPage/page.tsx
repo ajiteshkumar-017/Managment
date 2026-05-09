@@ -7,6 +7,8 @@ import { FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/f
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import Navbar from '@/utils/Navbar';
+import Footer from "@/utils/Footer"
 
 const languages = [
     { id: 1, text: 'Indian Institute of Technology, Dholakpur', font: 'font-poppins' },
@@ -66,19 +68,18 @@ const events = [
 function LandingPage() {
     const [index, setIndex] = useState(0);
     const [imageIndex, setImageIndex] = useState(0);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [isFormOpen, setIsFormOpen] = useState(false)
+    
     const [showPassword, setShowPassword] = useState(false)
-    const [clickedLogin, setClickedLogin] = useState(false);
+   
     const [email, setEmail] = useState("")
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const router = useRouter();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+        const [isFormOpen, setIsFormOpen] = useState(false)
+        const [clickedLogin, setClickedLogin] = useState(false);
 
-    const handleFormOpen = () => {
-        console.log("Form is opening")
-        setIsFormOpen(!isFormOpen)
-    }
+    
 
     const LatestSection = [
         {
@@ -119,6 +120,8 @@ function LandingPage() {
         const [count, setCount] = useState(0);
         const elementRef = useRef<HTMLSpanElement>(null);
         const hasAnimated = useRef(false);
+        
+        
 
         useEffect(() => {
             const observer = new IntersectionObserver(
@@ -183,7 +186,6 @@ function LandingPage() {
 
     const currentItem = languages[index];
 
-    const navLinks = ["Home", "Courses", "Faculty", "About", "Contact Us"];
 
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -217,83 +219,31 @@ function LandingPage() {
                 username
             })
 
+            console.log("Consologing res",res);
+
             if(res.status !== 200){
                 console.log("Error in SignUp, Please Try Again")
             }
 
             console.log("SIgnUp data: ", res.data)
         } catch (error: any) {
+         
+            
             throw new Error("Error in SignUp", error);
 
             
         }
     }
 
+    const handleFormOpen = () => {
+        console.log("Form is opening")
+        setIsFormOpen(!isFormOpen)
+    }
+
     return (
         <div className='bg-white min-h-screen'>
             {/* ============ NAVBAR ============ */}
-            <div className='w-full sticky top-0 z-50 border-b border-gray-100 bg-white'>
-                <div className='flex items-center justify-between px-4 sm:px-6 md:px-10 py-4 md:py-6'>
-                    {/* Logo */}
-                    <div className='shrink-0'>
-                        <img src="/iitblogo.png" alt="logo" width={50} height={50} className='w-12 h-12 sm:w-14 sm:h-14 md:w-15 md:h-15' />
-                    </div>
-
-                    {/* Desktop Navigation */}
-                    <div className='hidden md:flex items-center gap-8'>
-                        {navLinks.map((link) => (
-                            <a key={link} href="" className="relative font-medium text-sm lg:text-base text-[#333333] hover:text-[#786EFE] transition-colors duration-300 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-0 after:bg-[#786EFE] after:transition-all after:duration-300 after:-translate-x-1/2 hover:after:w-full">
-                                {link}
-                            </a>
-                        ))}
-                    </div>
-
-                    {/* Desktop Buttons */}
-                    <div className='hidden md:flex gap-3 lg:gap-4'>
-                        <button className="border border-[#333333] px-4 lg:px-6 py-2 rounded text-sm lg:text-base text-[#333333] hover:scale-105 transition-all duration-300" onClick={() => {handleFormOpen() ; setClickedLogin(true)}}>
-                            Login
-                        </button>
-
-                        <button className="bg-[#786EFE] text-white px-4 lg:px-6 py-2 rounded hover:bg-[#655BDB] hover:scale-105 transition-all duration-300 text-sm lg:text-base" onClick={() => {handleFormOpen() ; setClickedLogin(false)}}>
-                            Sign Up
-                        </button>
-                    </div>
-
-                    {/* Mobile Menu Button */}
-                    <button className='md:hidden p-2' onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-                </div>
-
-                {/* Mobile Menu */}
-                <AnimatePresence>
-                    {mobileMenuOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className='md:hidden border-t border-gray-100 bg-white'
-                        >
-                            <div className='px-4 py-4 space-y-3'>
-                                {navLinks.map((link) => (
-                                    <a key={link} href="" className="block py-2 text-sm text-[#333333] hover:text-[#786EFE] transition-colors">
-                                        {link}
-                                    </a>
-                                ))}
-                                <div className='flex gap-2 pt-4 border-t border-gray-100'>
-                                    <button className="flex-1 border border-[#333333] px-4 py-2 rounded text-sm text-[#333333]" onClick={() => {handleFormOpen; setClickedLogin(true)}}>
-                                        Login
-                                    </button>
-                                    <button className="flex-1 bg-[#786EFE] text-white px-4 py-2 rounded text-sm" onClick={handleFormOpen}>
-                                        Sign Up
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-
+            <Navbar/>
             {/* ============ IDENTITY SECTION ============ */}
             <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 sm:px-6 md:px-16 py-8'>
                 {/* Left Side */}
@@ -511,205 +461,11 @@ function LandingPage() {
             </div>
 
             {/* ============ FOOTER ============ */}
-            <footer className="bg-[#F9FAFB] border-t border-gray-200 mt-12 md:mt-20 px-4 sm:px-6 md:px-10 py-8 md:py-16">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-                    {/* Column 1 — Branding */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-4">
-                            <img src="/iitblogo.png" alt="logo" width={50} height={50} className='w-12 h-12 md:w-15 md:h-15' />
-                            <span className="text-lg sm:text-xl font-semibold tracking-tight text-[#1F2937] leading-snug">
-                                Indian Institute of Technology
-                            </span>
-                        </div>
+            <Footer />
+            
+            
 
-                        <p className="text-sm sm:text-[15px] leading-7 text-[#4B5563]">
-                            Committed to excellence in education, research, and innovation to build a better tomorrow.
-                        </p>
-
-                        <div className="flex gap-3">
-                            {[FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter].map((Icon, idx) => (
-                                <Icon key={idx} className="w-8 h-8 sm:w-10 sm:h-10 p-2 sm:p-3 rounded-full bg-white border border-gray-200 text-[#4B5563] hover:text-[#786EFE] hover:-translate-y-1 transition-all duration-300 cursor-pointer" />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Column 2 — Quick Links */}
-                    <div>
-                        <h3 className="text-base sm:text-lg font-semibold tracking-tight text-[#1F2937] mb-4 sm:mb-5">
-                            Quick Links
-                        </h3>
-                        <ul className="flex flex-col gap-3 sm:gap-4">
-                            {["Home", "Courses", "Faculty", "About Us", "Contact Us"].map((link) => (
-                                <li key={link}>
-                                    <a href="" className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
-                                        {link}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 3 — Resources */}
-                    <div>
-                        <h3 className="text-base sm:text-lg font-semibold tracking-tight text-[#1F2937] mb-4 sm:mb-5">
-                            Resources
-                        </h3>
-                        <ul className="flex flex-col gap-3 sm:gap-4">
-                            {["Academic Calendar", "Library", "Placement Cell", "Student Portal", "Alumni"].map((resource) => (
-                                <li key={resource}>
-                                    <a href="" className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
-                                        {resource}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 4 — Contact */}
-                    <div>
-                        <h3 className="text-base sm:text-lg font-semibold tracking-tight text-[#1F2937] mb-4 sm:mb-5">
-                            Contact Us
-                        </h3>
-
-                        <div className="space-y-4 sm:space-y-5">
-                            <div className="flex items-start gap-3">
-                                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[#786EFE] mt-1 shrink-0" />
-                                <p className="text-sm sm:text-[15px] leading-7 text-[#4B5563]">
-                                    IIT Dholakpur, Komna, Nuapada, Odisha
-                                </p>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-[#786EFE] mt-1 shrink-0" />
-                                <p className="text-sm sm:text-[15px] text-[#4B5563]">
-                                    +91 9876543210
-                                </p>
-                            </div>
-
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-[#786EFE] mt-1 shrink-0" />
-                                <p className="text-sm sm:text-[15px] text-[#4B5563]">
-                                    info@iitdholakpur.ac.in
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Bar */}
-                <div className="border-t border-gray-200 mt-8 md:mt-12 pt-6 text-center">
-                    <p className="text-xs sm:text-sm text-[#6B7280]">
-                        © 2026 Indian Institute of Technology, Dholakpur. All rights reserved.
-                    </p>
-                </div>
-            </footer>
-
-            {
-                isFormOpen ? (
-
-
-                    <div className={`fixed inset-0  flex z-50 bg-black/40 backdrop-blur-sm items-center justify-center`} >
-                        <div className={`bg-white p-6 backdrop-blur-md w-[90%] sm:w-125 min-h-100 flex flex-col  items-start rounded-2xl shadow-2xl border border-white/20`}>
-                            <div className="relative w-full flex items-center justify-center">
-                                <h1 className={`text-black text-2xl font-semibold tracking-tight p-3 text-center`}>{clickedLogin ? "Login" : "SignUp"}</h1>
-                                <X className={`w-10 h-10 items-end absolute right-3 cursor-pointer p-2 rounded-full hover:bg-black/10 transition-all text-black `}  onClick={handleFormOpen}/>
-                            </div>
-
-                            <div className="p-6 w-full overflow-hidden">
-                                {
-                                    clickedLogin ? (
-                                        <form action="" className="w-full space-y-5" >
-                                    <div className="flex flex-col w-full ">
-                                        <label htmlFor="email" className="mb-2 text-sm font-medium text-[#111827]">Email</label>
-                                        <input type="email" id="email" placeholder="Enter your email" className="border border-gray-400 text-black py-3 px-4 rounded-lg w-full placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col w-full">
-                                        <label className="mb-2 text-sm font-medium text-[#111827]">Password</label>
-
-                                        <div className="relative flex items-center w-full">
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="Enter your password"
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="border border-gray-400 py-3 px-4 pl-3 pr-12  text-[15px] font-medium rounded-lg w-full outline-none text-black placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 "
-                                            />
-
-                                            {/* Toggle icon based on state */}
-                                            <div
-                                                className="absolute right-3 cursor-pointer p-1 hover:bg-black/10 rounded-full transition-colors"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? (
-                                                    <EyeOff className="w-5 h-5 text-gray-800" />
-                                                ) : (
-                                                    <Eye className="w-5 h-5 text-gray-800" />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95" onClick={handleLogin}>
-                                        Submit
-                                    </button>
-                                </form>
-                                    ) : (
-                                        <form action="" className="w-full space-y-5" >
-                                        <div className="flex flex-col w-full ">
-                                        <label htmlFor="username" className="mb-2 text-sm font-medium text-[#111827]">Username</label>
-                                        <input type="text" id="username" placeholder="Enter your username" className="border border-gray-400 text-black py-3 px-4 rounded-lg w-full placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value={username} onChange={(e) => setUsername(e.target.value)} />
-                                    </div>
-                                    <div className="flex flex-col w-full ">
-                                        <label htmlFor="email" className="mb-2 text-sm font-medium text-[#111827]">Email</label>
-                                        <input type="email" id="email" placeholder="Enter your email" className="border border-gray-400 text-black py-3 px-4 rounded-lg w-full placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value={email} onChange={(e) => setEmail(e.target.value)} />
-                                    </div>
-
-                                    
-                                    
-
-                                    <div className="flex flex-col w-full">
-                                        <label className="mb-2 text-sm font-medium text-[#111827]">Password</label>
-
-                                        <div className="relative flex items-center w-full">
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="Enter your password"
-                                                className="border border-gray-400 py-3 px-4 pl-3 pr-12  text-[15px] font-medium rounded-lg w-full outline-none text-black placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 "
-                                                value={password} onChange={(e) => setPassword(e.target.value)}
-                                            />
-
-                                            {/* Toggle icon based on state */}
-                                            <div
-                                                className="absolute right-3 cursor-pointer p-1 hover:bg-black/10 rounded-full transition-colors"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? (
-                                                    <EyeOff className="w-5 h-5 text-gray-800" />
-                                                ) : (
-                                                    <Eye className="w-5 h-5 text-gray-800" />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95" onClick={handleSignUp}>
-                                        Submit
-                                    </button>
-                                </form>
-                                    )
-                                }
-                            </div>
-
-
-
-                        </div>
-                    </div>
-                ) : (
-                    <></>
-                )
-            }
+            
 
 
 
