@@ -7,7 +7,7 @@ import Footer from "@/utils/Footer";
 import Navbar from "@/utils/Navbar"
 
 
-function page() {
+function contactUs() {
 
     const handleSubmit = async (e:React.FormEvent) => {
         try {
@@ -137,4 +137,4 @@ function page() {
   )
 }
 
-export default page
+export default contactUs
