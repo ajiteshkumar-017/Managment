@@ -162,10 +162,10 @@ function Navbar() {
                                     </a>
                                 ))}
                                 <div className='flex gap-2 pt-4 border-t border-gray-100'>
-                                    <button className="flex-1 border border-[#333333] px-4 py-2 rounded text-sm text-[#333333]" onClick={() => {handleFormOpen; setClickedLogin(true) ; console.log("Clicked Login :")}}>
+                                    <button className="flex-1 border border-[#333333] px-4 py-2 rounded text-sm text-[#333333]" onClick={() => {handleFormOpen(); setClickedLogin(true) ; }}>
                                         Login
                                     </button>
-                                    <button className="flex-1 bg-[#786EFE] text-white px-4 py-2 rounded text-sm" onClick={() => {handleFormOpen; setClickedLogin(false) ; console.log("Clicked Login :")}}>
+                                    <button className="flex-1 bg-[#786EFE] text-white px-4 py-2 rounded text-sm" onClick={() => {handleFormOpen(); setClickedLogin(false) ; }}>
                                         Sign Up
                                     </button>
                                 </div>
