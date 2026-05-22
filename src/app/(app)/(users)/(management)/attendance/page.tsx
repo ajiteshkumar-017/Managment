@@ -5,7 +5,8 @@ import React, { useState } from 'react'
 import { Percent, CircleCheckBig, CircleX, CalendarDays } from 'lucide-react';
 import { CalendarCheck, UserCheck, ClipboardCheck } from 'lucide-react';
 import { AlertTriangle, AlertCircle, ShieldAlert, Ban } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";    
+
 
 import {
   LayoutDashboard,
@@ -107,10 +108,7 @@ const tableData = [
 
       {/* Right Side */}
 
-      <div className='bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 lg:p-8 shadow-sm
-            transition-all duration-300
-            w-full
-            text-slate-900'>
+      <div className="flex-1 min-w-0 overflow-hidden rounded-2xl bg-white p-5 text-slate-900 shadow-sm transition-all duration-300 sm:rounded-3xl sm:p-6 md:p-7 lg:p-8">
         {/* Header */}
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
@@ -155,13 +153,14 @@ const tableData = [
 
         {/* Main Content */}
 
-            <div className="flex flex-col xl:flex-row gap-6">
+            <div className="flex w-full min-w-0 flex-col gap-6 xl:flex-row">
 
             {/* ================= LEFT SECTION ================= */}
             <div
                 className="
                 xl:w-3/5
                 w-full
+                min-w-0
                 bg-white
                 border
                 border-slate-200
@@ -482,6 +481,7 @@ const tableData = [
                 className="
                 xl:w-2/5
                 w-full
+                min-w-0
                 bg-white
                 border
                 border-slate-200
@@ -801,18 +801,10 @@ const tableData = [
 
                 </div>
 
-            <div
-            className="
-                mt-8
-                flex
-                flex-col
-                xl:flex-row
-                gap-6
-            "
-            >
+          
 
             {/* ================= LEFT CARD ================= */}
-            <div className="xl:w-[38%] w-full">
+            <div className="w-full min-w-0 ">
 
                 <div
                 className="
@@ -1021,7 +1013,7 @@ const tableData = [
             </div>
 
             {/* ================= RIGHT CARD ================= */}
-            <div className="xl:w-[62%] w-full">
+            <div className="w-full min-w-0 mt-6">
 
                 <div
                 className="
@@ -1086,8 +1078,8 @@ const tableData = [
                         "
                     >
 
-                        {/* TOP */}
-                        {/* <div
+                        
+                        <div
                         className="
                             flex
                             flex-col
@@ -1162,10 +1154,10 @@ const tableData = [
 
                         </div>
 
-                        </div> */}
+                        </div> 
 
-                        {/* PROGRESS BAR */}
-                        {/* <div
+                        
+                         <div
                         className="
                             mt-5
                             h-3
@@ -1186,16 +1178,18 @@ const tableData = [
                             }}
                         />
 
-                        </div> */}
+                        </div> 
 
-                    {/* </div>
+                     </div>
 
-                    ))} */}
+                    ))} 
 
-                {/* </div> */} 
+                </div>  */}
 
                 <div
             className="
+                hidden
+                lg:block
                 mt-6
                 bg-white
                 rounded-3xl
@@ -1203,6 +1197,7 @@ const tableData = [
                 border-slate-200
                 shadow-sm
                 overflow-x-auto
+                
             "
             >
 
@@ -1327,13 +1322,90 @@ const tableData = [
 
             </div>
 
+            
+
             </div>
+
+                <div className="lg:hidden mt-6 space-y-4">
+
+                { tableData.length>0 && tableData.map((data, index) => (
+
+                    <div
+                    key={index}
+                    className="
+                        bg-white
+                        border
+                        border-slate-200
+                        rounded-2xl
+                        shadow-sm
+                        hover:shadow-md
+                        transition-all
+                        p-4
+                    "
+                    >
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+
+                        <h3 className="font-bold text-slate-900">
+                        {data.subject}
+                        </h3>
+
+                        <span
+                        className={`
+                            px-3 py-1
+                            rounded-full
+                            text-xs
+                            font-semibold
+                            text-white
+
+                            ${
+                            data.status === "present"
+                                ? "bg-green-500"
+                                : "bg-red-500"
+                            }
+                        `}
+                        >
+                        {data.status === "present"
+                            ? "Present"
+                            : "Absent"}
+                        </span>
+
+                    </div>
+
+                    {/* Faculty & Time */}
+                    <div className="mt-3 text-sm text-slate-500">
+
+                        {data.faculty} • {data.time}
+
+                    </div>
+
+                    {/* Method & Date */}
+                    <div className="mt-2 text-sm text-slate-600">
+
+                        {data.method === "--"
+                        ? "No Method"
+                        : data.method}
+
+                        {" • "}
+                        {data.date}
+
+                    </div>
+
+                    </div>
+
+                ))}
+
+                </div>
+
+                
+
 
                 </div>
 
             </div>
 
-            </div>
+           
 
       </div>
     </div>

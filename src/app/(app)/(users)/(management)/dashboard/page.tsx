@@ -16,6 +16,7 @@ import {
   Award,
   Users,
   Menu,
+  LogOut,
 } from "lucide-react";
 import {
   SlidersHorizontal,
@@ -39,12 +40,16 @@ import {
 import AdminNavbar from "@/utils/AdminNavbar"
 
 import StudentPlanner from "@/utils/StudentPlanner";
+import toast from "react-hot-toast";
+import axios from "axios";
+// import { Router } from "next/router";
+import { useRouter } from "next/navigation";
 
 function Dashboard() {
   const [openProfile, setOpenProfile] = useState(false);
   const [username, setUsername] = useState("Ajitesh");
 
-
+const router = useRouter();
 
   const courseCard = [
     {
@@ -128,10 +133,29 @@ function Dashboard() {
     console.log("Clicked")
   }
 
+  const handleLogout = async () => {
+    console.log("Trying to logout");
+
+    try{
+        const res = await axios.post('/api/users/logout');
+        toast.success(res?.data?.message || "Logout")
+
+        console.log(res.data)
+        router.push("/landingPage")
+
+        
+    }catch(err:any){
+      toast.error(err?.res?.data?.message ||"Failed to Log Out.")
+      console.error("Error while Loging Out. Please try after sometime.")
+    }
+  }
+
   return (
     <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
       {/* MAIN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
+
+        {/* Fixed the navbar width in small screen --> reomoved items-start from above div. That was the culprit */}
 
           <AdminNavbar/ >
 
@@ -182,6 +206,10 @@ function Dashboard() {
                 className="p-2.5 sm:p-3 bg-slate-100 border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-slate-600 rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center"
               >
                 <SquarePen size={18} />
+              </button>
+
+              <button onClick={handleLogout} className="p-2.5 bg-red-600 rounded-lg cursor-pointer">
+                <LogOut size={18}/>
               </button>
             </div>
           </div>
@@ -298,7 +326,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className=" mt-4 rounded-lg shadow-md  ">
+          <div className="hidden lg:block mt-4 rounded-lg shadow-md  ">
                
                <h2 className="text-2xl text-black font-semibold tracking-tight leading-4 p-4">My Assignment</h2>
                       {/* Heading and Icon Section */}
@@ -525,12 +553,156 @@ function Dashboard() {
                     </div>
                   </div>
                   </div>
+
+                  
                 {/* hello */}
                <div>
 
                </div>
                
           </div>
+
+          <div className="lg:hidden mt-6 space-y-4">
+
+  {assignmentData.map((data, index) => (
+
+    <div
+      key={index}
+      className="
+        bg-white
+        border
+        border-slate-200
+        rounded-2xl
+        p-4
+        shadow-sm
+      "
+    >
+
+      {/* Top */}
+      <div className="flex items-start justify-between gap-4">
+
+        <div className="flex items-center gap-3">
+
+          <div
+            className="
+              w-12
+              h-12
+              rounded-xl
+              border
+              border-slate-200
+              flex
+              items-center
+              justify-center
+              text-slate-700
+            "
+          >
+            {data.icon}
+          </div>
+
+          <div>
+
+            <h3
+              className="
+                font-bold
+                text-slate-900
+              "
+            >
+              {data.taskName}
+            </h3>
+
+            <p
+              className="
+                text-sm
+                text-slate-500
+                mt-1
+              "
+            >
+              {data.doneTime}
+            </p>
+
+          </div>
+
+        </div>
+
+        <span
+          className={`
+            px-3
+            py-1
+            rounded-xl
+            text-xs
+            font-semibold
+
+            ${
+              data.status === "Completed"
+                ? "bg-purple-100 text-purple-600"
+                : "bg-orange-100 text-orange-500"
+            }
+          `}
+        >
+          {data.status}
+        </span>
+
+      </div>
+
+      {/* Bottom */}
+      <div
+        className="
+          mt-4
+          pt-4
+          border-t
+          border-slate-100
+          flex
+          items-center
+          justify-between
+        "
+      >
+
+        <div>
+
+          <p className="text-xs text-slate-500">
+            Grade
+          </p>
+
+          <h3
+            className="
+              text-lg
+              font-bold
+              text-slate-900
+            "
+          >
+            {data.grade}
+          </h3>
+
+        </div>
+
+        <div className="text-right">
+
+          <p className="text-xs text-slate-500">
+            Status
+          </p>
+
+          <p
+            className={`
+              font-semibold
+              ${
+                data.status === "Completed"
+                  ? "text-purple-600"
+                  : "text-orange-500"
+              }
+            `}
+          >
+            {data.status}
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  ))}
+
+</div>
 
 
         </div>

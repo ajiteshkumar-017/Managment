@@ -47,6 +47,7 @@ function Navbar() {
             console.log("Redirect done");
 
         } catch (err:any) {
+            toast.error(err?.response?.data?.message || "Something went wrong. Please try again.")
             console.error("Error in Login. Please Try Again.", err)
 
             
@@ -71,6 +72,7 @@ function Navbar() {
             console.log("SIgnUp data: ", res.data);
 
             toast.success(res?.data?.message || "SignUp Sucessfull")
+            setIsFormOpen(false)
         } catch (error: any) {
             console.log("Error in SignUp Page:", error)
             const message = error.response?.data?.message || "Something went wrong"
@@ -162,10 +164,10 @@ function Navbar() {
                                     </a>
                                 ))}
                                 <div className='flex gap-2 pt-4 border-t border-gray-100'>
-                                    <button className="flex-1 border border-[#333333] px-4 py-2 rounded text-sm text-[#333333]" onClick={() => {handleFormOpen(); setClickedLogin(true) ; }}>
+                                    <button type="button" className="flex-1 border border-[#333333] px-4 py-2 rounded text-sm text-[#333333]" onClick={() => {handleFormOpen(); setClickedLogin(true); }}>
                                         Login
                                     </button>
-                                    <button className="flex-1 bg-[#786EFE] text-white px-4 py-2 rounded text-sm" onClick={() => {handleFormOpen(); setClickedLogin(false) ; }}>
+                                    <button type="button" className="flex-1 bg-[#786EFE] text-white px-4 py-2 rounded text-sm" onClick={() => {handleFormOpen(); setClickedLogin(false); }}>
                                         Sign Up
                                     </button>
                                 </div>
@@ -192,7 +194,7 @@ function Navbar() {
                             <div className="p-6 w-full overflow-hidden">
                                 {
                                     clickedLogin ? (
-                                        <form action="" className="w-full space-y-5" >
+                                        <form action="" className="w-full space-y-5" onSubmit={handleLogin} >
                                     <div className="flex flex-col w-full ">
                                         <label htmlFor="email" className="mb-2 text-sm font-medium text-[#111827]">Email</label>
                                         <input type="email" id="email" placeholder="Enter your email" className="border border-gray-400 text-black py-3 px-4 rounded-lg w-full placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
@@ -225,12 +227,12 @@ function Navbar() {
                                         </div>
                                     </div>
 
-                                    <button className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95" onClick={handleLogin}>
+                                    <button type="submit" className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95">
                                         Submit
                                     </button>
                                 </form>
                                     ) : (
-                                        <form action="" className="w-full space-y-5" >
+                                        <form action="" className="w-full space-y-5" onSubmit={handleSignUp} >
                                         <div className="flex flex-col w-full ">
                                         <label htmlFor="username" className="mb-2 text-sm font-medium text-[#111827]">Username</label>
                                         <input type="text" id="username" placeholder="Enter your username" className="border border-gray-400 text-black py-3 px-4 rounded-lg w-full placeholder:text-sm placeholder:font-normal placeholder:text-gray-500 shadow-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -269,7 +271,7 @@ function Navbar() {
                                         </div>
                                     </div>
 
-                                    <button className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95" onClick={handleSignUp}>
+                                    <button type="submit" className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95">
                                         Submit
                                     </button>
                                 </form>

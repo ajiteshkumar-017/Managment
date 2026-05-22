@@ -11,7 +11,7 @@ const items = [
   { icon: Calculator, text: "Organizing academic data" },
 ];
 
-export default function Loading() {
+export default function DelayLoading() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {

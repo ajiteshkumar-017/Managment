@@ -254,11 +254,13 @@ function Course() {
 </div> */}
 
     {/* TABLE SECTION */}
-    <div className="mt-8">
+    <div className="mt-8 ">
 
       {/* TABLE WRAPPER */}
       <div
         className="
+        hidden
+        lg:block
           bg-white
           border
           border-slate-200
@@ -293,7 +295,7 @@ function Course() {
           {/* HEADER */}
           <div
             className="
-              min-w-[1000px]
+              min-w-250
               grid
               grid-cols-5
              
@@ -330,7 +332,7 @@ function Course() {
           </div>
 
           {/* ROWS */}
-          <div className="min-w-[1100px]">
+          <div className="min-w-250">
 
             {attendanceData.map((course, index) => (
 
@@ -340,7 +342,7 @@ function Course() {
                   grid
                   grid-cols-5
                   items-center
-                  
+
                   px-4
                   py-5
                   border-b
@@ -412,6 +414,94 @@ function Course() {
           </div>
         </div>
       </div>
+
+      <div className="lg:hidden mt-6 space-y-4">
+
+  <h2 className="text-xl font-bold text-slate-900 mb-4">
+    Overview
+  </h2>
+
+  {attendanceData.map((item, index) => (
+
+    <div
+      key={index}
+      className="
+        bg-white
+        border
+        border-slate-200
+        rounded-2xl
+        p-4
+        shadow-sm
+      "
+    >
+
+      {/* Top */}
+      <div className="flex items-start justify-between">
+
+        <div>
+          <p className="text-xs text-slate-500">
+            {item.subjectCode}
+          </p>
+
+          <h3 className="font-bold text-slate-900 mt-1">
+            {item.subject}
+          </h3>
+        </div>
+
+        <span
+          className="
+            bg-indigo-50
+            text-indigo-600
+            px-3
+            py-1
+            rounded-lg
+            text-sm
+            font-semibold
+          "
+        >
+          {item.credits} Cr
+        </span>
+
+      </div>
+
+      {/* Faculty */}
+      <div className="mt-3 text-sm text-slate-600">
+        {item.faculty}
+      </div>
+
+      {/* Attendance */}
+      <div className="mt-4">
+
+        <div className="flex justify-between text-sm">
+
+          <span className="text-slate-500">
+            Total Classes
+          </span>
+
+          <span className="font-bold text-slate-900">
+            {item.attendance}
+          </span>
+
+        </div>
+
+        <div className="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+
+          <div
+            className="h-full bg-indigo-500 rounded-full"
+            style={{
+              width: item.attendance
+            }}
+          />
+
+        </div>
+
+      </div>
+
+    </div>
+
+  ))}
+
+</div>
     </div>
   </div>
 </div>

@@ -42,7 +42,8 @@ export default function AdminNavbar() {
               {/* ================= LEFT SIDEBAR ================= */}
               {/* ================= MOBILE TOP BAR ================= */}
       
-      <div className="lg:hidden w-full flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm">
+      <div className="flex flex-col w-full px-4 lg:hidden">
+        <div className="flex lg:hidden items-center justify-between bg-white rounded-2xl  shadow-sm  p-4 w-full    ">
       
         <div className="flex items-center gap-3">
           <img
@@ -68,6 +69,7 @@ export default function AdminNavbar() {
         >
           <Menu className="w-6 h-6 text-black" />
         </button>
+        </div>
       </div>
       
       
@@ -244,7 +246,7 @@ export default function AdminNavbar() {
             >
       
               {/* HEADER */}
-              <div className="flex items-center">
+              <div className="flex items-center w-full">
       
                 <div className="flex items-center gap-3">
                   <img
