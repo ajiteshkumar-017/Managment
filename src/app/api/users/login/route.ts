@@ -114,16 +114,14 @@ export async function POST(request: NextRequest){
         
     } catch (error: any) {
         console.log("Error in Login BAckend", error);
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: "Server Error",
-                    error
-                },
-                {
-                    status: 500
-                }
-            )
+        console.error("The actual login error is:", error);
+
+            return NextResponse.json({
+            errorName: error.name || "RuntimeError",
+            errorMessage: error.message || "Unknown crash",
+            errorStack: error.stack || "No trace available"
+        }, { status: 500 });
+    
         
     }
 }
