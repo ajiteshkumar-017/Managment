@@ -71,7 +71,9 @@ export async function POST(request: NextRequest){
             throw new Error("JWT_SECRET is not configured")
         }
 
-        const token = jwt.sign(tokenData, process.env.JWT_SECRET, { expiresIn: "1d" });
+        console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
+
+        const token = jwt.sign(tokenData, process.env.JWT_SECRET!, { expiresIn: "1d" });
 
         console.log("Token generated", token);
 
