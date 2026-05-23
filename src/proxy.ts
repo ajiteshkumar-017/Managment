@@ -6,6 +6,10 @@ import path from "path";
 
 let count = 0;
 
+console.log("Middleware File Loaded");
+
+console.log("Secret JWT Key:", process.env.JWT_SECRET!);
+
 export function proxy(request:NextRequest){
 
     

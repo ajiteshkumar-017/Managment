@@ -3,10 +3,18 @@ import Connect from "@/dbConnect/connect";
 import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
 import jwt from "jsonwebtoken"
+import dotenv from "dotenv";
 
-if(!process.env.JWT_SECRET){
-    throw new Error("JWT_SECRET is also not configured")
-}
+dotenv.config();
+
+// if(!process.env.JWT_SECRET){
+//     throw new Error("JWT_SECRET is not configured")
+// }
+
+ if(!process.env.JWT_SECRET!){
+    console.log("JWT_SECRET is also not configured")
+    console.log("JWT_SECRET value is:", process.env.JWT_SECRET!);
+ }
 
 
 export async function POST(request: NextRequest){
