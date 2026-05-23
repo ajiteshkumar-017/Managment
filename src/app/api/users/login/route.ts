@@ -4,6 +4,10 @@ import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
 import jwt from "jsonwebtoken"
 
+if(!process.env.JWT_SECRET){
+    throw new Error("JWT_SECRET is also not configured")
+}
+
 
 export async function POST(request: NextRequest){
     try {
@@ -116,6 +120,7 @@ export async function POST(request: NextRequest){
         
     } catch (error: any) {
         console.log("Error in Login BAckend", error);
+        console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
         console.error("The actual login error is:", error);
 
             return NextResponse.json({

@@ -50,8 +50,6 @@ function Navbar() {
         } catch (err:any) {
             toast.error(err?.response?.data?.message || "Something went wrong. Please try again.")
             console.error("Error in Login. Please Try Again.", err)
-
-            
         }
     }
 
@@ -62,7 +60,7 @@ function Navbar() {
                 email,
                 password,
                 username
-            })
+            });
 
             if(res.status !== 200){
                 console.log("Error in SignUp, Please Try Again")
