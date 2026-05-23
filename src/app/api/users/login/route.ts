@@ -79,11 +79,13 @@ export async function POST(request: NextRequest){
             role: user.role
         };
 
+        console.log("Coming to JWT Part");
         if (!process.env.JWT_SECRET!) {
-            throw new Error("JWT_SECRET is not configured")
+            console.log("JWT_SECRET is not configured")
         }
 
         console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
+        console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
 
         const token = jwt.sign(tokenData, process.env.JWT_SECRET!, { expiresIn: "1d" });
 
