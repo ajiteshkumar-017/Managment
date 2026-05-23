@@ -79,7 +79,7 @@ export async function POST(request: NextRequest){
             role: user.role
         };
 
-        if (!process.env.JWT_SECRET) {
+        if (!process.env.JWT_SECRET!) {
             throw new Error("JWT_SECRET is not configured")
         }
 
