@@ -33,6 +33,7 @@ function Navbar() {
     const handleLogin = async (e: React.FormEvent) => {
         try {
              e.preventDefault();
+             console.log("Login Clicked, Coming to frontend")
             const res = await axios.post("/api/users/login", {
                 email,
                 password

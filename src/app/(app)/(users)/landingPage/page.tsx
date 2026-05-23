@@ -199,7 +199,7 @@ function LandingPage() {
             console.log("Login Successfull" ,res.data);
             console.log("API Success");
 
-  await router.push("/dashboard");
+             router.push("/dashboard");
 
   console.log("Redirect done");
 

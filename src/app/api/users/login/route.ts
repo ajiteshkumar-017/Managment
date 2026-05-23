@@ -7,8 +7,8 @@ import jwt from "jsonwebtoken"
 
 export async function POST(request: NextRequest){
     try {
-
-        const db = await Connect();
+        console.log("Coming to Login Backend");
+         await Connect();
 
         // const text = await request.text();
         // console.log(text);
@@ -67,12 +67,17 @@ export async function POST(request: NextRequest){
             role: user.role
         };
 
-        const token = await jwt.sign( tokenData, process.env.JWT_SECRET!, {expiresIn: "1d" });
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET is not configured")
+        }
+
+        const token = jwt.sign(tokenData, process.env.JWT_SECRET, { expiresIn: "1d" });
 
         console.log("Token generated", token);
 
         const response = NextResponse.json(
             {
+                success: true,
                 message: "User logged In Successfully"
             },
             {
@@ -82,14 +87,12 @@ export async function POST(request: NextRequest){
 
         response.cookies.set("token", token, {
                 httpOnly: true,
-                
+                path: "/"
                 });
 
-          console.log("Generated The response")      
+        console.log("Generated The response")      
 
         return response;
-        
-        // console.log("The Form Data is: ", newUser);
 
         return NextResponse.json(
             {
