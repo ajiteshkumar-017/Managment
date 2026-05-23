@@ -87,7 +87,7 @@ export async function POST(request: NextRequest){
         console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
         console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
 
-        const token = jwt.sign(tokenData, process.env.JWT_SECRET!, { expiresIn: "1d" });
+        const token = await jwt.sign(tokenData, process.env.JWT_SECRET!, { expiresIn: "1d" });
 
         console.log("Token generated", token);
 
