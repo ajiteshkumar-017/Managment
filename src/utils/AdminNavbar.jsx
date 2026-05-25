@@ -1,4 +1,4 @@
-import react,{useState} from "react"
+import react,{useState, useEffect} from "react"
 
 
 import React from 'react'
@@ -25,17 +25,33 @@ import { useRouter } from 'next/navigation';
 export default function AdminNavbar() {
 
     const [mobileView, setMobileView] = useState(false)
+    const [username, setUsername] = useState("");
     const router = useRouter();
 
       const panelData = [
-        { name: "Dashboard", icon: <LayoutDashboard size={20} /> },
+        { name: "Dashboard", icon: <LayoutDashboard size={20} />, link: "/dashboard" },
         { name: "Courses", icon: <BookOpen size={20} />, link : "/course" },
         { name: "Messages", icon: <MessageCircle size={20}/>, link : "/messages" },
-        {name: "Attandance", icon : <CalendarCheck/>, link: "/attendance"},
+        {name: "Attendance", icon : <CalendarCheck/>, link: "/attendance"},
         { name: "Results", icon: <BarChart3 size={20} /> , link : "/result"},
         { name: "Timetable", icon: <CalendarDays size={20} />, link : "/timetable" },
         { name: "Settings", icon: <Settings size={20} /> ,link : "/setting" },
       ];
+
+      const fetchUsername = async () => {
+        try{
+            const res = await fetch("/api/users/getUsername");
+            const data = await res.json();
+            setUsername(data.username);
+            console.log("Username:", data.username);
+        }catch(err){
+          console.log(err);
+        }
+      }
+
+      useEffect(() => {
+        fetchUsername();
+      }, []);
   return (
     <div>
       

@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+console.log("MongoDB URL:", process.env.MONGODB_URL!);
+
 // if(!process.env.JWT_SECRET){
 //     throw new Error("JWT_SECRET is not configured")
 // }
@@ -24,7 +26,8 @@ export async function POST(request: NextRequest){
 
         // const text = await request.text();
         // console.log(text);
-        
+        console.log("MongoDB URL:", process.env.MONGODB_URL!);
+        console.log("JWT_SECRET:", process.env.JWT_SECRET!);
 
         const req = await request.json();
 
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest){
 
         const tokenData = {
             _id : user._id,
-            username: user.username,
+            email: user.email,
             role: user.role
         };
 
@@ -110,15 +113,15 @@ export async function POST(request: NextRequest){
 
         return response;
 
-        return NextResponse.json(
-            {
-                success:  true,
-                message: "User Logged in successfully"
-            },
-            {
-                status: 201
-            }
-        )
+        // return NextResponse.json(
+        //     {
+        //         success:  true,
+        //         message: "User Logged in successfully"
+        //     },
+        //     {
+        //         status: 201
+        //     }
+        // )
         
 
         // console.log("Detail" con)

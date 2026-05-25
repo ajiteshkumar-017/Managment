@@ -12,7 +12,7 @@ export interface IAttendanceSession extends Document {
 const AttendanceSessionSchema = new Schema({
     
     classId : {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
     },
      sessionCode: {

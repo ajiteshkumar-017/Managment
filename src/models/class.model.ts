@@ -33,4 +33,4 @@ const classSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 
-const Class =   (models.Class as mongoose.Model<IClass>) || model<IClass>("Class", classSchema)
+export const Class =   (models.Class as mongoose.Model<IClass>) || model<IClass>("Class", classSchema)

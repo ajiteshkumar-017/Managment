@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -48,6 +48,22 @@ import { useRouter } from "next/navigation";
 function Dashboard() {
   const [openProfile, setOpenProfile] = useState(false);
   const [username, setUsername] = useState("Ajitesh");
+  const [completeClasses, setCompleteClasses] = useState(0);
+
+  const fetchUsername = async () => {
+          try{
+              const res = await fetch("/api/users/getUsername");
+              const data = await res.json();
+              setUsername(data.username);
+              console.log("Username:", data.username);
+          }catch(err){
+            console.log(err);
+          }
+        }
+  
+        useEffect(() => {
+          fetchUsername();
+        }, []);
 
 const router = useRouter();
 
@@ -149,6 +165,23 @@ const router = useRouter();
       console.error("Error while Loging Out. Please try after sometime.")
     }
   }
+  
+  const handleCompletedClasses = async () => {
+    console.log("Trying to fetch completed classes");
+    try{
+        const res = await axios.get('/api/users/auth/dashboard');
+       
+    } catch (err) {
+        console.error("Error fetching completed classes:", err);  
+    }
+
+  }
+
+  useEffect(() => {
+    handleCompletedClasses();
+  }, [])
+
+  
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
