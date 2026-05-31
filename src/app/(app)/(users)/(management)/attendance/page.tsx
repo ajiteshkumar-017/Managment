@@ -1,7 +1,7 @@
 "use client"
 import AdminNavbar from '@/utils/AdminNavbar'
 import { Bell, Clock, Divide, Search, SquarePen, UserCheck2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Percent, CircleCheckBig, CircleX, CalendarDays } from 'lucide-react';
 import { CalendarCheck, UserCheck, ClipboardCheck } from 'lucide-react';
 import { AlertTriangle, AlertCircle, ShieldAlert, Ban } from 'lucide-react';
@@ -99,6 +99,21 @@ const tableData = [
     {date: "10 Feb 2026", subject : "English", faculty : "Dr.Dash", status: "present", method: "Code", time: "1:30 AM"},
     {date: "10 Jan 2026", subject : "Communation English", faculty : "Dr.Kunal", status: "Absent", method: "--", time: "9:02 AM"},
 ]
+
+const fetchUsername = async () => {
+          try{
+              const res = await fetch("/api/users/getUsername");
+              const data = await res.json();
+              setUsername(data.username);
+              console.log("Username:", data.username);
+          }catch(err){
+            console.log(err);
+          }
+        }
+
+        useEffect(() => {
+            fetchUsername();
+        })
 
   return (
     <div className=' text-black bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6 flex flex-col lg:flex-row lg:gap-8 w-full'>

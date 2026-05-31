@@ -7,6 +7,7 @@ export async function getUser() {
    console.log("x-user-id:", h.get("x-user-id"));
   console.log("x-user-email:", h.get("x-user-email"));
   console.log("x-user-role:", h.get("x-user-role"));
+
   return {
     _id:   h.get('x-user-id')    ?? undefined,
     email: h.get('x-user-email') ?? undefined,

@@ -20,13 +20,7 @@ export async function proxy(request: NextRequest) {
 
   
 
-//   if ("api/users/getUsername" !== pathname) {
-    
-//     console.log("API Route, skipping middleware");
-//     return NextResponse.next();
-//   }else{
-//     console.log(`Coming to ${pathname}` )
-//   }
+  
 
   // define Paths
 
@@ -36,6 +30,8 @@ export async function proxy(request: NextRequest) {
     "/about",
     "/contactUs",
     "/faculty",
+    "/api/login",
+    "/api/signUp"
   ];
 
   const userProtectedRoutes = [
@@ -45,6 +41,7 @@ export async function proxy(request: NextRequest) {
     "/setting",
     "/result",
     "/messages",
+    "/dashboard"
   ];
 
   const adminPublicRoutes = [];
@@ -54,6 +51,20 @@ export async function proxy(request: NextRequest) {
   const routeMatcher = (routes: string[], pathname: string): boolean => {
     return routes.some((route) => pathname.startsWith(route));
   };
+
+  if (pathname.includes("/api/users/login")  && userPublicRoutes) {
+    
+    console.log("API Route, skipping middleware");
+    console.log(`Coming to ${pathname}` )
+    return NextResponse.next();
+  }else{
+   console.log("need Authentiction")
+    console.log(`Coming to else ${pathname}` )
+  }
+
+//   if (userPublicRoutes.includes(pathname)) {
+//     return NextResponse.next();
+//   }
 
   try {
     const token =
@@ -66,6 +77,7 @@ export async function proxy(request: NextRequest) {
     if (!token) {
       console.log("Token not Found");
       if (routeMatcher(userPublicRoutes, pathname)) {
+         console.log("Kya gunda banega re tu ")
         return NextResponse.next();
       }
       return NextResponse.redirect(new URL("/landingPage", request.url));

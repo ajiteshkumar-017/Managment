@@ -36,6 +36,21 @@ function Messages() {
       setLoading(false);
     }
   }
+
+  const fetchUsername = async () => {
+            try{
+                const res = await fetch("/api/users/getUsername");
+                const data = await res.json();
+                setUsername(data.username);
+                console.log("Username:", data.username);
+            }catch(err){
+              console.log(err);
+            }
+          }
+  
+          useEffect(() => {
+              fetchUsername();
+          })
   return (
     <div className='bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6'>
       {/* Header for Messages Page */}

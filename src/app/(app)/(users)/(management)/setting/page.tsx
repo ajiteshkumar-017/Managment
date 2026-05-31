@@ -38,6 +38,9 @@ const [zoom, setZoom] = useState(1);
 const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 const [showCropModal, setShowCropModal] = useState(false);
 
+let chooseCounter = 0
+let uploadCounter = 0;
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -49,6 +52,9 @@ const [showCropModal, setShowCropModal] = useState(false);
     try {
       setLoading(true)
       setUploading(true)
+      chooseCounter ++;
+
+      console.log("Select Counter",chooseCounter)
 
       const file = e.target.files?.[0]
       if (!file) return
@@ -81,6 +87,11 @@ const [showCropModal, setShowCropModal] = useState(false);
     const preview = URL.createObjectURL(file)
 
     setPreview(preview)
+    console.log("Preview:", preview);
+    console.log("Crop", crop);
+    console.log("showModal:", showCropModal);
+    console.log("selectedImage:", selectedFile);
+    
     setShowCropModal(true);
 
       
@@ -125,6 +136,9 @@ const [showCropModal, setShowCropModal] = useState(false);
       // console.log(croppedAreaPixels)console.log
       setLoading(true);
       setUploading(true)
+      uploadCounter++;
+
+      console.log("Upload Counter",uploadCounter)
 
       if(!setSelectedFile || !croppedAreaPixels){
         console.log("No file and Cropped Image found.")
@@ -176,6 +190,9 @@ const [showCropModal, setShowCropModal] = useState(false);
         console.log("Successfully Uploaded the Image")
         setCurrentImage(res.data.imageUrl);
         setCloudUrl(res.data.publicId);
+        setCrop({x:0, y:0});
+        setPreview(null)
+        setCroppedAreaPixels(null)
         setShowCropModal(false)
         toast.success(res.data?.message || "Successfully Uploaded the Image")
       }
@@ -189,9 +206,25 @@ const [showCropModal, setShowCropModal] = useState(false);
     }
   }
 
+  const fetchUsername = async () => {
+            try{
+                const res = await fetch("/api/users/getUsername");
+                const data = await res.json();
+                setUsername(data.username);
+                console.log("Username:", data.username);
+            }catch(err){
+              console.log(err);
+            }
+          }
+    
+          // useEffect(() => {
+          //   fetchUsername();
+          // }, []);
+
   
 
   useEffect(() => {
+    fetchUsername();
     getProfileImage()
   }, [])
 
@@ -649,9 +682,12 @@ const [showCropModal, setShowCropModal] = useState(false);
           </div>
 
           {showCropModal && (
+            
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    
     <div className="w-full max-w-lg rounded-2xl bg-white p-6">
             <div className='relative h-[400px] w-full '>
+             
               <Cropper
               image={`${preview}`} 
               crop={crop}
@@ -677,7 +713,7 @@ const [showCropModal, setShowCropModal] = useState(false);
 
                 <button type='submit'className="flex items-center gap-2 bg-green-500 py-3 px-3 rounded-lg font-bold tracking-wide cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSave} disabled={loading}>
                 <Save size={20} />
-                Save
+                {loading===true ? "Saving..." : "Save "}
                 </button>
     </div>
     </div>

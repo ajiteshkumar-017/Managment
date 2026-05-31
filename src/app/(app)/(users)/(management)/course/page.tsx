@@ -8,7 +8,7 @@ import toast from "react-hot-toast"
 import {Loader2} from "lucide-react"
 
 function Course() {
-  const [username, setUsername] = useState("Ajitesh")
+  const [username, setUsername] = useState("")
   const [attendanceData, setAttendanceData] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -79,6 +79,7 @@ function Course() {
 //     // absent: 8,
 //     // status: "Warning",
 //   },
+
 // ];
 
 const fetchTableData = async () => {
@@ -100,7 +101,22 @@ const fetchTableData = async () => {
   }
 }
 
+const fetchUsername = async () => {
+          try{
+              const res = await fetch("/api/users/getUsername");
+              const data = await res.json();
+              setUsername(data.username);
+              console.log("Username:", data.username);
+          }catch(err){
+            console.log(err);
+          }
+        }
+  
+        
+
 useEffect(() => {
+  console.log("Getting Username")
+  fetchUsername();
   console.log("Course component mounted, fetching data...");
   fetchTableData();
 }, [])

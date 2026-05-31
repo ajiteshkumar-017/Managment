@@ -43,8 +43,8 @@ export default function AdminNavbar() {
         try{
             const res = await axios.get("/api/users/getUsername");
             const data = await res.data;
-            setUsername(data.email);
-            console.log("Email:", data.email);
+            setUsername(data.username);
+            console.log("Username in Admin Navbar:", data.username);
         }catch(err){
           console.log(err);
         }
