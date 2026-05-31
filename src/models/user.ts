@@ -4,6 +4,8 @@ export interface IUser extends Document {
     username: string,
     email: string,
     password: string,
+    avatar: string,
+    avatarPublicId: string,
     role: 'student' | 'faculty' | 'admin',
 
 }
@@ -25,6 +27,16 @@ const UserSchema = new Schema<IUser>({
         type : String,
         trim:true,
         required: [true, "Password is Required"]
+    },
+    avatar: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    avatarPublicId: {
+        type: String,
+        required: false,
+        trim: true
     },
     role: {
         type: String,

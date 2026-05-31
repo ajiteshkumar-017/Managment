@@ -1,125 +1,204 @@
-import {NextRequest, NextResponse} from "next/server";
-import jwt from "jsonwebtoken";
+import { NextRequest, NextResponse } from "next/server";
+// import jwt from "jsonwebtoken";
 import path from "path";
-
-
+import { jwtVerify } from "jose";
 
 let count = 0;
 
 console.log("Middleware File Loaded");
 
 console.log("Secret JWT Key:", process.env.JWT_SECRET!);
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-export function proxy(request:NextRequest){
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
 
+  count++;
+  console.log("Count:", count);
+
+  console.log("Middleware RUNNING 🔥 🔥 🔥 🔥 🔥");
+
+  
+
+//   if ("api/users/getUsername" !== pathname) {
     
-    const pathname = request.nextUrl.pathname;
-    
-    
-    count ++;
-    console.log("Count:" , count)
+//     console.log("API Route, skipping middleware");
+//     return NextResponse.next();
+//   }else{
+//     console.log(`Coming to ${pathname}` )
+//   }
 
-    console.log("Middleware RUNNING 🔥 🔥 🔥 🔥 🔥");
+  // define Paths
 
-    // Used here to bypass the login and SignUp as they dont have any frontend page
+  const userPublicRoutes = [
+    "/landingPage",
+    "/courses",
+    "/about",
+    "/contactUs",
+    "/faculty",
+  ];
 
-    if(pathname.includes("/api")){
+  const userProtectedRoutes = [
+    "/dashboard",
+    "/attendance",
+    "/course",
+    "/setting",
+    "/result",
+    "/messages",
+  ];
+
+  const adminPublicRoutes = [];
+
+  const adminPrivateRoute = ["/admin/dashboard"];
+
+  const routeMatcher = (routes: string[], pathname: string): boolean => {
+    return routes.some((route) => pathname.startsWith(route));
+  };
+
+  try {
+    const token =
+      request.cookies.get("token")?.value ||
+      request.headers.get("authorization")?.replace("Bearer ", "") ||
+      null;
+
+    console.log("Token Exists:", !!token);
+
+    if (!token) {
+      console.log("Token not Found");
+      if (routeMatcher(userPublicRoutes, pathname)) {
         return NextResponse.next();
+      }
+      return NextResponse.redirect(new URL("/landingPage", request.url));
     }
 
-    // define Paths
+    let decoded: { _id?: string; email?: string; role?: string } = {};
 
-    const userPublicRoutes = ["/landingPage", "/courses", "/about", "/contactUs", "/faculty"];
+    const requestHeaders = new Headers(request.headers);
 
-    const userProtectedRoutes = ["/dashboard", "/attendance", "/course", "/setting", "/result", "/messages"];
+try {
 
-    const adminPublicRoutes = []
+   const { payload } = await jwtVerify(token, secret);
 
-    const adminPrivateRoute = ["/admin/dashboard"];
+   decoded = {
+      _id: payload._id as string | undefined,
+      email: payload.email as string | undefined,
+      role: payload.role as string | undefined,
+   };
 
-    const routeMatcher = (routes: string[], pathname: string) : boolean => {
-        return routes.some((route) => pathname.startsWith(route))
-    }
+   requestHeaders.set(
+      "x-user-id",
+      String(payload._id ?? "")
+   );
 
-    try {
+   requestHeaders.set(
+      "x-user-email",
+      String(payload.email ?? "")
+   );
 
-        const token = request.cookies.get("token")?.value || request.headers.get("authorization")?.replace("Bearer ", "") || null;
-        console.log("Token Exists:", !!token);
+   requestHeaders.set(
+      "x-user-role",
+      String(payload.role ?? "")
+   );
 
-        if(!token){
-            console.log("Token not Found");
-            if(routeMatcher(userPublicRoutes, pathname)){
-                return NextResponse.next();
-            }
-            return NextResponse.redirect(
-        new URL("/landingPage", request.url)
+} catch {
+
+   console.log("Invalid token");
+
+   if (routeMatcher(userPublicRoutes, pathname)) {
+      return NextResponse.next();
+   }
+
+   return NextResponse.redirect(
+      new URL("/landingPage", request.url)
+   );
+}
+
+const nextResponse = () =>
+   NextResponse.next({
+      request: {
+         headers: requestHeaders,
+      },
+   });
+
+const role = decoded?.role;
+
+console.log("URL:", pathname);
+console.log("Role:", role);
+
+if (!role) {
+
+   if (routeMatcher(adminPrivateRoute, pathname)) {
+      return NextResponse.redirect(
+         new URL("/landingPage", request.url)
       );
-        }
+   }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET! ) as  {
-            id?: string,
-            username?: string,
-            role?: string
-        };
+   return nextResponse();
+}
 
-        const role = decoded?.role
+if (role === "admin") {
 
-        console.log("URL:", pathname);
-        console.log("Role:", role);
+   if (
+      routeMatcher(userPublicRoutes, pathname) ||
+      routeMatcher(userProtectedRoutes, pathname)
+   ) {
+      return NextResponse.redirect(
+         new URL("/admin/dashboard", request.url)
+      );
+   }
 
-        if(!role){
-            if(routeMatcher(adminPrivateRoute,pathname)){
-                return NextResponse.redirect(new URL("/landingPage", request.url));
-            }
+   if (routeMatcher(adminPublicRoutes, pathname)) {
+      return NextResponse.redirect(
+         new URL("/admin/dashboard", request.url)
+      );
+   }
 
-            return NextResponse.next();
-        }
+   return nextResponse();
+}
 
-        if(role === "admin"){
-            if(routeMatcher(userPublicRoutes, pathname) || routeMatcher(userProtectedRoutes, pathname)){
-                return NextResponse.redirect( new URL("/admin/dashboard", request.url))
-            }
+if (role !== "admin") {
 
-            if(routeMatcher(adminPublicRoutes,pathname)){
-                return NextResponse.redirect(new URL("/admin/dashboard", request.url))
-            }
+   if (
+      routeMatcher(adminPrivateRoute, pathname) ||
+      routeMatcher(adminPublicRoutes, pathname)
+   ) {
+      return NextResponse.redirect(
+         new URL("/dashboard", request.url)
+      );
+   }
 
-            return NextResponse.next();
-        }
+   if (routeMatcher(userPublicRoutes, pathname)) {
+      return NextResponse.redirect(
+         new URL("/dashboard", request.url)
+      );
+   }
 
-        if(role !== "admin"){
-            console.log(
-  "Landing Match:",
-  routeMatcher(userPublicRoutes, pathname)
-);
+   return nextResponse();
+}
 
-            if(routeMatcher(adminPrivateRoute,pathname) || routeMatcher(adminPublicRoutes, pathname)){
-                return NextResponse.redirect(new URL("/dashboard", request.url));
+return nextResponse();
+  } catch (error: any) {
+    console.error("Error in Middleware File", error);
 
-            }
+    if (routeMatcher(userPublicRoutes, pathname)) {
+      const response = NextResponse.next();
 
-            if(routeMatcher(userPublicRoutes,pathname)){
-                return NextResponse.redirect( new URL ("/dashboard", request.url));
-            }
+      response.cookies.delete("token");
 
-            return NextResponse.next();
-        }
-
-        return NextResponse.next();
-        
-    } catch (error: any) {
-        console.error("Error in Middleware File", error)
-        return NextResponse.redirect(new URL ("/landingPage", request.url));
+      return response;
     }
 
+    const response = NextResponse.redirect(
+      new URL("/landingPage", request.url),
+    );
 
+    // delete expired token
+    response.cookies.delete("token");
 
+    return response;
+  }
 }
 
 export const config = {
-    matcher: [
-        "/((?!_next|.*\\..*|favicon.ico).*)",
-    ],
-}
-
-
+  matcher: ["/((?!_next|.*\\..*|favicon.ico).*)"],
+};

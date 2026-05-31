@@ -153,7 +153,7 @@ const tableData = [
 
         {/* Main Content */}
 
-            <div className="flex w-full min-w-0 flex-col gap-6 xl:flex-row">
+            <div className="flex w-full min-w-0 flex-col gap-6 xl:flex-row mt-8">
 
             {/* ================= LEFT SECTION ================= */}
             <div
@@ -223,7 +223,7 @@ const tableData = [
                 {/* SESSION CARD */}
                 <div
                 className="
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-purple-50
                     to-indigo-50
                     border
@@ -310,7 +310,7 @@ const tableData = [
                         border-slate-200
                         w-full
                         sm:w-fit
-                        sm:min-w-[170px]
+                        sm:min-w-42.5
                     "
                     >
 
@@ -435,7 +435,7 @@ const tableData = [
                     className="
                         mt-6
                         w-full
-                        max-w-[220px]
+                        max-w-55
                         border
                         border-slate-200
                         rounded-2xl
@@ -699,7 +699,7 @@ const tableData = [
                     rounded-2xl
                     border
                     border-yellow-200
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-yellow-50
                     via-white
                     to-orange-50
@@ -1024,7 +1024,7 @@ const tableData = [
                     shadow-sm
                     p-5
                     sm:p-6
-                    min-h-[360px]
+                    min-h-90
                 "
                 >
 
@@ -1204,7 +1204,7 @@ const tableData = [
             {/* TABLE HEADER */}
             <div
                 className="
-                min-w-[900px]
+                min-w-225
                 grid
                 grid-cols-6
                 gap-4
@@ -1243,7 +1243,7 @@ const tableData = [
             </div>
 
             {/* TABLE BODY */}
-            <div className="min-w-[900px]">
+            <div className="min-w-225">
 
                 {
                 tableData.map((item, index) => (

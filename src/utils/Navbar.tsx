@@ -41,6 +41,8 @@ function Navbar() {
 
             console.log("Login Successfull" ,res.data);
             console.log("API Success");
+            setEmail("");
+            setPassword("");
             toast.success(res?.data?.message || "Login Sucessfull")
 
              router.push("/dashboard");
@@ -69,6 +71,9 @@ function Navbar() {
 
 
             console.log("SIgnUp data: ", res.data);
+            setEmail("");
+            setPassword("");
+            setUsername("");
 
             toast.success(res?.data?.message || "SignUp Sucessfull")
             setIsFormOpen(false)
@@ -226,7 +231,7 @@ function Navbar() {
                                         </div>
                                     </div>
 
-                                    <button type="submit" className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide hover:-translate-y-1 transition-all duration-300 hover:scale-105 cursor-pointer shadow-md hover:shadow-xl active:scale-95">
+                                    <button type="submit" className="w-full p-3 bg-blue-500 mt-4 rounded-2xl text-black text-sm font-semibold tracking-wide  transition-all duration-300 hover:scale-95 cursor-pointer shadow-md hover:shadow-xl active:scale-95">
                                         Submit
                                     </button>
                                 </form>

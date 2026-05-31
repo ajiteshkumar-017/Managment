@@ -21,6 +21,7 @@ import {
 import { CalendarCheck, UserCheck, ClipboardCheck } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from 'next/navigation';
+import axios from "axios";
 
 export default function AdminNavbar() {
 
@@ -40,10 +41,10 @@ export default function AdminNavbar() {
 
       const fetchUsername = async () => {
         try{
-            const res = await fetch("/api/users/getUsername");
-            const data = await res.json();
-            setUsername(data.username);
-            console.log("Username:", data.username);
+            const res = await axios.get("/api/users/getUsername");
+            const data = await res.data;
+            setUsername(data.email);
+            console.log("Email:", data.email);
         }catch(err){
           console.log(err);
         }

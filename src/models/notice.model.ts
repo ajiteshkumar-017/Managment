@@ -9,6 +9,7 @@ export interface INotice extends Document {
     type: 'assignment' | 'announcement' | 'event' | 'placement' | 'general' | 'holiday';
     createdBy: mongoose.Types.ObjectId;
     IsImportant: boolean;
+    expiryDate: Date
 }
 
 
@@ -40,7 +41,7 @@ const NoticeSchema = new Schema({
         type: Boolean,
         default: false
     },
-    expirtionDate: {
+    expiryDate: {
         type: Date,
         default: null,
         required: false

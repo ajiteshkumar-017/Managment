@@ -4,49 +4,41 @@ import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
+import { getUser } from "@/lib/getUser";
+import { jwtVerify } from "jose";
 
 dotenv.config();
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!) 
 
 export async function GET(request: NextRequest) {
   try {
     await Connect();
 
-    const token = request.cookies.get("token")?.value || request.headers.get("authorization")?.replace("Bearer ", "") || null;
+     
+         const {email} = await getUser();
+         
 
-    if (!token) {
-      console.error("No Token Found In GetUsername Route");
-      return NextResponse.json(
-        {
-          success: false,
-          message: "No Token Found"
-        },
-        {
-          status: 401
-        }
-      );
-    }
+          if(!email){
+            console.error("Email not found in token payload")
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Email not found in token"
+                },
+                {
+                    status: 401
+                }
+            )
+          }
+      
 
-    let tokenData;
-    try {
-      tokenData = jwt.verify(token, process.env.JWT_SECRET!) as any;
-      console.log("Token Data in GetUsername Route:", tokenData);
-    } catch (err) {
-      console.error("Error parsing token in GetUsername Route:", err);
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid Token"
-        },
-        {
-          status: 401
-        }
-      );
-    }
-
-    const email = (tokenData as any).email;
+    
+    
 
     if (!email) {
       console.error("Email not found in token data");
+
       return NextResponse.json(
         {
           success: false,

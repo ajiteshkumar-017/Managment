@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
+import { SignJWT } from 'jose'
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ console.log("MongoDB URL:", process.env.MONGODB_URL!);
     console.log("JWT_SECRET is also not configured")
     console.log("JWT_SECRET value is:", process.env.JWT_SECRET!);
  }
+
+ const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
 
 
 export async function POST(request: NextRequest){
@@ -82,17 +85,26 @@ export async function POST(request: NextRequest){
             role: user.role
         };
 
-        console.log("Coming to JWT Part");
-        if (!process.env.JWT_SECRET!) {
-            console.log("JWT_SECRET is not configured")
-        }
+        // console.log("Coming to JWT Part");
+        // if (!process.env.JWT_SECRET!) {
+        //     console.log("JWT_SECRET is not configured")
+        // }
 
-        console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
-        console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+        // console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
+        // console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
 
-        const token = await jwt.sign(tokenData, process.env.JWT_SECRET!, { expiresIn: "1d" });
+        console.log("Token Data:", tokenData);
 
+        const token = await new SignJWT({ 
+                _id:   String(tokenData._id),   
+                email: tokenData.email, 
+                role:  tokenData.role 
+            })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setExpirationTime('1d')
+            .sign(secret)
         console.log("Token generated", token);
+        console.log("Token type:", typeof token);
 
         const response = NextResponse.json(
             {

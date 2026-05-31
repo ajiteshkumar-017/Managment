@@ -131,8 +131,26 @@ function result() {
     },
   ];
 
+    const totalEarnedPoints = subjects.reduce((total, subject) => {
+  let gradePoint = 0;
+  if (subject.marksObtained >= 90) gradePoint = 10;
+  else if (subject.marksObtained >= 80) gradePoint = 9;
+  else if (subject.marksObtained >= 70) gradePoint = 8; 
+  else if (subject.marksObtained >= 60) gradePoint = 7;
+  else if (subject.marksObtained >= 50) gradePoint = 6;
+  else if (subject.marksObtained >= 40) gradePoint = 5;
+  else if (subject.marksObtained >= 30) gradePoint = 4;
+  else if (subject.marksObtained >= 20) gradePoint = 3;
+  else gradePoint = 0;
+  
+  return total + (gradePoint * subject.credits);
+}, 0);
+
+const totalCredits = subjects.reduce((total, subject) => total + subject.credits, 0);
+const sgpa = totalEarnedPoints / totalCredits;
+
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
+    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
       {/* MAIN LAYOUT */}
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
         <AdminNavbar />
@@ -188,7 +206,7 @@ function result() {
             <div
               className="
                 rounded-2xl sm:rounded-3xl
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-indigo-50
                 via-white
                 to-indigo-50
@@ -198,9 +216,15 @@ function result() {
                 text-slate-900
               "
             >
-              <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-indigo-600">
+              <div className="flex items-center gap-3 justify-between">
+                <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-indigo-600">
                 Semester Performance
               </p>
+
+              <p className='text-lg sm:text-xl md:text-lg pb-4 font-bold  sm:mt-3 text-slate-500'>
+                Date Published: 25th May 2024
+              </p>
+              </div>
 
               <h2 className="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
                 Congratulations 🎉
@@ -236,7 +260,7 @@ function result() {
               </div>
 
               {/* Message */}
-              <div className="mt-6 sm:mt-8 bg-gradient-to-r from-indigo-50 to-white rounded-lg sm:rounded-2xl p-4 sm:p-6 border border-indigo-100">
+              <div className="mt-6 sm:mt-8 bg-linear-to-r from-indigo-50 to-white rounded-lg sm:rounded-2xl p-4 sm:p-6 border border-indigo-100">
                 <p className="text-sm sm:text-base leading-relaxed font-medium text-slate-700">
                   Congratulations on your excellent performance. Your hard work and
                   dedication have resulted in an outstanding academic record. Keep
@@ -254,7 +278,7 @@ function result() {
 
             {/* Desktop Table */}
             <div className="hidden lg:block">
-              <div className="grid grid-cols-7 gap-4 mt-4 bg-gradient-to-r from-slate-100 to-slate-50 rounded-xl sm:rounded-2xl px-4 py-4 border border-slate-200">
+              <div className="grid grid-cols-7 gap-4 mt-4 bg-linear-to-r from-slate-100 to-slate-50 rounded-xl sm:rounded-2xl px-4 py-4 border border-slate-200">
                 {[
                   "Subject Code",
                   "Subject Name",
@@ -415,6 +439,11 @@ function result() {
                 </div>
               ))}
             </div>
+            <div className='h-12 text-white flex items-center justify-center mt-6 rounded-lg '>
+              <h3 className='text-lg sm:text-xl md:text-2xl font-bold bg-linear-to-r from-indigo-500 to-purple-500 text-transparent bg-clip-text'>
+                Total GPA: {sgpa}
+              </h3>
+            </div>
           </div>
 
           {/* SEMESTER SUMMARY SECTION */}
@@ -521,7 +550,7 @@ function result() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 gap-y-4 sm:gap-y-5">
-                    <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
+                    <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
                         Percentage
                       </p>
@@ -530,7 +559,7 @@ function result() {
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
+                    <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
                         Rank
                       </p>
@@ -539,7 +568,7 @@ function result() {
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
+                    <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
                         Best Subject
                       </p>
@@ -548,7 +577,7 @@ function result() {
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
+                    <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
                         To Improve
                       </p>

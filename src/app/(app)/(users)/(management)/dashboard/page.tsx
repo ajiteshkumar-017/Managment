@@ -184,7 +184,7 @@ const router = useRouter();
   
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
+    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
       {/* MAIN LAYOUT */}
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
 
@@ -416,7 +416,7 @@ const router = useRouter();
                     <div className="overflow-x-auto mt-6">
 
                     {/* TABLE WRAPPER */}
-                    <div className="min-w-[750px]">
+                    <div className="min-w-187.5">
 
                       {/* HEADER */}
                       <div

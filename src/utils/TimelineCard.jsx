@@ -7,6 +7,10 @@ import { events } from "@/data/events";
 const TimelineCard = ({ selectedDate = new Date(), events = [] }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  const addSchedule =  (name,time) => {
+    
+  }
+
   const todayEvents = useMemo(() => {
     return events.filter(
       (e) =>
@@ -101,9 +105,10 @@ const TimelineCard = ({ selectedDate = new Date(), events = [] }) => {
           </p>
         </div>
 
-        <button className="h-9 w-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center">
+        <button className="h-9 w-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center" onClick={AddSchedule}>
           <Plus size={16} />
         </button>
+        
       </div>
 
       {/* Events */}

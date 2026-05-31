@@ -35,7 +35,7 @@ function contactUs() {
         <div className="w-full lg:w-1/2 ">
           <form
             action=""
-            className="bg-white shadow-xl w-full rounded-2xl p-4 min-h-[500px] space-y-4"
+            className="bg-white shadow-xl w-full rounded-2xl p-4 min-h-125 space-y-4"
           >
             <div className="flex justify-between">
               <div className="flex flex-col gap-4 p-2 w-1/2">
