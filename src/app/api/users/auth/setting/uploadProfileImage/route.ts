@@ -95,12 +95,12 @@ export async function POST(request:NextRequest){
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadDir  = path.join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadDir, { recursive: true }) 
-    const filename  = `${Date.now()}-${file.name.replace(/\s/g, '_')}`
-    const localPath = path.join(uploadDir, filename)
-    await writeFile(localPath, buffer)
-    const localUrl = `/uploads/${filename}`
+    // const uploadDir  = path.join(process.cwd(), 'public', 'uploads')
+    // await mkdir(uploadDir, { recursive: true }) 
+    // const filename  = `${Date.now()}-${file.name.replace(/\s/g, '_')}`
+    // const localPath = path.join(uploadDir, filename)
+    // await writeFile(localPath, buffer)
+    // const localUrl = `/uploads/${filename}`
     // console.log("Local Url: ", localUrl)
 
     console.log("Coming to Cloudinary part")
@@ -173,7 +173,7 @@ export async function POST(request:NextRequest){
         {
             success: true,
             message: "Profile image uploaded successfully",
-            localPath,                                    
+            // localPath,                                    
             publicId:cloudinaryResult.public_id, 
             imageUrl
         },
