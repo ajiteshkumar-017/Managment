@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest) {
     return routes.some((route) => pathname.startsWith(route));
   };
 
-  if (pathname.includes("/api/users/login")  && userPublicRoutes) {
+  if (pathname.includes("/api/users/login")  || pathname.includes("/api/users/signUp")) {
     
     console.log("API Route, skipping middleware");
     console.log(`Coming to ${pathname}` )
@@ -119,6 +119,12 @@ try {
    if (routeMatcher(userPublicRoutes, pathname)) {
       return NextResponse.next();
    }
+
+
+   const response = NextResponse.next();
+
+   response.cookies.delete("token");
+
 
    return NextResponse.redirect(
       new URL("/landingPage", request.url)

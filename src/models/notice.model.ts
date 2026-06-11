@@ -45,6 +45,15 @@ const NoticeSchema = new Schema({
         type: Date,
         default: null,
         required: false
+    },
+    attachment: {
+        type: Boolean,
+        required: false
+    },
+    audience: {
+        type : String,
+        enum : ["Faculty Only", "All", "Student Only", "Admin Only"],
+        default: "All"
     }
 }, {timestamps: true});
 
