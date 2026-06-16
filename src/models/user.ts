@@ -6,6 +6,7 @@ export interface IUser extends Document {
     password: string,
     avatar: string,
     avatarPublicId: string,
+    profileCompleted: boolean,
     role: 'student' | 'faculty' | 'admin',
 
 }
@@ -37,6 +38,10 @@ const UserSchema = new Schema<IUser>({
         type: String,
         required: false,
         trim: true
+    },
+    profileCompleted: {
+        type: Boolean,
+        required: false
     },
     role: {
         type: String,

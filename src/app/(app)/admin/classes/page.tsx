@@ -273,7 +273,7 @@ function adminFaculty() {
 
         
 
-    <div className="mt-4 w-full lg:w-auto  flex flex-col lg:flex-row gap-3 lg:flex-wrap lg:items-center">
+    <div className="mt-2 w-full lg:w-auto  flex flex-col lg:flex-row gap-3 lg:flex-wrap lg:items-center">
             {
               filterOption.length > 0 && filterOption.map((opt, i) =>
               (
@@ -307,7 +307,7 @@ function adminFaculty() {
                 placeholder="Search..."
               />
 
-              <button className="cursor-pointer rounded-lg border border-slate-200 bg-gray-400 px-4 py-3 font-bold text-white shadow-sm font-comfortaa">
+              <button className="cursor-pointer rounded-lg  border border-slate-200 bg-black px-4 py-3 font-bold text-white shadow-sm font-comfortaa tracking-tighter text-sm">
                 Search
               </button>
             </div>

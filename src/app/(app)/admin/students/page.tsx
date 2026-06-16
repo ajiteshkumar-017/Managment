@@ -217,16 +217,12 @@ function AdminStudents() {
       </p>
     </div> */}
 
-    <div className="mt-4 w-full gap-4 lg:flex lg:items-center lg:justify-center">
+    <div className="mt-2 w-full gap-4 lg:flex lg:items-center lg:justify-start">
             {
               filterOption.length > 0 && filterOption.map((opt, i) =>
               (
-                <div key={i} className=' py-4 px-2 rounded-lg shadow:md border border-slate-200 text-black text-center'>
-                    <select name="" id="" value={selectedFilter[opt.by] || ""} onChange={(e) => handleChangeofFilter(opt.by, e.target.value)}  className={`outline-none bg-transparent ${
-                      selectedFilter[opt.by]
-                        ? "text-black"
-                        : "text-slate-500"
-                    }`}>
+                <div key={i} className=' py-3 px-4 rounded-lg shadow:md border border-slate-200 text-black text-center'>
+                    <select name="" id="" value={selectedFilter[opt.by] || ""} onChange={(e) => handleChangeofFilter(opt.by, e.target.value)}  className={`outline-none bg-transparent text-sm text-black `}>
 
                       <option value="" disabled>
                     {opt.by}  
@@ -250,18 +246,23 @@ function AdminStudents() {
             <div className="flex flex-col gap-2 lg:flex-row lg:items-center ">
               <input
                 type="text"
-                className="w-full lg:w-60 rounded-lg border border-slate-100 p-4 text-black shadow-sm"
+                className="w-full lg:w-60 rounded-lg border border-slate-100 px-4 py-3 text-black shadow-sm"
                 placeholder="Search..."
               />
 
-              <button className="cursor-pointer rounded-lg border border-slate-200 bg-gray-400 p-4 font-bold text-white shadow-sm font-comfortaa">
+              <button className="cursor-pointer rounded-lg border border-slate-200 bg-gray-400 px-4 py-3 font-bold text-white shadow-sm font-comfortaa">
                 Search
               </button>
             </div>
 
-            <button className='flex items-center font-bold text-white gap-2 border border-slate-200 bg-indigo-600 p-4 rounded-lg cursor-pointer font-comfortaa w-full mt-4 lg:mt-0 justify-center lg:justify-start' onClick={() => setShowModal(true)}>
+            {/* <button className='flex items-center font-bold text-white gap-2 border border-slate-200 bg-indigo-600 px-4 py-3 rounded-lg cursor-pointer font-comfortaa w-full lg:mt-0 justify-center lg:justify-start' onClick={() => setShowModal(true)}>
               <span ><PlusCircle/></span>
               Add Student
+            </button> */}
+
+            <button className='flex justify-center items-center gap-2 bg-indigo-600 px-4 py-3 rounded-xl font-bold text-sm'>
+              <PlusCircle size={18}/>
+              Add Students
             </button>
 
             

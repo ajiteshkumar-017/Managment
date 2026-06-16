@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
     "/contactUs",
     "/faculty",
     "/api/login",
-    "/api/signUp"
+    "/api/signUp",
+    
   ];
 
   const userProtectedRoutes = [
@@ -41,21 +42,22 @@ export async function proxy(request: NextRequest) {
     "/setting",
     "/result",
     "/messages",
-    "/dashboard"
+    "/dashboard",
+    "/setUp"
   ];
 
   const adminPublicRoutes = [];
 
-  const adminPrivateRoute = ["/admin/dashboard"];
+  const adminPrivateRoute = ["/admin/dashboard", "/admin/students"];
 
   const routeMatcher = (routes: string[], pathname: string): boolean => {
     return routes.some((route) => pathname.startsWith(route));
   };
 
-  if (pathname.includes("/api/users/login")  || pathname.includes("/api/users/signUp")) {
+  if (pathname.includes("/api/users/login")  || pathname.includes("/api/users/signUp") ) {
     
     console.log("API Route, skipping middleware");
-    console.log(`Coming to ${pathname}` )
+    console.log(`Coming to ${pathname}` ) 
     return NextResponse.next();
   }else{
    console.log("need Authentiction")

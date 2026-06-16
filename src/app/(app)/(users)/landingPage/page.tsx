@@ -199,9 +199,7 @@ function LandingPage() {
             console.log("Login Successfull" ,res.data);
             console.log("API Success");
 
-             router.push("/dashboard");
-
-  console.log("Redirect done");
+             
 
         } catch (err:any) {
             console.error("Error in Login. Please Try Again.", err)

@@ -51,11 +51,11 @@ export async function POST(request: NextRequest){
         const user = await User.findOne({email});
 
         if(!user){
-            console.log("No User Exits with this credential")
+            console.log("Invalid Credential. Please Try again")
             return NextResponse.json(
                 {
                     success: false,
-                    message: "No User Exits with this credential"
+                    message: "Invalid Credential. Please Try again"
                 },
                 {
                     status: 400
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest){
             )
         }
     
+
         const isPasswordValid = await bcrypt.compare(password, user.password)
 
         if (!isPasswordValid){
@@ -109,7 +110,8 @@ export async function POST(request: NextRequest){
         const response = NextResponse.json(
             {
                 success: true,
-                message: "User logged In Successfully"
+                message: "User logged In Successfully",
+                ProfileStatus: user.profileCompleted
             },
             {
                 status: 200
@@ -121,7 +123,9 @@ export async function POST(request: NextRequest){
                 path: "/"
                 });
 
-        console.log("Generated The response")      
+        console.log("Generated The response")   
+        
+        
 
         return response;
 

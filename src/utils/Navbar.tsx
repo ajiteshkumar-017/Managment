@@ -45,7 +45,14 @@ function Navbar() {
             setPassword("");
             toast.success(res?.data?.message || "Login Sucessfull")
 
-             router.push("/dashboard");
+             if(res.data.ProfileStatus === true){
+                router.push("/dashboard");
+                console.log("Profile is Updated")
+             }else{
+                console.log("InComplete Profile");
+                router.push("/setUp");
+                console.log("Redirecting to SetUp Page")
+             }
 
             console.log("Redirect done");
 

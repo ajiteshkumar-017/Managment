@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import Connect from "@/dbConnect/connect";
 import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
+import { Student } from "@/models/student.model";
 
 
 export async function POST(request: NextRequest){
@@ -71,12 +72,38 @@ export async function POST(request: NextRequest){
                     }
                 )
             }
+
+            console.log("User", newUser);
+
+            const newStudentUser = await Student.create(
+                {
+                    userId: newUser._id,
+
+                }
+            );
+
+            if(!newStudentUser){
+                console.log("Error in Creating User");
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "Failed to SignUp"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+            }
+            console.log("New Student User",newStudentUser)
             console.log("Succesfully Signed in")
+
+
 
             return NextResponse.json({
                 success : true,
                 message: "SignUp Succesfull",
-                newUser
+                newUser,
+                newStudentUser
             },{status: 200})
         
     } catch (error:any) {
