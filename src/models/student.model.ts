@@ -44,8 +44,12 @@ const studentSchema = new Schema(
         admissionYear: {
             type: String,
             required: false
+        },
+        lastPromoted: {
+            type: Date,
+            required: false
         }
-    }
+    }, {timestamps : true}
 )
 
 
