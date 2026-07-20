@@ -1,39 +1,46 @@
-// import mongoose, {Schema, Document,model, models} from "mongoose";
+import mongoose, { Schema, Document, model, models } from "mongoose";
 
+export interface ISubjectFacultyAssignment extends Document {
+  facultyId: mongoose.Types.ObjectId;
+  subjectId: mongoose.Types.ObjectId;
+  semester: string;
+  section: string;
+  department: string;
+  academicYear: string;
+}
 
-// interface IFacultySubjectAssignment extends Document{
-//     userId: mongoose.Types.ObjectId,
-//     designation: string,
-//     salary: number,
-//     department: string,
-//     status: string,
-//     joinedAt: Date,
-//     lastPromoted: string
-// }
+const subjectFacultyAssignmentSchema = new Schema(
+  {
+    facultyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Faculty",
+      required: true,
+    },
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+      required: true,
+    },
+    semester: {
+      type: String,
+      required: true,
+    },
+    section: {
+      type: String,
+      default: "ALL",
+    },
+    department: {
+      type: String,
+      required: true,
+    },
+    academicYear: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true },
+);
 
-// const facultySubjectAssignmentSchema = new Schema(
-//     {
-        
-//         facultyId: {
-//             type: mongoose.Schema.Types.ObjectId,
-//             ref: "Faculty"
-//         },
-//         department: {
-
-//         },
-//         semester : {
-
-//         },
-//         section : {
-
-//         },
-//         academicYear: {
-            
-//         }
-        
-//     }, {timestamps: true}
-// )
-
-
-// export const Faculty = (models.Faculty as mongoose.Model<IFacultySubjectAssignment>) || model<IFacultySubjectAssignment>("Faculty", facultySchema);
-
+export const SubjectFacultyAssignment =
+  (models.SubjectFacultyAssignment as mongoose.Model<ISubjectFacultyAssignment>) ||
+  model<ISubjectFacultyAssignment>("SubjectFacultyAssignment", subjectFacultyAssignmentSchema);

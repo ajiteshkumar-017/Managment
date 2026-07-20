@@ -1,143 +1,180 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import Bar from "@/utils/Admin/Bar"
+import React, { useState } from "react";
+import Bar from "@/utils/Admin/Bar";
 import {
-  UserRoundCheck,
-  Shapes,
-  MonitorPlay,
-  ScanFace,
   Activity,
-  User,
   History,
+  MonitorPlay,
   Plus,
-} from 'lucide-react';
+  ScanFace,
+  Shapes,
+  User,
+  UserRoundCheck,
+} from "lucide-react";
 import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area
 } from "recharts";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 const attendanceData = [
-  { day: 'Mon', attendance: 82 },
-  { day: 'Tue', attendance: 88 },
-  { day: 'Wed', attendance: 85 },
-  { day: 'Thu', attendance: 90 },
-  { day: 'Fri', attendance: 87 },
-  { day: 'Sat', attendance: 80 },
+  { day: "Mon", attendance: 82 },
+  { day: "Tue", attendance: 88 },
+  { day: "Wed", attendance: 85 },
+  { day: "Thu", attendance: 90 },
+  { day: "Fri", attendance: 87 },
+  { day: "Sat", attendance: 80 },
 ];
 
-const DashboardCard = [
-  { heading: "Total Students", number: 1200, icon: <User size={20} /> },
-  { heading: "Total Faculty", number: 700, icon: <UserRoundCheck size={20} /> },
-  { heading: "Total Subjects", number: 700, icon: <Shapes size={20} /> },
-  { heading: "Total Classes", number: 700, icon: <MonitorPlay size={20} /> },
-  { heading: "Attendance Today", number: 700, icon: <ScanFace size={20} /> },
-  { heading: "Active Notices", number: 700, icon: <Activity size={20} /> },
-]
+const dashboardStats = [
+  {
+    label: "Total Students",
+    value: "1,200",
+    hint: "All departments",
+    icon: <User size={20} />,
+    color: "bg-indigo-100 text-indigo-600",
+  },
+  {
+    label: "Total Faculty",
+    value: "86",
+    hint: "Currently teaching",
+    icon: <UserRoundCheck size={20} />,
+    color: "bg-emerald-100 text-emerald-600",
+  },
+  {
+    label: "Total Subjects",
+    value: "142",
+    hint: "Across programs",
+    icon: <Shapes size={20} />,
+    color: "bg-violet-100 text-violet-600",
+  },
+  {
+    label: "Total Classes",
+    value: "120",
+    hint: "Active rooms",
+    icon: <MonitorPlay size={20} />,
+    color: "bg-cyan-100 text-cyan-600",
+  },
+  {
+    label: "Attendance Today",
+    value: "85%",
+    hint: "Institution average",
+    icon: <ScanFace size={20} />,
+    color: "bg-amber-100 text-amber-600",
+  },
+  {
+    label: "Active Notices",
+    value: "22",
+    hint: "Currently visible",
+    icon: <Activity size={20} />,
+    color: "bg-rose-100 text-rose-600",
+  },
+];
 
 const quickActions = [
   { heading: "Add Student", link: "/admin/students" },
-  { heading: "Add Faculty", link: "/admin/faculty/add-faculty" },
-  { heading: "Add Subject", link: "/admin/subjects/add-subject" },
-  { heading: "Create Classes", link: "/admin/classes/create-classes" },
-  { heading: "Publish Notice", link: "/admin/notices/publish-notice" },
-]
+  { heading: "Add Faculty", link: "/admin/faculty" },
+  { heading: "Add Subject", link: "/admin/subjects" },
+  { heading: "Create Classes", link: "/admin/classes" },
+  { heading: "Publish Notice", link: "/admin/notices" },
+];
 
 const recentActivities = [
   "Ajitesh enrolled in CS202",
   "Faculty Dr Smith created attendance session",
   "Result published for Semester 4",
   "Notice added by Admin",
-]
+];
 
-function page() {
+function AdminDashboard() {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [open, setOpen] = useState(true);
 
   return (
-    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row min-h-screen w-full items-stretch">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row">
+      <Bar open={open} setOpen={setOpen} />
 
-      
-     <Bar open={sidebarOpen} setOpen={setSidebarOpen} />
-
-      
-      <div className="flex-1 min-w-0">
-        <div className="w-full min-h-screen border border-slate-100 shadow-md p-4 sm:p-6 pt-5">
-
-          
-          <div className="mb-8">
-            <h1 className="font-comfortaa lg:text-2xl text-3xl font-bold text-slate-900">
-              Admin Dashboard
+      <div className="flex-1 min-w-0 w-full">
+        <div className="overflow-hidden bg-white p-5 text-slate-900 shadow-sm sm:p-6 md:p-7 lg:p-6">
+          <div className="border-b border-slate-200 pb-6 sm:pb-8">
+            <h1 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">
+              Dashboard
             </h1>
-            <p className="text-slate-500 mt-2 text-sm sm:text-base">
-              Monitor students, faculty, attendance and academic activities.
+            <p className="mt-1 text-sm text-slate-600">
+              Monitor students, faculty, attendance and academic activities
             </p>
           </div>
 
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mt-8 gap-3 sm:gap-5">
-            {DashboardCard.map((data, i) => (
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {dashboardStats.map((stat) => (
               <div
-                key={i}
-                className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                key={stat.label}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                    {data.icon}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      {stat.label}
+                    </p>
+                    <h3 className="mt-2 text-2xl font-bold text-slate-900">
+                      {stat.value}
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">{stat.hint}</p>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium text-right leading-tight">
-                    {data.heading}
-                  </p>
+                  <span className={`rounded-xl p-2.5 ${stat.color}`}>
+                    {stat.icon}
+                  </span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-4 sm:mt-5">
-                  {data.number}
-                </h2>
               </div>
             ))}
           </div>
 
-          
-          <div className="mt-10 sm:mt-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-5">
-              Recent Activities
-            </h3>
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6">
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-slate-900">Recent Activities</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Latest actions across the institution
+            </p>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
               {recentActivities.map((activity, index) => (
                 <div
-                  key={index}
-                  className={`flex items-center gap-3 sm:gap-4 py-3 sm:py-4 ${index !== recentActivities.length - 1 ? "border-b border-slate-100" : ""}`}
+                  key={activity}
+                  className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${
+                    index !== recentActivities.length - 1
+                      ? "border-b border-slate-100"
+                      : ""
+                  }`}
                 >
-                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                  <span className="rounded-xl bg-indigo-100 p-2.5 text-indigo-600 shrink-0">
                     <History size={16} />
-                  </div>
-                  <p className="text-slate-700 text-sm sm:text-base font-medium">
-                    {activity}
-                  </p>
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">{activity}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          
-          <div className="mt-10 sm:mt-12 w-full">
-            <h2 className="text-xl sm:text-2xl font-bold text-black">Attendance Overview</h2>
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-slate-900">Attendance Overview</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Weekly trend and today&apos;s snapshot
+            </p>
 
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 mt-4 flex flex-col lg:flex-row gap-6">
-
-              
-              <div className="w-full lg:w-2/3 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6">
-                <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <div className="mt-4 flex flex-col gap-4 lg:flex-row">
+              <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:w-2/3">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs sm:text-sm text-slate-500">Attendance Trend</p>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900">87%</h3>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Attendance Trend
+                    </p>
+                    <h3 className="mt-1 text-2xl font-bold text-slate-900">87%</h3>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs sm:text-sm font-medium">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/15">
                     +4.2%
                   </span>
                 </div>
@@ -153,27 +190,22 @@ function page() {
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-
                     <CartesianGrid vertical={false} stroke="#f1f5f9" />
-
                     <XAxis
                       dataKey="day"
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fontSize: 12, fill: '#94a3b8' }}
+                      tick={{ fontSize: 12, fill: "#94a3b8" }}
                       dy={10}
                       height={32}
                     />
-
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fontSize: 12, fill: '#94a3b8' }}
+                      tick={{ fontSize: 12, fill: "#94a3b8" }}
                       domain={[0, 110]}
                       ticks={[0, 20, 40, 60, 80, 100]}
-                      
                     />
-
                     <Tooltip
                       contentStyle={{
                         borderRadius: "12px",
@@ -181,7 +213,6 @@ function page() {
                         fontSize: "13px",
                       }}
                     />
-
                     <Area
                       type="monotone"
                       dataKey="attendance"
@@ -194,52 +225,51 @@ function page() {
                 </ResponsiveContainer>
               </div>
 
-              
-              <div className="w-full lg:w-1/3 rounded-3xl bg-linear-to-br from-indigo-600 to-violet-600 text-white p-5 sm:p-6 flex flex-row lg:flex-col justify-between gap-4 items-center lg:items-start">
+              <div className="flex w-full flex-col justify-between gap-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:w-1/3">
                 <div>
-                  <p className="text-xs sm:text-sm opacity-80">Today's Attendance</p>
-                  <h2 className="text-4xl sm:text-5xl font-bold mt-2 sm:mt-4">85%</h2>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Today&apos;s Attendance
+                  </p>
+                  <h3 className="mt-2 text-4xl font-bold text-slate-900">85%</h3>
+                  <p className="mt-1 text-xs text-slate-500">Institution average</p>
                 </div>
-                <div className="flex flex-row lg:flex-col gap-4 sm:gap-5">
-                  <div>
-                    <p className="text-xs sm:text-sm opacity-80">Total Present</p>
-                    <h3 className="text-xl sm:text-2xl font-semibold">1200</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Total Present</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">1,200</p>
                   </div>
-                  <div>
-                    <p className="text-xs sm:text-sm opacity-80">Total Absent</p>
-                    <h3 className="text-xl sm:text-2xl font-semibold">200</h3>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Total Absent</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">200</p>
                   </div>
                 </div>
-              </div>
-
-            </div>
-          </div>
-
-          
-          <div className="mt-10 sm:mt-12 mb-8">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-5">
-              Quick Actions
-            </h3>
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {quickActions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={() => router.push(action.link)}
-                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-sm sm:text-base rounded-2xl font-semibold transition-all hover:shadow-lg active:scale-95 cursor-pointer"
-                  >
-                    <Plus size={16} />
-                    {action.heading}
-                  </button>
-                ))}
               </div>
             </div>
           </div>
 
+          <div className="mt-10 mb-2">
+            <h2 className="text-lg font-bold text-slate-900">Quick Actions</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Jump to common admin tasks
+            </p>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {quickActions.map((action) => (
+                <button
+                  key={action.heading}
+                  type="button"
+                  onClick={() => router.push(action.link)}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 active:scale-[0.98] cursor-pointer"
+                >
+                  <Plus size={16} />
+                  {action.heading}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default page
+export default AdminDashboard;

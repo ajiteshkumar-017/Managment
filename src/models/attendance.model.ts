@@ -31,4 +31,4 @@ const attendanceRecordSchema = new Schema({
   }
 })
 
-const AttendanceRecord = (models.AttendanceRecord as mongoose.Model<IAttendanceRecord>) || model<IAttendanceRecord>("AttendanceRecord", attendanceRecordSchema);
+export const AttendanceRecord = (models.AttendanceRecord as mongoose.Model<IAttendanceRecord>) || model<IAttendanceRecord>("AttendanceRecord", attendanceRecordSchema);

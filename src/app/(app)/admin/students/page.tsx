@@ -1,457 +1,551 @@
-"use client"
-import React, { useState } from 'react'
-
-import Bar  from '@/utils/Admin/Bar'
-import {Book, ChevronsUp, DrumstickIcon, Eye, KeyRound, Pen, PlusCircle, Search, ShieldAlert, Trash2Icon, User2Icon, X} from "lucide-react"
-import { stringify } from 'querystring'
-
-function AdminStudents() {
-  const [open, setOpen] = useState(true)
-  const [selectedFilter, setSelectedFilter]= useState({});
-  const [currentPage, setCurrentPage]= useState(1);
-  const [totalPages, setTotalPages] = useState(100);
-  const [LargeScreen, setLargeScreen] = useState(window.innerWidth >= 1024)
-  const [showModal, setShowModal] = useState<boolean | null>(false)
-
-  const handleChangeofFilter = (filterName, value ) => {
-    setSelectedFilter((prev) => ({
-      ...prev,
-      [filterName] : value
-    }))
-  }
-
-  const studentCard = [
-    { heading: "Total Students", number: 1200 },
-    { heading: "Active Students", number: 1100 },
-    { heading: "Graduated Students", number: 300 },
-    { heading: "New Enrollments", number: 150 },
-  ]
-
-  const Card = ({data} : {data : typeof studentCard[0]}) => {}
-
-  const filterOption = [
-    {
-      by: "Department", option : ["Computer Science Engineering", "Mechanical Engineering", "Civil Engineering", "AeroSpace Engineering" ]
-    },
-    {
-      by: "Semester", option : ["1st Semester", "2nd Semester", "3rd Semester", "4th Semester" ]
-    },
-    {
-      by: "Section", option : ["A", "B", "C", "D" ]
-    },
-    {
-      by: "Status", option : ["Active", "Graduated", "BlackList", "Resticated" ]
-    },
-  ]
-
-  const tableData = [
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-
-    {
-      name: "Boman", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-    {
-      name: "Ajitesh Kumar", semester: "2nd", department : "CSE", section :"A", status: "Active"
-    },
-  ]
-
-  const getPagination = (currentPage: number, totalPage: number) => {
-
-        const pages = [];
-        const siblingCount = LargeScreen ? 2 : 1;
-
-        currentPage = Math.max(1, Math.min(currentPage, totalPage));
-
-        const start = Math.max(2, currentPage - siblingCount)
-        console.log(currentPage, totalPage)
-
-        if (totalPage < 7) {
-            return Array.from({ length: 5 }, (_, i) => i + 1);
-        }
-
-        pages.push(1);
-
-        if (currentPage <= 4) {
-            console.log("Failing into 1st Block")
-            pages.push(2, 3, 4, 5, "...", totalPage)
-            return pages
-        }
-
-
-
-        if (currentPage >= totalPage - 3) {
-
-            console.log("Failing into 2nd Block")
-            pages.push(
-                "...",
-                totalPage - 4,
-                totalPage - 3,
-                totalPage - 2,
-                totalPage - 1,
-                totalPage
-            )
-
-            return pages
-        }
-
-
-        console.log(currentPage, totalPage)
-
-        if (currentPage > 4 && currentPage < totalPage - 3) {
-            console.log("Failing into 3rd Block")
-            //      pages.push(
-            //     "...",
-            //     currentPage-2,
-            //     currentPage -1,
-            //     currentPage,
-            //     currentPage +1,
-            //     currentPage +2,
-            //     "...",
-            // )
-
-            pages.push("...")
-            for (let i = currentPage - siblingCount; i <= currentPage + siblingCount; i++) {
-                console.log("Faling Under for Loop.");
-                if (i > 1 && i < totalPage) {
-                    pages.push(i);
-                }
-            }
-        }
-
-        pages.push("...")
-
-
-
-        pages.push(totalPage);
-
-        return pages
-    }
-  return (
-    <div className='bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row min-h-screen w-full items-stretch'>
-      <Bar open={open} setOpen={setOpen}/>
-
-      <div className='flex-1 p-6 w-full'>
-        <h1 className="text-2xl font-bold mb-4 text-black font-comfortaa tracking-tight">Student Management</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {
-              studentCard.length > 0 && studentCard.map((data,i) => 
-              (
-
-                <div className='space-x-2 text-black  p-4 rounded-lg shadow-md border border-slate-200'>
-                    <div className='flex justify-start gap-4 items-center mb-4'>
-                      <span className='bg-indigo-400 p-2 rounded-lg'>
-                        <User2Icon size={24}/>
-                      </span>
-
-                      <h3 className='text-xl font-medium'>{data.heading}</h3>
-                    </div>
-                    
-                    <h2 className='text-2xl text-center font-bold '>{data.number}</h2>
-                </div>
-              ))
-            }
-        </div>
-
-         <h2 className='text-2xl mt-8 text-slate-600 font-comfortaa tracking-tight font-bold'>Student Information</h2>
-
-        <h3 className=' mt-8 text-slate-600 font-comfortaa tracking-tight font-bold'>Filter Options</h3>
-
-        
-
-        {/* <div className="w-full bg-amber-50/60 border border-amber-200 rounded-2xl p-5 shadow-xs mt-4">
-      
-      <div className="flex items-center gap-2.5 text-amber-800 font-semibold text-base mb-3 border-b border-amber-200/60 pb-2">
-        <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
-        <h2>Critical Administrative Instructions</h2>
-      </div>
-
-     
-      <ul className="space-y-3.5 text-sm text-slate-700 font-medium pl-1">
-        
-        
-        <li className="flex items-start gap-2.5">
-          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0" />
-          <p>
-            <span className="text-slate-900 font-bold">Data Modifications (Edit):</span> Committing an update permanently overwrites the existing data records. Ensure accuracy before saving, as current data attributes cannot be automatically recovered.
-          </p>
-        </li>
-
-        
-        <li className="flex items-start gap-2.5">
-          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0" />
-          <p>
-            <span className="text-slate-900 font-bold">Record Deletion (Delete):</span> Activating the deletion mechanism results in the permanent removal of the specified data asset. This operation is absolute and <span className="text-rose-600 font-bold underline decoration-rose-200 decoration-2">cannot be reverted or restored</span> under any circumstances.
-          </p>
-        </li>
-
-        
-        <li className="flex items-start gap-2.5">
-          <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 shrink-0" />
-          <p>
-            <span className="text-slate-900 font-bold">Academic Promotion (Semester Up):</span> Advancing a student to the next academic level updates their structural enrollment parameters. Please note that academic demotions <span className="text-amber-800 font-bold underline decoration-amber-200 decoration-2">are restricted</span> by the system; students cannot be reverted to a previous semester once promoted.
-          </p>
-        </li>
-
-      </ul>
-      
-      
-      <p className="mt-4 text-xs text-slate-400 font-normal italic">
-        * Please double-check all inputs before executing these actions. System logs will record all administrative modifications.
-      </p>
-    </div> */}
-
-    <div className="mt-2 w-full gap-4 lg:flex lg:items-center lg:justify-start">
-            {
-              filterOption.length > 0 && filterOption.map((opt, i) =>
-              (
-                <div key={i} className=' py-3 px-4 rounded-lg shadow:md border border-slate-200 text-black text-center'>
-                    <select name="" id="" value={selectedFilter[opt.by] || ""} onChange={(e) => handleChangeofFilter(opt.by, e.target.value)}  className={`outline-none bg-transparent text-sm text-black `}>
-
-                      <option value="" disabled>
-                    {opt.by}  
-                  </option>
-                     
-                      {
-                        opt.option.map((item,index) => 
-                        (
-                         
-                            <option value={item} key={index}  className='text-black'>{item}</option>
-                          
-                        )
-                        )
-                      }
-                    </select>
-                </div>
-              )
-              )
-            }
-
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-center ">
-              <input
-                type="text"
-                className="w-full lg:w-60 rounded-lg border border-slate-100 px-4 py-3 text-black shadow-sm"
-                placeholder="Search..."
-              />
-
-              <button className="cursor-pointer rounded-lg border border-slate-200 bg-gray-400 px-4 py-3 font-bold text-white shadow-sm font-comfortaa">
-                Search
-              </button>
-            </div>
-
-            {/* <button className='flex items-center font-bold text-white gap-2 border border-slate-200 bg-indigo-600 px-4 py-3 rounded-lg cursor-pointer font-comfortaa w-full lg:mt-0 justify-center lg:justify-start' onClick={() => setShowModal(true)}>
-              <span ><PlusCircle/></span>
-              Add Student
-            </button> */}
-
-            <button className='flex justify-center items-center gap-2 bg-indigo-600 px-4 py-3 rounded-xl font-bold text-sm'>
-              <PlusCircle size={18}/>
-              Add Students
-            </button>
-
-            
-        </div>
-
-        {
-          Object.keys(selectedFilter).length > 0   ? <pre className="w-full mt-4 rounded bg-slate-100 p-4 text-black wrap-break-words whitespace-normal">
-        <h3>
-          Selected Filter : {selectedFilter === "{}" ? "None" : JSON.stringify(selectedFilter)}
-        </h3>
-      </pre> : ("")
-        }
-
-        
-       
-
-
-       {/* HEADING */}
-
-        <div className='grid grid-cols-8 mt-4  bg-slate-100 py-4 px-2 text-center '>
-          {
-            ["SL No", "Photo", "Name","Department", "Semester", "Section", "Status", "Actions"].map((head, i) => 
-            (
-              <div key={i}  className=''>
-                <h3 className='uppercase font-bold text-zinc-400'>{head}</h3>
-              </div>
-              
-            )
-            
-            )
-          }
-
-
-          
-        </div>
-
-         
-        <div className='gap-4 space-y-2 overflow-x-auto'>
-          {
-            tableData.map((tbData, index) => 
-            (
-              <div className='grid lg:grid-cols-8 text-center text-black  py-2'>
-                 <div>{index + 1}</div>
-                 <div>Photot</div>
-                  <div>{tbData.name}</div>
-                  
-                  <div>{tbData.department}</div>
-                  <div>{tbData.semester}</div>
-                  <div>{tbData.section}</div>
-                  <div>{tbData.status}</div>
-                  <div className='space-x-4 flex justify-center'>
-                    <button title="View Details" className='py-2 px-2 bg-slate-100 rounded-lg text-slate-600 cursor-pointer hover'>
-                      <Eye size={18}/>
-                    </button>
-
-                    <button title="Edit Detail" className='py-2 px-2 bg-indigo-50 rounded-lg text-indigo-600 cursor-pointer'>
-                      <Pen size={18}/>
-                    </button>
-
-
-                    {/* <button title="Delete Student" className='py-2 px-2 bg-rose-50 rounded-lg text-rose-600 cursor-pointer'>
-                      <Trash2Icon size={18}/>
-                    </button> */}
-
-                    {/* <button title="Edit Detail" className='py-2 px-2 bg-amber-50 rounded-lg text-amber-600'>
-                      <KeyRound size={12}/>
-                    </button> */}
-
-                    {/* <button title="Promote One Semester Up" className='py-2 px-2 bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer'>
-                      <ChevronsUp size={12}/>
-                    </button> */}
-
-                    
-                  </div>
-              </div>
-            )
-            )
-          }
-        </div>
-
-        <div className='flex justify-center items-center gap-4 mt-4'>
-            <button className='py-2 px-2 rounded-lg font-bold  disabled:cursor-not-allowed disabled:opacity-50 text-black shadow-sm border border-slate-200 transition-all ' disabled={
-                currentPage === 1
-            }
-            onClick={() => setCurrentPage(currentPage-1)}
-            >
-                Previous
-            </button>
-
-            {
-                getPagination(currentPage, totalPages).map((page,index) => 
-                    (
-                        <button className={`${currentPage === page ? "bg-indigo-600 text-white" : "bg-white text-black"} font-extralight   px-4 py-2 rounded-lg shadow-md shadow-indigo-100 border-2 border-white transition-all duration-100`} disabled={page === "..."}
-                            onClick={() => {
-                                if (page !== "...") {
-                                setCurrentPage(page);
-                                }
-                                }}>
-                            {page}
-                        </button>
-                    ) 
-                )
-            }
-
-            <button className='py-2 px-2 rounded-lg font-medium  disabled:cursor-not-allowed disabled:opacity-50 text-black shadow-sm border border-slate-200 transition-all ' disabled ={currentPage === totalPages}>
-                Next
-            </button>
-        </div>
-        
-
-      </div>
-
-      {
-                showModal ? (
-                <div className=' fixed inset-0 bg-black/50  flex justify-center items-center'>
-                        <div className='h-160 lg:h-120 w-260 bg-white rounded-lg shadow-sm p-4'>
-                            <div className='flex flex-cols justify-between text-black'>
-                                    <h3 className='p-2'>Input From</h3>
-                                    <button className='rounded-full hover:bg-slate-200  p-2 cursor-pointer ' onClick={() => setShowModal(false)}>
-                                        <X size={24} />
-                                    </button>
-                            </div>
-
-                            <div className='flex flex-col lg:flex-row  p-2 gap-4'>
-                                <div className='flex flex-col  w-full lg:w-1/2'>
-                                    <label htmlFor="" className='text-black font-medium tracking-tight font-comfortaa'>Photo</label>
-                                <input type="text" placeholder='Enter Subject Name' className=' p-3 mt-2 rounded-xl bg-white shadow-sm text-black border border-slate-200 w-full' />
-                                </div>
-
-                                <div className='flex flex-col  w-full lg:w-1/2'>
-                                    <label htmlFor="" className='text-black font-medium tracking-tight font-comfortaa'>Subject Name</label>
-                                <input type="text" placeholder='Enter Subject Name' className=' p-3 mt-2 rounded-xl bg-white shadow-sm text-black border border-slate-200 w-full' />
-                                </div>
-                            </div>
-
-                             <div className='flex flex-col lg:flex-row   p-2 gap-4'>
-                                <div className='flex flex-col w-full lg:w-1/2'>
-                                    <label htmlFor="" className='text-black font-medium tracking-tight font-comfortaa'>Status</label>
-                                <select name="" id="" className='p-3 mt-2 rounded-xl bg-white shadow-sm text-black border border-slate-200 w-full'>
-                                    <option value="">CSE-001</option>
-                                    <option value="">CSE-002</option>
-                                    <option value="">CSE-003</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                </select>
-                                </div>
-
-                                <div className='flex flex-col  w-full lg:w-1/2'>
-                                    <label htmlFor="" className='text-black font-medium tracking-tight font-comfortaa'> Department</label>
-                                <select name="" id="" className='p-3 mt-2 rounded-xl bg-white shadow-sm text-black border border-slate-200 w-full'>
-                                    <option value="">CSE-001</option>
-                                    <option value="">CSE-002</option>
-                                    <option value="">CSE-003</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                </select>
-                                </div>
-                            </div>
-
-                             <div className='flex  p-2 gap-4'>
-                                 <div className='flex flex-col  w-full lg:w-1/2'>
-                                    <label htmlFor="" className='text-black font-medium tracking-tight font-comfortaa'>Semester</label>
-                                <select name="" id="" className='p-3 mt-2 rounded-xl bg-white shadow-sm text-black border border-slate-200 w-full'>
-                                    <option value="">CSE-001</option>
-                                    <option value="">CSE-002</option>
-                                    <option value="">CSE-003</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                    <option value="">BSE-001</option>
-                                </select>
-                                </div>
-
-                            
-                            </div>
-
-                            <button className='p-4 bg-blue-500 mt-2 w-full rounded-xl font-bold font-comfortaa hover:border-none hover:bg-blue-700 shadow-sm border-zinc-200 cursor-pointer transition-all duration-200 hover:scale-98'>
-                                Submit
-                            </button>
-                        </div>
-                </div>
-                ) : (<></>)
-            }
-    </div>
-  )
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import Bar from "@/utils/Admin/Bar";
+import {
+  Eye,
+  GraduationCap,
+  Pen,
+  PlusCircle,
+  Search,
+  User2Icon,
+  UserCheck,
+  UserPlus,
+  X,
+} from "lucide-react";
+import axios from "axios";
+import toast from "react-hot-toast";
+
+type StudentRow = {
+  rollNo: string;
+  name: string;
+  semester: string;
+  department: string;
+  section: string;
+  status: "Active" | "Graduated" | "Blacklisted" | "Restricted";
+};
+
+type StudentStats = {
+  total: number;
+  active: number;
+  graduated: number;
+  newEnrollments: number;
+};
+
+const filterOptions = [
+  { key: "Department", options: ["CSE", "ME", "CE", "AE"] },
+  { key: "Semester", options: ["1", "2", "3", "4", "5", "6", "7", "8"] },
+  { key: "Section", options: ["A", "B", "C", "D"] },
+  { key: "Status", options: ["Active", "Graduated", "Blacklisted", "Restricted"] },
+];
+
+const PAGE_SIZE = 5;
+
+const formatCount = (n: number) => n.toLocaleString();
+
+function statusClass(status: StudentRow["status"]) {
+  const map: Record<StudentRow["status"], string> = {
+    Active: "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-600/15",
+    Graduated: "bg-violet-50 text-violet-700 ring-1 ring-violet-600/10",
+    Blacklisted: "bg-red-50 text-red-800 ring-1 ring-red-600/15",
+    Restricted: "bg-amber-50 text-amber-800 ring-1 ring-amber-600/15",
+  };
+  return map[status];
 }
 
-export default AdminStudents
+function AdminStudents() {
+  const [open, setOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [largeScreen, setLargeScreen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [view, setView] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<StudentRow | null>(null);
+  const [rows, setRows] = useState<StudentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StudentStats>({
+    total: 0,
+    active: 0,
+    graduated: 0,
+    newEnrollments: 0,
+  });
+  const [form, setForm] = useState({
+    rollNo: "",
+    name: "",
+    department: "CSE",
+    semester: "1",
+    section: "A",
+    status: "Active" as StudentRow["status"],
+  });
+
+  useEffect(() => {
+    const onResize = () => setLargeScreen(window.innerWidth >= 1024);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get("/api/admin/students");
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || "Failed to fetch students");
+        }
+        const data: StudentRow[] = (res.data.data || []).map((s: StudentRow) => ({
+          rollNo: s.rollNo || "—",
+          name: s.name || "—",
+          semester: String(s.semester ?? ""),
+          department: s.department || "—",
+          section: s.section || "—",
+          status: s.status,
+        }));
+        setRows(data);
+        setStats({
+          total: res.data.stats?.total ?? data.length,
+          active: res.data.stats?.active ?? 0,
+          graduated: res.data.stats?.graduated ?? 0,
+          newEnrollments: res.data.stats?.newEnrollments ?? 0,
+        });
+      } catch (err: unknown) {
+        const message =
+          axios.isAxiosError(err)
+            ? err.response?.data?.message || err.message
+            : err instanceof Error
+              ? err.message
+              : "Failed to fetch students";
+        toast.error(message);
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const studentStats = useMemo(
+    () => [
+      {
+        label: "Total Students",
+        value: formatCount(stats.total),
+        hint: "All departments",
+        icon: <User2Icon size={20} />,
+        color: "bg-indigo-100 text-indigo-600",
+      },
+      {
+        label: "Active Students",
+        value: formatCount(stats.active),
+        hint: "Currently enrolled",
+        icon: <UserCheck size={20} />,
+        color: "bg-emerald-100 text-emerald-600",
+      },
+      {
+        label: "Graduated",
+        value: formatCount(stats.graduated),
+        hint: "Alumni records",
+        icon: <GraduationCap size={20} />,
+        color: "bg-violet-100 text-violet-600",
+      },
+      {
+        label: "New Enrollments",
+        value: formatCount(stats.newEnrollments),
+        hint: "This academic year",
+        icon: <UserPlus size={20} />,
+        color: "bg-cyan-100 text-cyan-600",
+      },
+    ],
+    [stats],
+  );
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const query = search.trim().toLowerCase();
+      const matchesSearch =
+        !query ||
+        row.name.toLowerCase().includes(query) ||
+        row.rollNo.toLowerCase().includes(query) ||
+        row.department.toLowerCase().includes(query);
+
+      const matchesFilters = Object.entries(selectedFilter).every(([key, value]) => {
+        if (!value) return true;
+        if (key === "Department") return row.department === value;
+        if (key === "Semester") return row.semester === value;
+        if (key === "Section") return row.section === value;
+        if (key === "Status") return row.status === value;
+        return true;
+      });
+
+      return matchesSearch && matchesFilters;
+    });
+  }, [rows, search, selectedFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const paginatedRows = filteredRows.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const handleFilterChange = (filterName: string, value: string) => {
+    setSelectedFilter((prev) => ({ ...prev, [filterName]: value }));
+    setCurrentPage(1);
+  };
+
+  const clearFilter = (key: string) => {
+    setSelectedFilter((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = useMemo(
+    () => Object.values(selectedFilter).some(Boolean) || search.trim().length > 0,
+    [selectedFilter, search],
+  );
+
+  const clearAllFilters = () => {
+    setSelectedFilter({});
+    setSearch("");
+    setCurrentPage(1);
+  };
+
+  const populateForm = (row: StudentRow) => {
+    setForm({
+      rollNo: row.rollNo,
+      name: row.name,
+      department: row.department,
+      semester: row.semester,
+      section: row.section,
+      status: row.status,
+    });
+  };
+
+  const openView = (row: StudentRow) => {
+    setSelectedStudent(row);
+    populateForm(row);
+    setView(true);
+  };
+
+  const openEdit = (row: StudentRow) => {
+    setSelectedStudent(row);
+    populateForm(row);
+    setEdit(true);
+  };
+
+  const openAdd = () => {
+    setForm({ rollNo: "", name: "", department: "CSE", semester: "1", section: "A", status: "Active" });
+    setShowModal(true);
+  };
+
+  const getPagination = (page: number, total: number) => {
+    const pages: (number | string)[] = [];
+    const siblingCount = largeScreen ? 2 : 1;
+    const safePage = Math.max(1, Math.min(page, total));
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    pages.push(1);
+    if (safePage <= 4) return [...pages, 2, 3, 4, 5, "...", total];
+    if (safePage >= total - 3) {
+      return [...pages, "...", total - 4, total - 3, total - 2, total - 1, total];
+    }
+    pages.push("...");
+    for (let i = safePage - siblingCount; i <= safePage + siblingCount; i++) {
+      if (i > 1 && i < total) pages.push(i);
+    }
+    pages.push("...", total);
+    return pages;
+  };
+
+  const StudentFormFields = ({ disabled = false }: { disabled?: boolean }) => (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Roll Number</label>
+        <input
+          disabled={disabled}
+          value={form.rollNo}
+          onChange={(e) => setForm((p) => ({ ...p, rollNo: e.target.value }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="CSE21001"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Full Name</label>
+        <input
+          disabled={disabled}
+          value={form.name}
+          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="Student name"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+        <select
+          disabled={disabled}
+          value={form.department}
+          onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {["CSE", "ME", "CE", "AE"].map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Semester</label>
+        <select
+          disabled={disabled}
+          value={form.semester}
+          onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <option key={n} value={String(n)}>{n}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Section</label>
+        <select
+          disabled={disabled}
+          value={form.section}
+          onChange={(e) => setForm((p) => ({ ...p, section: e.target.value }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {["A", "B", "C", "D"].map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+        <select
+          disabled={disabled}
+          value={form.status}
+          onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StudentRow["status"] }))}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          {filterOptions[3].options.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row">
+      <Bar open={open} setOpen={setOpen} />
+
+      <div className="flex-1 min-w-0 w-full">
+        <div className="overflow-hidden bg-white p-5 text-slate-900 shadow-sm sm:p-6 md:p-7 lg:p-6">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:pb-8">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">Students</h1>
+              <p className="mt-1 text-sm text-slate-600">Manage student records, enrollment, and academic status</p>
+            </div>
+            <button
+              type="button"
+              onClick={openAdd}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              <PlusCircle size={18} />
+              Add Student
+            </button>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {studentStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{stat.label}</p>
+                    <h3 className="mt-2 text-2xl font-bold text-slate-900">{stat.value}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{stat.hint}</p>
+                  </div>
+                  <span className={`rounded-xl p-2.5 ${stat.color}`}>{stat.icon}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-bold text-slate-900">Student Directory</h2>
+            <p className="mt-1 text-sm text-slate-500">Filter and search enrolled students</p>
+
+            <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+              {filterOptions.map((opt) => (
+                <div key={opt.key} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm lg:w-auto lg:min-w-[160px]">
+                  <select
+                    value={selectedFilter[opt.key] || ""}
+                    onChange={(e) => handleFilterChange(opt.key, e.target.value)}
+                    className="w-full bg-transparent text-sm text-slate-900 outline-none"
+                  >
+                    <option value="">{opt.key}</option>
+                    {opt.options.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+              <div className="flex w-full gap-2 lg:max-w-md lg:flex-1">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                    placeholder="Search name, roll no, department..."
+                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {hasActiveFilters && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {Object.entries(selectedFilter).map(([key, value]) =>
+                  value ? (
+                    <button key={key} type="button" onClick={() => clearFilter(key)} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-600/10">
+                      {key}: {value}<X size={12} />
+                    </button>
+                  ) : null,
+                )}
+                {search.trim() && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                    Search: {search.trim()}
+                  </span>
+                )}
+                <button type="button" onClick={clearAllFilters} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                  Clear all<X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 hidden lg:block overflow-hidden rounded-2xl border border-slate-200">
+            <div className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_0.7fr] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+              {["#", "Roll No", "Name", "Dept", "Sem", "Sec", "Status", "Actions"].map((head) => (
+                <div key={head} className="min-w-0 truncate text-center">{head}</div>
+              ))}
+            </div>
+            {loading ? (
+              <div className="px-4 py-12 text-center text-sm text-slate-500">Loading students...</div>
+            ) : paginatedRows.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-slate-500">
+                {rows.length === 0 ? "No students found." : "No students match your filters."}
+              </div>
+            ) : (
+              paginatedRows.map((row, index) => (
+                <div key={row.rollNo} className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_0.7fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
+                  <div className="text-center text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</div>
+                  <div className="truncate text-center font-semibold text-indigo-700">{row.rollNo}</div>
+                  <div className="truncate text-left font-medium text-slate-900">{row.name}</div>
+                  <div className="text-center text-slate-600">{row.department}</div>
+                  <div className="text-center text-slate-600">{row.semester}</div>
+                  <div className="text-center text-slate-600">{row.section}</div>
+                  <div className="flex justify-center">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(row.status)}`}>{row.status}</span>
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <button type="button" onClick={() => openView(row)} className="rounded-lg bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200" title="View"><Eye size={16} /></button>
+                    <button type="button" onClick={() => openEdit(row)} className="rounded-lg bg-indigo-50 p-2 text-indigo-600 transition hover:bg-indigo-100" title="Edit"><Pen size={16} /></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <ul className="mt-6 divide-y divide-slate-100 lg:hidden" role="list">
+            {loading ? (
+              <li className="p-6 text-center text-sm text-slate-500">Loading students...</li>
+            ) : paginatedRows.length === 0 ? (
+              <li className="p-6 text-center text-sm text-slate-500">
+                {rows.length === 0 ? "No students found." : "No students match your filters."}
+              </li>
+            ) : (
+              paginatedRows.map((row) => (
+                <li key={`${row.rollNo}-mobile`} className="p-3 sm:p-4">
+                  <article className="overflow-hidden rounded-2xl border border-slate-200 border-l-[3px] border-l-indigo-500 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-indigo-700">{row.rollNo}</p>
+                        <h3 className="mt-1 font-bold leading-snug text-slate-900">{row.name}</h3>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusClass(row.status)}`}>{row.status}</span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                      <div><p className="text-xs text-slate-400">Department</p><p className="font-medium text-slate-700">{row.department}</p></div>
+                      <div><p className="text-xs text-slate-400">Semester</p><p className="font-medium text-slate-700">{row.semester}</p></div>
+                      <div><p className="text-xs text-slate-400">Section</p><p className="font-medium text-slate-700">{row.section}</p></div>
+                    </div>
+                    <div className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
+                      <button type="button" onClick={() => openView(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-100 py-2.5 text-sm font-medium text-slate-700"><Eye size={16} /> View</button>
+                      <button type="button" onClick={() => openEdit(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-50 py-2.5 text-sm font-medium text-indigo-700"><Pen size={16} /> Edit</button>
+                    </div>
+                  </article>
+                </li>
+              ))
+            )}
+          </ul>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 lg:w-24">Previous</button>
+            <div className="flex items-center gap-2">
+              {getPagination(currentPage, totalPages).map((page, index) => (
+                <button key={`${page}-${index}`} type="button" disabled={page === "..."} onClick={() => typeof page === "number" && setCurrentPage(page)} className={`min-h-[42px] min-w-[42px] rounded-xl text-sm font-semibold transition ${currentPage === page ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : page === "..." ? "cursor-default bg-transparent text-slate-400" : "border border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:text-indigo-600"}`}>{page}</button>
+              ))}
+            </div>
+            <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 lg:w-24">Next</button>
+          </div>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Add Student</h3>
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-slate-100 text-slate-900"><X size={22} /></button>
+            </div>
+            <StudentFormFields />
+            <button type="button" onClick={() => { toast.success("Student added (connect API when ready)"); setShowModal(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Submit</button>
+          </div>
+        </div>
+      )}
+
+      {edit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Edit Student</h3>
+              <button type="button" onClick={() => setEdit(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
+            </div>
+            <StudentFormFields />
+            <button type="button" onClick={() => { toast.success("Student updated (connect API when ready)"); setEdit(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Save Changes</button>
+          </div>
+        </div>
+      )}
+
+      {view && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Student Details</h3>
+              <button type="button" onClick={() => setView(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
+            </div>
+            <StudentFormFields disabled />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AdminStudents;

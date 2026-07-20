@@ -33,6 +33,17 @@ const studentSchema = new Schema(
             type: String,
             required: false
         },
+        lastSem:{
+
+        },
+
+        examStatus:{
+            type: String,
+            enum: ["passed", "back", "failed", "not_attended"],
+            default: "not_attended",
+            required: false
+        },
+
         status: {
             type: String,
             required: false

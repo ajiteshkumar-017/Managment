@@ -5,7 +5,9 @@ export interface ISubject extends Document {
     credits: number,
     subjectCode: string,
     subjectName: string,
-    totalClasses: number
+    totalClasses: number,
+    department: string,
+    status: "active" | "inactive"
 }
 
 const subjectSchema = new Schema(
@@ -30,6 +32,16 @@ const subjectSchema = new Schema(
         totalClasses: {
             type: Number,
             required:false
+        },
+        department: {
+            type: String,
+            required: true,
+            default: "CSE"
+        },
+        status: {
+            type: String,
+            enum: ["active", "inactive"],
+            default: "active"
         }
     }, { timestamps: true }
 )

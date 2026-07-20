@@ -2,7 +2,7 @@
 
 import Bar from '@/utils/Admin/Bar'
 // import { ArrowBigUpDash, ArrowRight, CalendarPlus, Shuffle, User2Icon, UserCircle2Icon } from 'lucide-react'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ArrowBigUpDash,
   PauseCircle,
@@ -145,6 +145,70 @@ type parseRow = {
   data: unknown;
 };
 
+type FacultyOption = {
+  username: string;
+  department?: string;
+  designation?: string;
+};
+
+type SubjectOption = {
+  subjectCode: string;
+  subjectName: string;
+  semester?: string;
+  department?: string;
+};
+
+const DEPARTMENTS = [
+  { value: "CSE", label: "Computer Science and Engineering" },
+  { value: "ME", label: "Mechanical Engineering" },
+  { value: "CE", label: "Civil Engineering" },
+];
+
+const API_ROUTES = {
+  FACULTY: {
+    LIST: "/api/admin/academicManagment/faculty",
+    ASSIGN_SUBJECT: "/api/admin/academicManagment/faculty/assign-subject",
+    ASSIGN_CLASS: "/api/admin/academicManagment/faculty/assign-class",
+    TRANSFER_DEPARTMENT: "/api/admin/academicManagment/faculty/transfer-department",
+    AVAILABILITY: "/api/admin/academicManagment/faculty/availability",
+    STATUS: "/api/admin/academicManagment/faculty/status",
+    WORKLOAD: "/api/admin/academicManagment/faculty/workload",
+    BULK_UPLOAD: "/api/admin/academicManagment/faculty/bulk-upload",
+  },
+  SUBJECT: {
+    LIST: "/api/admin/academicManagment/subject",
+    UPDATE: "/api/admin/academicManagment/subject/update",
+    ASSIGN_SEMESTER: "/api/admin/academicManagment/subject/assign-semester",
+    ASSIGN_DEPARTMENT: "/api/admin/academicManagment/subject/assign-department",
+    ACTIVATE: "/api/admin/academicManagment/subject/activate",
+    BULK_UPLOAD: "/api/admin/academicManagment/subject/bulk-upload",
+  },
+  STUDENT: {
+    BULK_UPLOAD: "/api/admin/academicManagment/bulkUpload-students",
+  },
+};
+
+const bulkUploadConfig: Record<string, { validate: string; import: string; template: string; filename: string }> = {
+  "Bulk Student Upload": {
+    validate: `${API_ROUTES.STUDENT.BULK_UPLOAD}?validateOnly=true`,
+    import: `${API_ROUTES.STUDENT.BULK_UPLOAD}?validateOnly=false`,
+    template: `${API_ROUTES.STUDENT.BULK_UPLOAD}/template`,
+    filename: "student-template.xlsx",
+  },
+  "Bulk Faculty Upload": {
+    validate: `${API_ROUTES.FACULTY.BULK_UPLOAD}?validateOnly=true`,
+    import: `${API_ROUTES.FACULTY.BULK_UPLOAD}?validateOnly=false`,
+    template: `${API_ROUTES.FACULTY.BULK_UPLOAD}/template`,
+    filename: "faculty-template.xlsx",
+  },
+  "Bulk Subject Upload": {
+    validate: `${API_ROUTES.SUBJECT.BULK_UPLOAD}?validateOnly=true`,
+    import: `${API_ROUTES.SUBJECT.BULK_UPLOAD}?validateOnly=false`,
+    template: `${API_ROUTES.SUBJECT.BULK_UPLOAD}/template`,
+    filename: "subject-template.xlsx",
+  },
+};
+
 function academicManagment() {
 
 
@@ -163,6 +227,75 @@ function academicManagment() {
   const [validRow, setValidRow] = useState(0);
   const [invalidRow, setInvalidRow] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
+  const [facultyList, setFacultyList] = useState<FacultyOption[]>([]);
+  const [subjectList, setSubjectList] = useState<SubjectOption[]>([]);
+  const [workload, setWorkload] = useState<{ totalLoad?: number; subjectAssignments?: number; classAssignments?: number } | null>(null);
+  const [form, setForm] = useState({
+    selectedFacultyUsername: "",
+    selectedSubjectCode: "",
+    semester: "1",
+    section: "ALL",
+    department: "CSE",
+    academicYear: "2025-26",
+    classCode: "",
+    room: "",
+    newDepartment: "CSE",
+    availability: "Available",
+    status: "active",
+    subjectCode: "",
+    subjectName: "",
+    credits: "4",
+    totalClasses: "40",
+  });
+
+  const resetModalState = () => {
+    setSelectedFile(null);
+    setValidationDone(false);
+    sethasValidationError(false);
+    setParsedRows([]);
+    setDuplicateData(0);
+    setValidRow(0);
+    setInvalidRow(0);
+    setTotalRows(0);
+    setWorkload(null);
+  };
+
+  const openOperationModal = (title: string) => {
+    resetModalState();
+    setModelType(title);
+    setModal(true);
+  };
+
+  const closeModal = () => {
+    setModal(false);
+    resetModalState();
+  };
+
+  useEffect(() => {
+    if (!showModal) return;
+
+    const fetchOptions = async () => {
+      try {
+        const [facultyRes, subjectRes] = await Promise.all([
+          axios.get(API_ROUTES.FACULTY.LIST),
+          axios.get(API_ROUTES.SUBJECT.LIST),
+        ]);
+
+        setFacultyList(facultyRes.data.data || []);
+        setSubjectList(subjectRes.data.data || []);
+      } catch (error) {
+        console.error("Failed to load faculty/subject options", error);
+      }
+    };
+
+    fetchOptions();
+  }, [showModal]);
+
+  const updateForm = (key: string, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const getBulkConfig = () => bulkUploadConfig[modelType];
 
 
   const handleButtonClick = () => {
@@ -221,7 +354,7 @@ function academicManagment() {
 
 
   // }
-  const handleImportofBulkStudents = async (e) => {
+  const handleImportofBulkStudents = async (e: React.FormEvent) => {
     try {
 
       e.preventDefault();
@@ -231,17 +364,16 @@ function academicManagment() {
         return;
       }
 
-      // const imageUrl = URL.createObjectURL(selectedFile)
+      const config = getBulkConfig();
+      if (!config) {
+        toast.error("Bulk upload config not found");
+        return;
+      }
 
       const formData = new FormData();
-
-
       formData.append("file", selectedFile)
 
-      console.log("CALLING API");
-      console.log("API URL", "/api/admin/ClgMangment");
-
-      const res = await axios.post("/api/admin/academicManagment/bulkUpload-students?validateOnly=false", formData,
+      const res = await axios.post(config.import, formData,
         {
           headers: {
             "Content-Type": "multipart/form-data"
@@ -249,15 +381,11 @@ function academicManagment() {
         }
       )
 
-      toast.success("Students imported successfully!");
-      console.log("API Response:", res.data);
-      toast.success(res.data.message || "Students imported successfully!");
-      setModal(false); // Close modal window
-      setSelectedFile(null);
-      setValidationDone(false);
+      toast.success(res.data.message || "Records imported successfully!");
+      closeModal();
     } catch (error: any) {
       console.error("Error in Uploading the File. Please review the File and Upload again")
-      toast.error(error.response.data.message || "Something went wrong while Uploading the File")
+      toast.error(error.response?.data?.message || "Something went wrong while Uploading the File")
     } finally {
       setLoading(false);
     }
@@ -266,9 +394,13 @@ function academicManagment() {
   const handleDownloadofTemplate = async () => {
     try {
 
-      console.log("Downloading the Template")
+      const config = getBulkConfig();
+      if (!config) {
+        toast.error("Template not available for this operation");
+        return;
+      }
 
-      const response = await axios.get("/api/admin/academicManagment/bulkUpload-students/template", {
+      const response = await axios.get(config.template, {
         responseType: "blob",
       });
 
@@ -277,7 +409,7 @@ function academicManagment() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = "student-template.xlsx";
+      link.download = config.filename;
 
       document.body.appendChild(link);
 
@@ -287,14 +419,9 @@ function academicManagment() {
 
       window.URL.revokeObjectURL(url);
 
-      console.log(response)
-      if (!response.status === true) {
-        console.log("Error in Downloadig the template.")
-        toast.error("Error in Downloadig the template.")
-      }
-
     } catch (err: any) {
-      console.log("Error in Dewloading the Template", err);
+      console.log("Error in Downloading the Template", err);
+      toast.error("Error downloading template");
     }
   }
 
@@ -312,8 +439,13 @@ function academicManagment() {
   // }
 
   const handleValidationofFile = async () => {
-    console.log("Reached the Validation route")
     if (!selectedFile) return toast.error("Please pick a file first!");
+
+    const config = getBulkConfig();
+    if (!config) {
+      toast.error("Validation not available for this operation");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -321,85 +453,152 @@ function academicManagment() {
       formData.append("file", selectedFile);
 
       const res = await axios.post(
-        "/api/admin/academicManagment/bulkUpload-students?validateOnly=true",
+        config.validate,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       )
 
-      console.log(res.data.invalidRows);
-
-
-
-
       if (res.data.success === false || res.data.hasConflicts) {
         sethasValidationError(true);
-        console.log("Total Rows", res.data.totalRows),
-          console.log("Valid data", res.data.validData);
-        console.log("Duplicate Rows", res.data.duplicateRows);
         toast.error(res.data.message || "Validation failed! Duplicate entries found.");
       } else {
         sethasValidationError(false);
-        setParsedRows(res.data.data || []); // Show these rows in a table preview
-        console.log("Console Log of the Backend data:", res.data.message)
-        console.log("Total Rows", res.data.totalRows),
-          console.log("Ready To Import data", res.data.finalVRow);
-
-
+        setParsedRows(res.data.data || []);
         setInvalidRow(0);
         setDuplicateData(0)
         setTotalRows(res.data.totalRows)
-        setValidRow(res.data.finalVRow)
+        setValidRow(res.data.finalVRow ?? res.data.validData ?? 0)
         toast.success("File analyzed! No duplicates found.");
-        // if(hasValidationErrors === false){
-
-        // }
       }
 
       setValidationDone(true);
-    } catch (error) {
+    } catch (error: any) {
       sethasValidationError(true);
       setValidationDone(true);
 
-
-      console.log("Total Rows", error.response.data.totalRows),
-        console.log("Valid data", error.response.data.validData);
-      console.log("Duplicate Rows", error.response.data.duplicateRows);
-      console.log("Invalid Rows", error.response.data.invalidRows.length)
-      console.log("Invalid Rows Data", error.response.data.invalidRows)
-      console.log("Final Rows", error.response.data.finalVRow)
-      setInvalidRow(error.response.data.invalidRows.length);
-      setDuplicateData(error.response.data.duplicateRows)
-      setTotalRows(error.response.data.totalRows)
-      setValidRow(error.response.data.finalVRow)
-      setParsedRows(error.response.data.invalidRows)
-      console.log("Parsed Rows", parsedRows)
-      // toast.error(error.response?.data?.message || "File validation failed.");
+      const errData = error.response?.data;
+      if (errData) {
+        setInvalidRow(errData.invalidRows?.length ?? 0);
+        setDuplicateData(errData.duplicateRows ?? 0)
+        setTotalRows(errData.totalRows ?? 0)
+        setValidRow(errData.finalVRow ?? 0)
+        setParsedRows(errData.invalidRows ?? [])
+      }
     } finally {
       setLoading(false);
     }
   }
 
+  const submitFacultyOperation = async (endpoint: string, payload: Record<string, unknown>, successMsg: string) => {
+    try {
+      setLoading(true);
+      const res = await axios.post(endpoint, payload);
+      toast.success(res.data.message || successMsg);
+      closeModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Operation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const patchFacultyOperation = async (endpoint: string, payload: Record<string, unknown>, successMsg: string) => {
+    try {
+      setLoading(true);
+      const res = await axios.patch(endpoint, payload);
+      toast.success(res.data.message || successMsg);
+      closeModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Operation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const patchSubjectOperation = async (endpoint: string, payload: Record<string, unknown>, successMsg: string) => {
+    try {
+      setLoading(true);
+      const res = await axios.patch(endpoint, payload);
+      toast.success(res.data.message || successMsg);
+      closeModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Operation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const postSubjectOperation = async (endpoint: string, payload: Record<string, unknown>, successMsg: string) => {
+    try {
+      setLoading(true);
+      const res = await axios.post(endpoint, payload);
+      toast.success(res.data.message || successMsg);
+      closeModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Operation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFacultyWorkload = async () => {
+    if (!form.selectedFacultyUsername) return toast.error("Select a faculty member first");
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_ROUTES.FACULTY.WORKLOAD}?facultyUsername=${encodeURIComponent(form.selectedFacultyUsername)}`);
+      setWorkload(res.data.data);
+      toast.success("Workload loaded");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load workload");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const academicStats = [
+    { label: "Student Operations", value: String(studentOperations.length), hint: "Enrollment & promotion", color: "bg-indigo-100 text-indigo-600" },
+    { label: "Faculty Operations", value: String(facultyOperations.length), hint: "Assignments & status", color: "bg-emerald-100 text-emerald-600" },
+    { label: "Subject Operations", value: String(subjectOperations.length), hint: "Curriculum management", color: "bg-violet-100 text-violet-600" },
+    { label: "Bulk Uploads", value: "3", hint: "Batch import tools", color: "bg-cyan-100 text-cyan-600" },
+  ];
 
   return (
-    <div className='bg-linear-to-br from-slate-50 via white to-slate-50 flex flex-col lg:flex-row w-full items-stretch min-h-screen'>
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row">
       <Bar open={open} setOpen={setOpen} />
 
-      <div className='flex-1 p-6 w-full'>
+      <div className="flex-1 min-w-0 w-full">
+        <div className="overflow-hidden bg-white p-5 text-slate-900 shadow-sm sm:p-6 md:p-7 lg:p-6">
+          <div className="border-b border-slate-200 pb-6 sm:pb-8">
+            <h1 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">Academic Management</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Manage academic operations, bulk uploads, and institutional settings
+            </p>
+          </div>
 
-        <h2 className='text-2xl font-comfortaa text-black'>Academic Management</h2>
-        <p className='text-slate-600 tracking-tight mt-2'>Manage all academic operation and institutional settings</p>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {academicStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{stat.label}</p>
+                    <h3 className="mt-2 text-2xl font-bold text-slate-900">{stat.value}</h3>
+                    <p className="mt-1 text-xs text-slate-500">{stat.hint}</p>
+                  </div>
+                  <span className={`rounded-xl p-2.5 ${stat.color}`}>
+                    <School size={20} />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {/* <div className='grid grid-cols-1 gap-4'>
-              {
-                Card.length > 0 && Card.map(() => 
-              (
+          <div className="mt-8">
+            <h2 className="text-lg font-bold text-slate-900">Operations Center</h2>
+            <p className="mt-1 text-sm text-slate-500">Select an operation to manage students, faculty, or subjects</p>
+          </div>
 
-              ))
-              }
-          </div> */}
-
-
-        <div className='my-6'>
+        <div className='mt-6'>
           <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
             <div className="flex items-start gap-3">
 
@@ -457,17 +656,17 @@ function academicManagment() {
         </div>
 
         <div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-4">
 
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
+                <span className="bg-indigo-100 text-indigo-600 p-2 rounded-xl">
                   <User2Icon size={22} />
                 </span>
 
                 <div>
-                  <h3 className="text-black font-bold text-lg">
+                  <h3 className="text-slate-900 font-bold text-lg">
                     Student Operations
                   </h3>
                   <p className="text-sm text-slate-500">
@@ -481,23 +680,9 @@ function academicManagment() {
                 {studentOperations.map((item, index) => (
                   <button
                     key={index}
-                    className="
-                      w-full
-                      flex
-                      items-center
-                      justify-between
-                      p-3
-                      rounded-lg
-                      border
-                      border-slate-200
-                      hover:bg-slate-50
-                      transition-all
-                      cursor-pointer
+                    className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 cursor-pointer"
 
-                      
-                      "
-
-                    onClick={() => { console.log(item.title); setModelType(item.title); setModal(true) }}
+                    onClick={() => openOperationModal(item.title)}
                   >
                     <div className="flex items-center gap-3">
                       <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
@@ -505,7 +690,7 @@ function academicManagment() {
                         {item.icon}
                       </span>
 
-                      <p className="text-sm font-medium text-black">
+                      <p className="text-sm font-medium text-slate-900">
                         {item.title}
                       </p>
                     </div>
@@ -521,14 +706,14 @@ function academicManagment() {
 
 
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <span className="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
+                <span className="bg-emerald-100 text-emerald-600 p-2 rounded-xl">
                   <BriefcaseBusiness size={22} />
                 </span>
 
                 <div>
-                  <h3 className="text-black font-bold text-lg">
+                  <h3 className="text-slate-900 font-bold text-lg">
                     Faculty Operations
                   </h3>
 
@@ -543,26 +728,15 @@ function academicManagment() {
                 {facultyOperations.map((item, index) => (
                   <button
                     key={index}
-                    className="
-            w-full
-            flex
-            items-center
-            justify-between
-            p-3
-            rounded-lg
-            border
-            border-slate-200
-            hover:bg-slate-50
-            transition-all
-            cursor-pointer
-          "
+                    className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 cursor-pointer"
+                    onClick={() => openOperationModal(item.title)}
                   >
                     <div className="flex items-center gap-3">
                       <span className="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
                         {item.icon}
                       </span>
 
-                      <p className="text-sm font-medium text-black">
+                      <p className="text-sm font-medium text-slate-900">
                         {item.title}
                       </p>
                     </div>
@@ -577,14 +751,14 @@ function academicManagment() {
 
 
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <span className="bg-violet-100 text-violet-600 p-2 rounded-lg">
+                <span className="bg-violet-100 text-violet-600 p-2 rounded-xl">
                   <BookOpenCheck size={22} />
                 </span>
 
                 <div>
-                  <h3 className="text-black font-bold text-lg">
+                  <h3 className="text-slate-900 font-bold text-lg">
                     Subject Operations
                   </h3>
 
@@ -599,26 +773,15 @@ function academicManagment() {
                 {subjectOperations.map((item, index) => (
                   <button
                     key={index}
-                    className="
-            w-full
-            flex
-            items-center
-            justify-between
-            p-3
-            rounded-lg
-            border
-            border-slate-200
-            hover:bg-slate-50
-            transition-all
-            cursor-pointer
-          "
+                    className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 cursor-pointer"
+                    onClick={() => openOperationModal(item.title)}
                   >
                     <div className="flex items-center gap-3">
                       <span className="bg-violet-100 text-violet-600 p-2 rounded-lg">
                         {item.icon}
                       </span>
 
-                      <p className="text-sm font-medium text-black">
+                      <p className="text-sm font-medium text-slate-900">
                         {item.title}
                       </p>
                     </div>
@@ -632,6 +795,7 @@ function academicManagment() {
 
           </div>
         </div>
+        </div>
       </div>
 
       {
@@ -642,7 +806,7 @@ function academicManagment() {
                 <h3 className='text-lg font-bold font-comfortaa'>{modelType}</h3>
                 <button
                   className='rounded-full hover:bg-slate-100 p-2 cursor-pointer transition'
-                  onClick={() => setModal(false)}
+                  onClick={closeModal}
                 >
                   <X size={24} />
                 </button>
@@ -844,8 +1008,355 @@ function academicManagment() {
                 )
               }
 
+              {modelType === "Assign Faculty To Subject" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Faculty</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                        <option value="">Select faculty</option>
+                        {facultyList.map((f) => (
+                          <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Subject</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                        <option value="">Select subject</option>
+                        {subjectList.map((s) => (
+                          <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Semester</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                        {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Section</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.section} onChange={(e) => updateForm("section", e.target.value)}>
+                        {["ALL","A","B","C","D","E"].map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Department</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                        {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Academic Year</label>
+                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.academicYear} onChange={(e) => updateForm("academicYear", e.target.value)} placeholder="2025-26" />
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_SUBJECT, {
+                      facultyUsername: form.selectedFacultyUsername,
+                      subjectCode: form.selectedSubjectCode,
+                      semester: form.semester,
+                      section: form.section,
+                      department: form.department,
+                      academicYear: form.academicYear,
+                    }, "Faculty assigned to subject")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {modelType === "Assign Faculty To Class" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Faculty</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                        <option value="">Select faculty</option>
+                        {facultyList.map((f) => (
+                          <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Subject</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                        <option value="">Select subject</option>
+                        {subjectList.map((s) => (
+                          <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Subject Code</label>
+                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder="CSE301-A" />
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Room</label>
+                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.room} onChange={(e) => updateForm("room", e.target.value)} placeholder="Lab 201" />
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_CLASS, {
+                      facultyUsername: form.selectedFacultyUsername,
+                      subjectCode: form.selectedSubjectCode,
+                      classCode: form.classCode,
+                      room: form.room,
+                    }, "Faculty assigned to class")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {modelType === "Transfer Department" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Faculty</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                        <option value="">Select faculty</option>
+                        {facultyList.map((f) => (
+                          <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">New Department</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.newDepartment} onChange={(e) => updateForm("newDepartment", e.target.value)}>
+                        {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.TRANSFER_DEPARTMENT, { facultyUsername: form.selectedFacultyUsername, newDepartment: form.newDepartment }, "Department transferred")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {modelType === "Faculty Workload" && (
+                <>
+                  <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                    <label className="text-black mb-1">Faculty</label>
+                    <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                      <option value="">Select faculty</option>
+                      {facultyList.map((f) => (
+                        <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all" onClick={fetchFacultyWorkload}>
+                    <BriefcaseBusiness size={18} /> Load Workload
+                  </button>
+                  {workload && (
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-center">
+                        <p className="text-xs text-slate-500">Subject load</p>
+                        <h3 className="text-2xl font-bold text-indigo-700">{workload.subjectAssignments}</h3>
+                      </div>
+                      <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-center">
+                        <p className="text-xs text-slate-500">Class load</p>
+                        <h3 className="text-2xl font-bold text-violet-700">{workload.classAssignments}</h3>
+                      </div>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+                        <p className="text-xs text-slate-500">Total</p>
+                        <h3 className="text-2xl font-bold text-emerald-700">{workload.totalLoad}</h3>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {modelType === "Faculty Availability" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Faculty</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                        <option value="">Select faculty</option>
+                        {facultyList.map((f) => (
+                          <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Availability</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.availability} onChange={(e) => updateForm("availability", e.target.value)}>
+                        <option value="Available">Available</option>
+                        <option value="Unavailable">Unavailable</option>
+                        <option value="On Leave">On Leave</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.AVAILABILITY, { facultyUsername: form.selectedFacultyUsername, availability: form.availability }, "Availability updated")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {modelType === "Faculty Status Update" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Faculty</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                        <option value="">Select faculty</option>
+                        {facultyList.map((f) => (
+                          <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Status</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="on leave">On Leave</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => patchFacultyOperation(API_ROUTES.FACULTY.STATUS, { facultyUsername: form.selectedFacultyUsername, status: form.status }, "Faculty status updated")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {modelType === "Add Subject" && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Subject Code</label>
+                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} />
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Subject Name</label>
+                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} />
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Credits</label>
+                      <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} />
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Semester</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                        {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Department</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                        {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                      <label className="text-black mb-1">Total Classes</label>
+                      <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} />
+                    </div>
+                  </div>
+                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all" onClick={() => postSubjectOperation(API_ROUTES.SUBJECT.LIST, form, "Subject added")}>
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
+              {(modelType === "Update Subject" || modelType === "Assign To Semester" || modelType === "Assign To Department" || modelType === "Activate Subject") && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg lg:col-span-2">
+                      <label className="text-black mb-1">Subject</label>
+                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                        <option value="">Select subject</option>
+                        {subjectList.map((s) => (
+                          <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {modelType === "Update Subject" && (
+                      <>
+                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                          <label className="text-black mb-1">Subject Code</label>
+                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
+                        </div>
+                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                          <label className="text-black mb-1">Subject Name</label>
+                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} placeholder='Enter Subject Name' />
+                        </div>
+                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                          <label className="text-black mb-1">Credits</label>
+                          <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} placeholder='Enter Credits' />
+                        </div>
+                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                          <label className="text-black mb-1">Total Classes</label>
+                          <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} placeholder='Enter Subject Name' />
+                        </div>
+                      </>
+                    )}
+
+                    {modelType === "Assign To Semester" && (
+                      <>
+                      <div>
+                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                          <label className="text-black mb-1">Subject Code</label>
+                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
+                        </div>
+                      </div>
+                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                        <label className="text-black mb-1">Semester</label>
+                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                          {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
+                        </select>
+                      </div>
+                      
+                      </>
+                    )}
+
+                    {modelType === "Assign To Department" && (
+                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                        <label className="text-black mb-1">Department</label>
+                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                          {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                        </select>
+                      </div>
+                    )}
+
+                    {modelType === "Activate Subject" && (
+                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
+                        <label className="text-black mb-1">Status</label>
+                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all"
+                    onClick={() => {
+                      if (modelType === "Update Subject") {
+                        patchSubjectOperation(API_ROUTES.SUBJECT.UPDATE, {
+                          subjectCode: form.selectedSubjectCode,
+                          newSubjectCode: form.subjectCode,
+                          subjectName: form.subjectName,
+                          credits: form.credits,
+                          semester: form.semester,
+                          department: form.department,
+                          totalClasses: form.totalClasses,
+                        }, "Subject updated");
+                      } else if (modelType === "Assign To Semester") {
+                        patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_SEMESTER, { subjectCode: form.selectedSubjectCode, semester: form.semester }, "Semester assigned");
+                      } else if (modelType === "Assign To Department") {
+                        patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_DEPARTMENT, { subjectCode: form.selectedSubjectCode, department: form.department }, "Department assigned");
+                      } else {
+                        patchSubjectOperation(API_ROUTES.SUBJECT.ACTIVATE, { subjectCode: form.selectedSubjectCode, status: form.status }, "Subject status updated");
+                      }
+                    }}
+                  >
+                    <Send size={18} /> Submit
+                  </button>
+                </>
+              )}
+
               {
-                modelType === "Bulk Student Upload" && (
+                bulkUploadConfig[modelType] && (
                   <>
                     {/* Download Template */}
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 flex flex-col lg:flex-row items-center justify-between gap-4">
@@ -1073,7 +1584,7 @@ function academicManagment() {
                         : "bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-sm shadow-indigo-100" // ✅ Active style (Indigo)
                         }`} onClick={handleImportofBulkStudents} disabled={loading || !validationDone || hasValidationErrors}>
                         <Send size={18} />
-                        Import Students
+                        Import Records
                       </button>
 
                     </div>
