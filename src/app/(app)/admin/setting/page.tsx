@@ -1,21 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
 import {
   Bell,
   Building2,
   Camera,
   KeyRound,
+  Loader2,
   LogOut,
   Save,
   Shield,
   SlidersHorizontal,
   UserRound,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Cropper, { Area } from "react-easy-crop";
+import { getCroppedImage } from "@/lib/cropImage";
+import Image from "next/image";
 
 type TabId = "profile" | "institution" | "security" | "notifications" | "preferences";
 
@@ -30,18 +35,26 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
 const inputClass =
   "w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50";
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
 function AdminSetting() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [open, setOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>("profile");
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
+  const [avatar, setAvatar] = useState("");
+  const [role, setRole] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [profile, setProfile] = useState({
-    name: "Admin User",
-    email: "admin@college.edu",
-    username: "admin",
-    phone: "+91 98765 43210",
+    name: "",
+    email: "",
+    username: "",
+    phone: "",
   });
 
   const [institution, setInstitution] = useState({
@@ -75,6 +88,119 @@ function AdminSetting() {
     sessionTimeout: "60",
     timezone: "Asia/Kolkata",
   });
+
+  // Crop modal state
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  useEffect(() => {
+    const getSettings = async () => {
+      try {
+        setLoadingProfile(true);
+        const res = await axios.get("/api/admin/setting");
+
+        if (!res.data?.success) {
+          toast.error(res.data?.message || "Failed to load settings");
+          return;
+        }
+
+        const d = res.data.data;
+        setProfile({
+          name: d.name || d.username || "",
+          email: d.email || "",
+          username: d.username || "",
+          phone: d.phone || "",
+        });
+        setAvatar(d.avatar || "");
+        setRole(d.role || "");
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          router.replace("/landingPage");
+          return;
+        }
+        toast.error(err?.response?.data?.message || "Failed to load settings");
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    getSettings();
+  }, [router]);
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreview(URL.createObjectURL(file));
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setShowCropModal(true);
+  };
+
+  const closeCropModal = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setShowCropModal(false);
+    setPreview(null);
+    setSelectedFile(null);
+    setCroppedAreaPixels(null);
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!selectedFile || !croppedAreaPixels || !preview) {
+      toast.error("Please select and crop an image first");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const croppedBlob = await getCroppedImage(preview, croppedAreaPixels);
+      const croppedFile = new File([croppedBlob], "profile.jpg", {
+        type: "image/jpeg",
+      });
+
+      const formData = new FormData();
+      formData.append("image", croppedFile);
+
+      const res = await axios.post(
+        "/api/users/auth/setting/uploadProfileImage",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+
+      if (!res.data?.success) {
+        toast.error(res.data?.message || "Failed to upload photo");
+        return;
+      }
+
+      setAvatar(res.data.imageUrl);
+      closeCropModal();
+      toast.success(res.data.message || "Profile photo updated");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (activeTab === "security") {
@@ -118,6 +244,15 @@ function AdminSetting() {
       setLoggingOut(false);
     }
   };
+
+  const initials = profile.name
+    ? profile.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "AD";
 
   const Toggle = ({
     checked,
@@ -226,81 +361,117 @@ function AdminSetting() {
                     </p>
                   </div>
 
-                  <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                    <div className="relative">
-                      <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-indigo-100 bg-indigo-50 text-2xl font-bold text-indigo-600">
-                        {profile.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
+                  {loadingProfile ? (
+                    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
+                      <Loader2 size={18} className="animate-spin text-indigo-600" />
+                      Loading profile...
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                        <div className="relative">
+                          {avatar ? (
+                            <Image
+                              src={avatar}
+                              alt="Profile"
+                              width={96}
+                              height={96}
+                              className="h-24 w-24 rounded-full border-4 border-indigo-100 object-cover bg-slate-100"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-indigo-100 bg-indigo-50 text-2xl font-bold text-indigo-600">
+                              {initials}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={openFilePicker}
+                            disabled={uploading}
+                            className="absolute -bottom-1 -right-1 rounded-full bg-indigo-600 p-2 text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+                            aria-label="Change photo"
+                          >
+                            {uploading ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Camera size={14} />
+                            )}
+                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {profile.name || "Admin"}
+                          </p>
+                          <p className="text-sm text-slate-500">{profile.email || "—"}</p>
+                          {role ? (
+                            <p className="mt-1 inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium capitalize text-indigo-700 ring-1 ring-indigo-600/15">
+                              {role}
+                            </p>
+                          ) : null}
+                          <p className="mt-1 text-xs text-slate-400">
+                            Click the camera icon to upload. JPG or PNG, max 5MB.
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => toast("Profile photo upload coming soon")}
-                        className="absolute -bottom-1 -right-1 rounded-full bg-indigo-600 p-2 text-white shadow-sm transition hover:bg-indigo-700"
-                        aria-label="Change photo"
-                      >
-                        <Camera size={14} />
-                      </button>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{profile.name}</p>
-                      <p className="text-sm text-slate-500">{profile.email}</p>
-                      <p className="mt-1 text-xs text-slate-400">JPG or PNG, max 5MB</p>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Full Name
-                      </label>
-                      <input
-                        value={profile.name}
-                        onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
-                        className={inputClass}
-                        placeholder="Admin name"
-                      />
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            Full Name
+                          </label>
+                          <input
+                            value={profile.name}
+                            onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+                            className={inputClass}
+                            placeholder="Admin name"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            Username
+                          </label>
+                          <input
+                            value={profile.username}
+                            onChange={(e) =>
+                              setProfile((p) => ({ ...p, username: e.target.value }))
+                            }
+                            className={inputClass}
+                            placeholder="username"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={profile.email}
+                            onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
+                            className={inputClass}
+                            placeholder="admin@college.edu"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-slate-700">
+                            Phone
+                          </label>
+                          <input
+                            value={profile.phone}
+                            onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                            className={inputClass}
+                            placeholder="+91 ..."
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Username
-                      </label>
-                      <input
-                        value={profile.username}
-                        onChange={(e) =>
-                          setProfile((p) => ({ ...p, username: e.target.value }))
-                        }
-                        className={inputClass}
-                        placeholder="username"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
-                        className={inputClass}
-                        placeholder="admin@college.edu"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">
-                        Phone
-                      </label>
-                      <input
-                        value={profile.phone}
-                        onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                        className={inputClass}
-                        placeholder="+91 ..."
-                      />
-                    </div>
-                  </div>
+                  )}
                 </section>
               )}
 
@@ -630,6 +801,86 @@ function AdminSetting() {
           </div>
         </div>
       </div>
+
+      {showCropModal && preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">Crop Profile Photo</h3>
+              <button
+                type="button"
+                onClick={closeCropModal}
+                disabled={uploading}
+                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="relative h-[360px] w-full overflow-hidden rounded-xl bg-slate-900">
+              <Cropper
+                image={preview}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, croppedPixels) => {
+                  setCroppedAreaPixels(croppedPixels);
+                }}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-xs font-medium text-slate-500">
+                Zoom
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.05}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full accent-indigo-600"
+              />
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={closeCropModal}
+                disabled={uploading}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <X size={16} />
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUploadPhoto}
+                disabled={uploading || !croppedAreaPixels}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    Save Photo
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
 import {
   Activity,
@@ -22,60 +22,8 @@ import {
   YAxis,
 } from "recharts";
 import { useRouter } from "next/navigation";
-
-const attendanceData = [
-  { day: "Mon", attendance: 82 },
-  { day: "Tue", attendance: 88 },
-  { day: "Wed", attendance: 85 },
-  { day: "Thu", attendance: 90 },
-  { day: "Fri", attendance: 87 },
-  { day: "Sat", attendance: 80 },
-];
-
-const dashboardStats = [
-  {
-    label: "Total Students",
-    value: "1,200",
-    hint: "All departments",
-    icon: <User size={20} />,
-    color: "bg-indigo-100 text-indigo-600",
-  },
-  {
-    label: "Total Faculty",
-    value: "86",
-    hint: "Currently teaching",
-    icon: <UserRoundCheck size={20} />,
-    color: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    label: "Total Subjects",
-    value: "142",
-    hint: "Across programs",
-    icon: <Shapes size={20} />,
-    color: "bg-violet-100 text-violet-600",
-  },
-  {
-    label: "Total Classes",
-    value: "120",
-    hint: "Active rooms",
-    icon: <MonitorPlay size={20} />,
-    color: "bg-cyan-100 text-cyan-600",
-  },
-  {
-    label: "Attendance Today",
-    value: "85%",
-    hint: "Institution average",
-    icon: <ScanFace size={20} />,
-    color: "bg-amber-100 text-amber-600",
-  },
-  {
-    label: "Active Notices",
-    value: "22",
-    hint: "Currently visible",
-    icon: <Activity size={20} />,
-    color: "bg-rose-100 text-rose-600",
-  },
-];
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const quickActions = [
   { heading: "Add Student", link: "/admin/students" },
@@ -85,16 +33,122 @@ const quickActions = [
   { heading: "Publish Notice", link: "/admin/notices" },
 ];
 
-const recentActivities = [
-  "Ajitesh enrolled in CS202",
-  "Faculty Dr Smith created attendance session",
-  "Result published for Semester 4",
-  "Notice added by Admin",
-];
-
 function AdminDashboard() {
   const router = useRouter();
+
   const [open, setOpen] = useState(true);
+  const [recentActivities, setRecentActivities] = useState<string[]>([]);
+  const [attendanceTrend, setAttendanceTrend] = useState<
+    { day: string; attendance: number }[]
+  >([]);
+  const [attendanceToday, setAttendanceToday] = useState({
+    rate: 0,
+    present: 0,
+    absent: 0,
+  });
+
+  const [cardInfo, setCardInfo] = useState({
+    TotalStudents: 0,
+    TotalFaculty: 0,
+    TotalSubject: 0,
+    TotalClasses: 0,
+    activeNotices: 0,
+  });
+
+  const avgTrend =
+    attendanceTrend.length > 0
+      ? Math.round(
+          attendanceTrend.reduce((sum, d) => sum + d.attendance, 0) /
+            attendanceTrend.length,
+        )
+      : 0;
+
+  const dashboardStats = [
+    {
+      label: "Total Students",
+      value: `${cardInfo.TotalStudents}`,
+      hint: "All departments",
+      icon: <User size={20} />,
+      color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      label: "Total Faculty",
+      value: `${cardInfo.TotalFaculty}`,
+      hint: "Currently teaching",
+      icon: <UserRoundCheck size={20} />,
+      color: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      label: "Total Subjects",
+      value: `${cardInfo.TotalSubject}`,
+      hint: "Across programs",
+      icon: <Shapes size={20} />,
+      color: "bg-violet-100 text-violet-600",
+    },
+    {
+      label: "Total Classes",
+      value: `${cardInfo.TotalClasses}`,
+      hint: "Active rooms",
+      icon: <MonitorPlay size={20} />,
+      color: "bg-cyan-100 text-cyan-600",
+    },
+    {
+      label: "Attendance Today",
+      value: `${attendanceToday.rate}%`,
+      hint: "Institution average",
+      icon: <ScanFace size={20} />,
+      color: "bg-amber-100 text-amber-600",
+    },
+    {
+      label: "Active Notices",
+      value: `${cardInfo.activeNotices}`,
+      hint: "Currently visible",
+      icon: <Activity size={20} />,
+      color: "bg-rose-100 text-rose-600",
+    },
+  ];
+
+  const getData = async () => {
+    try {
+      const res = await axios.get("/api/admin/dashboard");
+
+      if (!res.data?.success) {
+        toast.error(res.data?.error || "Failed to fetch dashboard data");
+        return;
+      }
+
+      const data = res.data.data;
+      const stats = data.stats;
+
+      setRecentActivities(data.recentActivities || []);
+      setAttendanceTrend(data.attendanceTrend || []);
+      setAttendanceToday({
+        rate: stats.attendanceToday ?? 0,
+        present: stats.presentToday ?? 0,
+        absent: stats.absentToday ?? 0,
+      });
+      setCardInfo({
+        TotalStudents: stats.totalStudents ?? 0,
+        TotalFaculty: stats.totalFaculty ?? 0,
+        TotalSubject: stats.totalSubjects ?? 0,
+        TotalClasses: stats.totalClasses ?? 0,
+        activeNotices: stats.activeNotices ?? 0,
+      });
+    } catch (error: any) {
+      console.error("Failed to Fetch Data", error);
+      if (error?.response?.status === 401) {
+        router.replace("/landingPage");
+        return;
+      }
+      toast.error(error?.response?.data?.error || "Failed to Fetch Data");
+    }
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+
 
   return (
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-linear-to-br from-slate-50 via-white to-slate-50 flex flex-col lg:flex-row">
@@ -141,21 +195,27 @@ function AdminDashboard() {
               Latest actions across the institution
             </p>
             <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-              {recentActivities.map((activity, index) => (
-                <div
-                  key={activity}
-                  className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${
-                    index !== recentActivities.length - 1
-                      ? "border-b border-slate-100"
-                      : ""
-                  }`}
-                >
-                  <span className="rounded-xl bg-indigo-100 p-2.5 text-indigo-600 shrink-0">
-                    <History size={16} />
-                  </span>
-                  <p className="text-sm font-medium text-slate-700">{activity}</p>
-                </div>
-              ))}
+              {recentActivities.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-slate-500">
+                  No recent activity yet
+                </p>
+              ) : (
+                recentActivities.map((activity, index) => (
+                  <div
+                    key={`${activity}-${index}`}
+                    className={`flex items-center gap-3 px-4 py-3.5 sm:px-5 ${
+                      index !== recentActivities.length - 1
+                        ? "border-b border-slate-100"
+                        : ""
+                    }`}
+                  >
+                    <span className="rounded-xl bg-indigo-100 p-2.5 text-indigo-600 shrink-0">
+                      <History size={16} />
+                    </span>
+                    <p className="text-sm font-medium text-slate-700">{activity}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -172,16 +232,18 @@ function AdminDashboard() {
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                       Attendance Trend
                     </p>
-                    <h3 className="mt-1 text-2xl font-bold text-slate-900">87%</h3>
+                    <h3 className="mt-1 text-2xl font-bold text-slate-900">
+                      {avgTrend}%
+                    </h3>
                   </div>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-600/15">
-                    +4.2%
+                    Last 7 days
                   </span>
                 </div>
 
                 <ResponsiveContainer width="100%" height={260}>
                   <AreaChart
-                    data={attendanceData}
+                    data={attendanceTrend}
                     margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                   >
                     <defs>
@@ -230,17 +292,23 @@ function AdminDashboard() {
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                     Today&apos;s Attendance
                   </p>
-                  <h3 className="mt-2 text-4xl font-bold text-slate-900">85%</h3>
+                  <h3 className="mt-2 text-4xl font-bold text-slate-900">
+                    {attendanceToday.rate}%
+                  </h3>
                   <p className="mt-1 text-xs text-slate-500">Institution average</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                     <p className="text-xs text-slate-500">Total Present</p>
-                    <p className="mt-1 text-xl font-semibold text-slate-900">1,200</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">
+                      {attendanceToday.present}
+                    </p>
                   </div>
                   <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                     <p className="text-xs text-slate-500">Total Absent</p>
-                    <p className="mt-1 text-xl font-semibold text-slate-900">200</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">
+                      {attendanceToday.absent}
+                    </p>
                   </div>
                 </div>
               </div>

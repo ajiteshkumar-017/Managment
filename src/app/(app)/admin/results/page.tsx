@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { exportPublishedExamsReport } from "./_data/exportReport";
 
 type ExamType = "Mid Sem" | "End Sem" | "Internal" | "Supplementary";
 type ResultStatus = "Published" | "Draft" | "Scheduled";
@@ -64,8 +65,8 @@ type PerformanceData = {
   overallPassPercent: number;
   totalPassed: number;
   totalFailed: number;
-  byDepartment: DeptPerformance[];
-  studentsPerDept: { department: string; totalStudents: number }[];
+  bestDepartment: DeptPerformance | null;
+  worstDepartment: DeptPerformance | null;
 };
 
 type ModalMode = "create" | "edit" | "view" | null;
@@ -85,6 +86,7 @@ const RESULT_STATUSES: ResultStatus[] = ["Published", "Draft", "Scheduled"];
 
 function normalizeExamType(value?: string): ExamType {
   if (value && EXAM_TYPES.includes(value as ExamType)) return value as ExamType;
+  // Do not treat Core/Elective (subject categories) as exam types
   return "End Sem";
 }
 
@@ -97,7 +99,6 @@ const filterOptions = [
   { key: "Department", options: ["CSE", "ME", "CE", "AE"] },
   { key: "Semester", options: ["1", "2", "3", "4", "5", "6", "7", "8"] },
   { key: "Exam Type", options: ["Mid Sem", "End Sem", "Internal", "Supplementary"] },
-  { key: "Status", options: ["Published", "Draft", "Scheduled"] },
 ];
 
 const resultOperations = [
@@ -405,8 +406,8 @@ function AdminResults() {
     overallPassPercent: 0,
     totalPassed: 0,
     totalFailed: 0,
-    byDepartment: [],
-    studentsPerDept: [],
+    bestDepartment: null,
+    worstDepartment: null,
   });
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
@@ -417,6 +418,7 @@ function AdminResults() {
   const [form, setForm] = useState(defaultForm);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [documentsById, setDocumentsById] = useState<Record<string, StoredDocument>>({});
+  const [exporting, setExporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -462,8 +464,8 @@ function AdminResults() {
           overallPassPercent: res.data.performance?.overallPassPercent ?? 0,
           totalPassed: res.data.performance?.totalPassed ?? 0,
           totalFailed: res.data.performance?.totalFailed ?? 0,
-          byDepartment: res.data.performance?.byDepartment || [],
-          studentsPerDept: res.data.performance?.studentsPerDept || [],
+          bestDepartment: res.data.performance?.bestDepartment || null,
+          worstDepartment: res.data.performance?.worstDepartment || null,
         });
       } catch (err: unknown) {
         const message = axios.isAxiosError(err)
@@ -489,23 +491,16 @@ function AdminResults() {
   const resultStats = useMemo(
     () => [
       {
-        label: "Total Declarations",
-        value: formatCount(stats.totalDeclarations),
-        hint: "All exam cycles",
-        icon: <ClipboardList size={20} />,
-        color: "bg-indigo-100 text-indigo-600",
-      },
-      {
-        label: "Published",
+        label: "Published Exams",
         value: formatCount(stats.published),
-        hint: "Visible to students",
+        hint: "Exam results released",
         icon: <Send size={20} />,
         color: "bg-emerald-100 text-emerald-600",
       },
       {
-        label: "Draft",
+        label: "Pending Drafts",
         value: formatCount(stats.draft),
-        hint: "Pending review",
+        hint: "Not yet published",
         icon: <FileSpreadsheet size={20} />,
         color: "bg-amber-100 text-amber-600",
       },
@@ -516,17 +511,19 @@ function AdminResults() {
         icon: <Users size={20} />,
         color: "bg-violet-100 text-violet-600",
       },
+      {
+        label: "Exam Groups",
+        value: formatCount(stats.totalDeclarations),
+        hint: "Published exam batches",
+        icon: <ClipboardList size={20} />,
+        color: "bg-indigo-100 text-indigo-600",
+      },
     ],
     [stats],
   );
 
-  const sortedDepartments = useMemo(
-    () => [...performance.byDepartment].sort((a, b) => b.passPercentage - a.passPercentage),
-    [performance.byDepartment],
-  );
-
-  const bestDept = sortedDepartments[0];
-  const worstDept = sortedDepartments[sortedDepartments.length - 1];
+  const bestDept = performance.bestDepartment;
+  const worstDept = performance.worstDepartment;
 
   const performanceStats = useMemo(() => {
     const cards: {
@@ -564,7 +561,7 @@ function AdminResults() {
       cards.push({
         label: "Highest Performing Dept",
         value: bestDept.department,
-        hint: `${bestDept.passPercentage}% pass rate`,
+        hint: `${bestDept.passPercentage}% pass rate · click to open`,
         icon: <Award size={20} />,
         color: "bg-violet-100 text-violet-600",
         href: `/admin/results/${encodeURIComponent(bestDept.department)}`,
@@ -591,17 +588,15 @@ function AdminResults() {
       const matchesSearch =
         !query ||
         row.examTitle.toLowerCase().includes(query) ||
-        row.id.toLowerCase().includes(query) ||
         row.department.toLowerCase().includes(query) ||
-        (row.studentName || "").toLowerCase().includes(query) ||
-        (row.subjectCode || "").toLowerCase().includes(query);
+        (row.subjectCode || "").toLowerCase().includes(query) ||
+        row.examType.toLowerCase().includes(query);
 
       const matchesFilters = Object.entries(selectedFilter).every(([key, value]) => {
         if (!value) return true;
         if (key === "Department") return row.department === value;
         if (key === "Semester") return row.semester === value;
         if (key === "Exam Type") return row.examType === value;
-        if (key === "Status") return row.status === value;
         return true;
       });
 
@@ -776,7 +771,35 @@ function AdminResults() {
       openCreateModal();
       return;
     }
+    if (title === "Download Template") {
+      const csv =
+        "examTitle,examType,department,semester,section,studentRoll,result\nData Structures,End Sem,CSE,3,A,CSE2021001,passed\n";
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "result_upload_template.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success("Template downloaded");
+      return;
+    }
     toast(`${title} — connect API when ready`, { icon: "ℹ️" });
+  };
+
+  const handleExportPublished = () => {
+    setExporting(true);
+    try {
+      const source = filteredRows.length > 0 ? filteredRows : rows;
+      exportPublishedExamsReport(source);
+      toast.success("Published exams PDF downloaded");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to export report";
+      toast.error(message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleFilterChange = (filterName: string, value: string) => {
@@ -847,14 +870,25 @@ function AdminResults() {
                 Publish exam results, manage marks, and track student performance
               </p>
             </div>
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-            >
-              <PlusCircle size={18} />
-              Publish Result
-            </button>
+            <div className="flex flex-wrap items-center gap-2 self-start">
+              <button
+                type="button"
+                onClick={handleExportPublished}
+                disabled={exporting || loading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Download size={18} />
+                {exporting ? "Exporting..." : "Export"}
+              </button>
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              >
+                <PlusCircle size={18} />
+                Publish Result
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -905,28 +939,6 @@ function AdminResults() {
             })}
           </div>
 
-          {sortedDepartments.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-bold text-slate-900">Department Ranking</h2>
-              <p className="mt-1 text-sm text-slate-500">Pass rate by department from published results</p>
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-                {sortedDepartments.map((dept, index) => (
-                  <Link
-                    key={dept.department}
-                    href={`/admin/results/${encodeURIComponent(dept.department)}`}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30"
-                  >
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      #{index + 1} {dept.department}
-                    </p>
-                    <p className="mt-2 text-3xl font-bold text-slate-900">{dept.passPercentage}%</p>
-                    <p className="mt-1 text-xs text-slate-500">{formatCount(dept.totalExamTaken)} exams</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="mt-8">
             <h2 className="text-lg font-bold text-slate-900">Result Operations</h2>
             <p className="mt-1 text-sm text-slate-500">Bulk upload and publish tools</p>
@@ -946,8 +958,10 @@ function AdminResults() {
           </div>
 
           <div className="mt-10">
-            <h2 className="text-lg font-bold text-slate-900">Result Declarations</h2>
-            <p className="mt-1 text-sm text-slate-500">Filter and search published exam results</p>
+            <h2 className="text-lg font-bold text-slate-900">Published Exam Results</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Exams with published results — filter by department, semester, or exam type
+            </p>
 
             <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
               {filterOptions.map((opt) => (
@@ -970,7 +984,7 @@ function AdminResults() {
                   <input
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    placeholder="Search exam title, ID, department..."
+                    placeholder="Search exam, subject code, department..."
                     className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -1010,55 +1024,46 @@ function AdminResults() {
           </div>
 
           <div className="mt-6 hidden lg:block overflow-hidden rounded-2xl border border-slate-200">
-            <div className="grid grid-cols-[0.7fr_1.3fr_0.8fr_0.5fr_0.5fr_0.5fr_0.6fr_0.6fr_0.7fr_0.7fr_0.9fr] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-              {["ID", "Exam", "Type", "Dept", "Sem", "Sec", "Students", "Pass %", "Status", "Actions", "Details"].map((head) => (
+            <div className="grid grid-cols-[1.4fr_0.8fr_0.6fr_0.5fr_0.9fr_0.7fr_0.7fr_0.8fr_0.9fr] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+              {["Exam", "Type", "Dept", "Sem", "Published", "Students", "Pass %", "Status", "Open"].map((head) => (
                 <div key={head} className="min-w-0 truncate text-center">{head}</div>
               ))}
             </div>
             {loading ? (
-              <div className="px-4 py-12 text-center text-sm text-slate-500">Loading results...</div>
+              <div className="px-4 py-12 text-center text-sm text-slate-500">Loading published exams...</div>
             ) : paginatedRows.length === 0 ? (
               <div className="px-4 py-12 text-center text-sm text-slate-500">
-                {rows.length === 0 ? "No results found." : "No results match your filters."}
+                {rows.length === 0 ? "No published exam results found." : "No exams match your filters."}
               </div>
             ) : (
               paginatedRows.map((row) => (
                 <div
-                  key={row.id}
-                  className="grid grid-cols-[0.7fr_1.3fr_0.8fr_0.5fr_0.5fr_0.5fr_0.6fr_0.6fr_0.7fr_0.7fr_0.9fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0"
+                  key={`${row.subjectCode}-${row.examType}-${row.department}-${row.semester}`}
+                  className="grid grid-cols-[1.4fr_0.8fr_0.6fr_0.5fr_0.9fr_0.7fr_0.7fr_0.8fr_0.9fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0"
                 >
-                  <div className="truncate text-center font-semibold text-indigo-700">{row.id}</div>
-                  <div className="truncate text-left font-medium text-slate-900" title={row.examTitle}>{row.examTitle}</div>
+                  <div className="min-w-0 text-left">
+                    <p className="truncate font-medium text-slate-900" title={row.examTitle}>{row.examTitle}</p>
+                    <p className="truncate text-xs text-slate-500">{row.subjectCode}</p>
+                  </div>
                   <div className="flex justify-center">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${examTypeClass(row.examType)}`}>{row.examType}</span>
                   </div>
                   <div className="text-center text-slate-600">{row.department}</div>
                   <div className="text-center text-slate-600">{row.semester}</div>
-                  <div className="text-center text-slate-600">{row.section}</div>
+                  <div className="text-center text-slate-600">{row.publishedDate}</div>
                   <div className="text-center font-medium text-slate-700">{row.studentsCount}</div>
-                  <div className="text-center font-medium text-slate-700">
-                    {row.passRate > 0 ? `${row.passRate}%` : "—"}
-                  </div>
+                  <div className="text-center font-medium text-slate-700">{row.passRate}%</div>
                   <div className="flex justify-center">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(row.status)}`}>{row.status}</span>
                   </div>
-                  <div className="flex justify-center gap-2">
-                    <button type="button" onClick={() => openView(row)} className="rounded-lg bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200" title="View">
-                      <Eye size={16} />
-                    </button>
-                    <button type="button" onClick={() => openEdit(row)} className="rounded-lg bg-indigo-50 p-2 text-indigo-600 transition hover:bg-indigo-100" title="Edit">
-                      <Pen size={16} />
-                    </button>
-                  </div>
                   <div className="flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => toast(`View details for ${row.id} — connect page when ready`, { icon: "ℹ️" })}
+                    <Link
+                      href={`/admin/results/${encodeURIComponent(row.department)}`}
                       className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
                     >
-                      View Details
+                      Department
                       <ArrowRightCircle size={14} />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))
@@ -1067,51 +1072,38 @@ function AdminResults() {
 
           <ul className="mt-6 divide-y divide-slate-100 lg:hidden" role="list">
             {loading ? (
-              <li className="p-6 text-center text-sm text-slate-500">Loading results...</li>
+              <li className="p-6 text-center text-sm text-slate-500">Loading published exams...</li>
             ) : paginatedRows.length === 0 ? (
               <li className="p-6 text-center text-sm text-slate-500">
-                {rows.length === 0 ? "No results found." : "No results match your filters."}
+                {rows.length === 0 ? "No published exam results found." : "No exams match your filters."}
               </li>
             ) : (
               paginatedRows.map((row) => (
-              <li key={`${row.id}-mobile`} className="p-3 sm:p-4">
-                <article className="overflow-hidden rounded-2xl border border-slate-200 border-l-[3px] border-l-indigo-500 bg-white p-4 shadow-sm">
+              <li key={`${row.subjectCode}-${row.examType}-${row.department}-${row.semester}-m`} className="p-3 sm:p-4">
+                <article className="overflow-hidden rounded-2xl border border-slate-200 border-l-[3px] border-l-emerald-500 bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-indigo-700">{row.id}</p>
-                      <h3 className="mt-1 font-bold leading-snug text-slate-900">{row.examTitle}</h3>
+                      <h3 className="font-bold leading-snug text-slate-900">{row.examTitle}</h3>
+                      <p className="mt-1 text-xs text-slate-500">{row.subjectCode}</p>
                     </div>
                     <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${statusClass(row.status)}`}>{row.status}</span>
                   </div>
-                  {row.documentFileName && (
-                    <p className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-                      <Paperclip size={12} /> {row.documentFileName}
-                    </p>
-                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${examTypeClass(row.examType)}`}>{row.examType}</span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                      {row.department} · Sem {row.semester} · Sec {row.section}
+                      {row.department} · Sem {row.semester}
                     </span>
                   </div>
-                  <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4">
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => openView(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-100 py-2.5 text-sm font-medium text-slate-700">
-                        <Eye size={16} /> View
-                      </button>
-                      <button type="button" onClick={() => openEdit(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-50 py-2.5 text-sm font-medium text-indigo-700">
-                        <Pen size={16} /> Edit
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toast(`View details for ${row.id} — connect page when ready`, { icon: "ℹ️" })}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                    >
-                      View Details
-                      <ArrowRightCircle size={16} />
-                    </button>
-                  </div>
+                  <p className="mt-3 text-sm text-slate-600">
+                    {row.studentsCount} students · {row.passRate}% pass · {row.publishedDate}
+                  </p>
+                  <Link
+                    href={`/admin/results/${encodeURIComponent(row.department)}`}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  >
+                    Open Department
+                    <ArrowRightCircle size={16} />
+                  </Link>
                 </article>
               </li>
             ))

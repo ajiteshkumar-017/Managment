@@ -84,41 +84,31 @@ function AdminFaculty() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const getFaculty = async () => {
       try {
+        setLoading(true);
         const res = await axios.get("/api/admin/faculty");
         if (!res.data?.success) {
-          throw new Error(res.data?.message || "Failed to fetch faculty");
+          toast.error(res.data?.message || "Failed to fetch faculty");
+          return;
         }
-        const data: FacultyRow[] = (res.data.data || []).map((f: FacultyRow) => ({
-          username: f.username || "—",
-          name: f.name || "—",
-          department: f.department || "—",
-          designation: f.designation || "—",
-          status: f.status,
-        }));
-        setRows(data);
+
+        setRows(res.data.data || []);
         setStats({
-          total: res.data.stats?.total ?? data.length,
+          total: res.data.stats?.total ?? 0,
           active: res.data.stats?.active ?? 0,
           onLeave: res.data.stats?.onLeave ?? 0,
           resigned: res.data.stats?.resigned ?? 0,
         });
-      } catch (err: unknown) {
-        const message =
-          axios.isAxiosError(err)
-            ? err.response?.data?.message || err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to fetch faculty";
-        toast.error(message);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to fetch faculty");
         setRows([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    getFaculty();
   }, []);
 
   const facultyStats = useMemo(

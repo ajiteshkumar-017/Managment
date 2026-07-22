@@ -43,6 +43,15 @@ const PAGE_SIZE = 5;
 
 const formatCount = (n: number) => n.toLocaleString();
 
+function capitalizeStatus(status?: string): StudentRow["status"] {
+  if (!status) return "Active";
+  const lower = status.toLowerCase();
+  if (lower === "graduated") return "Graduated";
+  if (lower === "blacklisted") return "Blacklisted";
+  if (lower === "restricted") return "Restricted";
+  return "Active";
+}
+
 function statusClass(status: StudentRow["status"]) {
   const map: Record<StudentRow["status"], string> = {
     Active: "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-600/15",
@@ -88,42 +97,43 @@ function AdminStudents() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const getStudents = async () => {
       try {
+        setLoading(true);
         const res = await axios.get("/api/admin/students");
         if (!res.data?.success) {
-          throw new Error(res.data?.message || "Failed to fetch students");
+          toast.error(res.data?.message || "Failed to fetch students");
+          return;
         }
-        const data: StudentRow[] = (res.data.data || []).map((s: StudentRow) => ({
-          rollNo: s.rollNo || "—",
-          name: s.name || "—",
-          semester: String(s.semester ?? ""),
-          department: s.department || "—",
-          section: s.section || "—",
-          status: s.status,
-        }));
-        setRows(data);
+
+        const list = Array.isArray(res.data.data) ? res.data.data : [];
+
+        setRows(
+          list.map((s: any) => ({
+            rollNo: s.rollNumber || s.rollNo || "—",
+            name: s.name || "—",
+            semester: String(s.semester ?? ""),
+            department: s.department || "—",
+            section: s.section || "—",
+            status: capitalizeStatus(s.status),
+          })),
+        );
+
         setStats({
-          total: res.data.stats?.total ?? data.length,
-          active: res.data.stats?.active ?? 0,
+          total: res.data.stats?.totalStudent ?? list.length,
+          active: res.data.stats?.activeStudent ?? 0,
           graduated: res.data.stats?.graduated ?? 0,
-          newEnrollments: res.data.stats?.newEnrollments ?? 0,
+          newEnrollments: res.data.stats?.newEnrollement ?? 0,
         });
-      } catch (err: unknown) {
-        const message =
-          axios.isAxiosError(err)
-            ? err.response?.data?.message || err.message
-            : err instanceof Error
-              ? err.message
-              : "Failed to fetch students";
-        toast.error(message);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to fetch students");
         setRows([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    getStudents();
   }, []);
 
   const studentStats = useMemo(
@@ -446,7 +456,7 @@ function AdminStudents() {
                 <div key={row.rollNo} className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_0.7fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
                   <div className="text-center text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</div>
                   <div className="truncate text-center font-semibold text-indigo-700">{row.rollNo}</div>
-                  <div className="truncate text-left font-medium text-slate-900">{row.name}</div>
+                  <div className="truncate text-center font-medium text-slate-900">{row.name}</div>
                   <div className="text-center text-slate-600">{row.department}</div>
                   <div className="text-center text-slate-600">{row.semester}</div>
                   <div className="text-center text-slate-600">{row.section}</div>

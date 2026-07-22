@@ -4,7 +4,7 @@ export interface IExamResult extends Document {
     userId: string,
     studentId: string,
     subjectId: string,
-    examType: 'Core' | 'Elective',
+    examType: 'Mid Sem' | 'End Sem' | 'Internal' | 'Supplementary',
     examPublishedStatus: 'pending' | 'published' | 'failed',
     examResult: 'passed' | 'back' | 'failed' | 'not_attended',
     examResultDate: Date
@@ -26,7 +26,7 @@ const examResultSchema = new Schema({
     },
     examType: {
         type: String,
-        enum: ['Core', 'Elective']
+        enum: ['Mid Sem', 'End Sem', 'Internal', 'Supplementary']
     },
     examPublishedStatus: {
         type: String,

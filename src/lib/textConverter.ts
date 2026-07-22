@@ -46,7 +46,7 @@ export function buildSemesterPerformancePdf(payload: SemesterPdfPayload): jsPDF 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100); 
-    doc.text("Subject-wise performance · poor subjects highlighted in red", 14, 26);
+    doc.text(subtitle, 14, 26);
 
     
     doc.setFillColor(248, 249, 250); 

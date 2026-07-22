@@ -152,7 +152,10 @@ export async function POST(request:NextRequest){
 
     const user = await User.findOneAndUpdate(
         { email },
-        { avatar  : imageUrl },
+        {
+          avatar: imageUrl,
+          avatarPublicId: cloudinaryResult.public_id,
+        },
         { new: true }
     )
 

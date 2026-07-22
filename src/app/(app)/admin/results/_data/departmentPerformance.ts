@@ -1,4 +1,4 @@
-export type PerformanceLevel = "poor" | "warning" | "good";
+export type PerformanceLevel = "poor" | "warning" | "good" | "none";
 
 export type SemesterPerformance = {
   semester: string;
@@ -7,6 +7,7 @@ export type SemesterPerformance = {
   passRate: number;
   avgCgpa: number;
   failed: number;
+  hasResults?: boolean;
 };
 
 export type SubjectPerformance = {
@@ -18,6 +19,7 @@ export type SubjectPerformance = {
   failed: number;
   faculty: string;
   facultyEmail: string;
+  hasResults?: boolean;
 };
 
 export type DepartmentOverview = {
@@ -35,7 +37,11 @@ export type DepartmentOverview = {
 const POOR_THRESHOLD = 70;
 const WARNING_THRESHOLD = 80;
 
-export function getPerformanceLevel(passRate: number): PerformanceLevel {
+export function getPerformanceLevel(
+  passRate: number,
+  hasResults = true,
+): PerformanceLevel {
+  if (!hasResults) return "none";
   if (passRate < POOR_THRESHOLD) return "poor";
   if (passRate < WARNING_THRESHOLD) return "warning";
   return "good";
@@ -46,6 +52,7 @@ export function performanceRowClass(level: PerformanceLevel) {
     poor: "bg-red-50/80 border-l-[3px] border-l-red-500 hover:bg-red-50",
     warning: "bg-amber-50/70 border-l-[3px] border-l-amber-500 hover:bg-amber-50",
     good: "bg-white border-l-[3px] border-l-emerald-400 hover:bg-slate-50/80",
+    none: "bg-white border-l-[3px] border-l-slate-200 hover:bg-slate-50/80",
   };
   return map[level];
 }
@@ -55,6 +62,7 @@ export function performanceBadgeClass(level: PerformanceLevel) {
     poor: "bg-red-100 text-red-800 ring-1 ring-red-600/15",
     warning: "bg-amber-100 text-amber-800 ring-1 ring-amber-600/15",
     good: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/15",
+    none: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
   };
   return map[level];
 }
@@ -64,6 +72,7 @@ export function performanceLabel(level: PerformanceLevel) {
     poor: "Poor",
     warning: "Needs Attention",
     good: "Healthy",
+    none: "No Results",
   };
   return map[level];
 }
@@ -73,6 +82,7 @@ export function performanceNameClass(level: PerformanceLevel) {
     poor: "text-red-700",
     warning: "text-amber-800",
     good: "text-slate-900",
+    none: "text-slate-500",
   };
   return map[level];
 }
