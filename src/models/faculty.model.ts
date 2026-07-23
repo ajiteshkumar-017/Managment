@@ -8,7 +8,11 @@ interface IFaculty extends Document{
     department: string,
     status: string,
     joinedAt: Date,
-    lastPromoted: string
+    lastPromoted: string,
+    /** Optional patents / IP (shown on public faculty page when present) */
+    patents?: string[],
+    /** Optional notable research / industry work */
+    prominentWork?: string,
 }
 
 const facultySchema = new Schema(
@@ -35,10 +39,18 @@ const facultySchema = new Schema(
         },
         lastPromoted: {
             type: String
-        }
+        },
+        patents: {
+            type: [String],
+            default: undefined,
+        },
+        prominentWork: {
+            type: String,
+            trim: true,
+            default: undefined,
+        },
     }, {timestamps: true}
 )
 
 
 export const Faculty = (models.Faculty as mongoose.Model<IFaculty>) || model<IFaculty>("Faculty", facultySchema);
-

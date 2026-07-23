@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function ContactMap() {
-  const [MapComponents, setMapComponents] = useState<any>(null);
+  const [MapComponents, setMapComponents] = useState(null);
 
   // 1. Only load Leaflet inside useEffect so the server completely ignores it
   useEffect(() => {

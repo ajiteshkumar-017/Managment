@@ -1,72 +1,208 @@
-"use client"
+"use client";
 
-import react, {useState} from "react" 
-
+import Link from "next/link";
+import {
+  Building2,
+  Compass,
+  History,
+  Target,
+  Eye,
+} from "lucide-react";
+import Navbar from "@/utils/Navbar";
 import Footer from "@/utils/Footer";
-import Navbar from "@/utils/Navbar"
 
+const highlights = [
+  {
+    title: "Introduction",
+    icon: Building2,
+    image: "/campus1.jpg",
+    imageAlt: "IIT Dholakpur campus",
+    body: "IIT Dholakpur attracts top-tier students and faculty dedicated to research, teaching, and national impact. Alumni contribute across industry, academia, and entrepreneurship. The institute offers strong residential life with hostels, dining, sports, and recreation — alongside continuing education and short-term programs.",
+  },
+  {
+    title: "Functional organization",
+    icon: Compass,
+    image: "/campus2.jpg",
+    imageAlt: "Institute academic block",
+    reverse: true,
+    body: "IIT Dholakpur is an autonomous institute of national importance. Governance is led by a Board of Governors, with academic standards overseen by the Senate. The Director steers academic and administrative strategy, supported by the Registrar and senior officers, while advisory councils bring industry and academic expertise into policy.",
+  },
+];
 
- function Page() {
+const missionPoints = [
+  "Deliver rigorous engineering education with strong fundamentals",
+  "Advance research that solves real industrial and societal problems",
+  "Build ethical, skilled graduates ready for leadership roles",
+  "Foster collaboration with academia, industry, and global peers",
+];
+
+const visionPoints = [
+  "Be a leading institute for engineering education and innovation",
+  "Create knowledge and technology with lasting national impact",
+  "Nurture inclusive excellence across teaching, research, and campus life",
+];
+
+export default function AboutPage() {
   return (
-    <>
-    
-    <div className="bg-white min-h-screen">
-      <Navbar/>
-      <div className="flex justify-between items-start m-4 p-4">
-        <div className="w-1/2 p-4 flex justify-center ">
-          <img src="/campus1.jpg" alt=""  className="bg-white max-h-100 w-auto object-contain rounded-2xl"/>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+
+      <section className="border-b border-gray-100 bg-linear-to-br from-slate-50 via-white to-[#786EFE]/5 px-4 py-10 sm:px-6 md:px-10 md:py-14">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#786EFE]">
+            About
+          </p>
+          <h1 className="mt-2 font-comfortaa text-3xl font-bold text-[#333333] sm:text-4xl">
+            About the institute
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+            Learn about IIT Dholakpur — our history, organization, mission, and
+            vision.
+          </p>
         </div>
-        <div className="w-1/2 p-4">
-          <h1 className="text-4xl font-bold tracking-tight mb-4 text-black">Introduction</h1>
-          <p className="text-black font-bitcount">IIT Bombay was established in 1958. It attracts top-tier students. Its renowned faculty drives research and academics, forging collaborations with national and international peers. Alumni excel in various fields, contributing to industry, academia, research, and more. The institute offers innovative short-term courses, continuing education, and distance learning. Faculty members have received prestigious awards, including the Shanti Swaroop Bhatnagar and Padma honors. It provides a fully residential experience with hostels, dining, sports, and recreational facilities.</p>
-        </div>
-        
-      </div>
+      </section>
 
-      <div className="flex justify-between items-start m-4 p-4">
+      <section className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 md:px-10 md:py-10">
+        {highlights.map((block) => {
+          const Icon = block.icon;
+          return (
+            <div
+              key={block.title}
+              className={`flex flex-col gap-6 lg:items-center lg:gap-10 ${
+                block.reverse ? "lg:flex-row-reverse" : "lg:flex-row"
+              }`}
+            >
+              <div className="w-full overflow-hidden rounded-2xl border border-gray-100 shadow-sm lg:w-1/2">
+                <img
+                  src={block.image}
+                  alt={block.imageAlt}
+                  className="h-56 w-full object-cover sm:h-72 lg:h-80"
+                />
+              </div>
+              <div className="w-full lg:w-1/2">
+                <span className="inline-flex rounded-xl bg-[#786EFE]/10 p-2.5 text-[#786EFE]">
+                  <Icon size={18} />
+                </span>
+                <h2 className="mt-3 text-2xl font-bold text-[#333333]">
+                  {block.title}
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-[15px] sm:leading-7">
+                  {block.body}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </section>
 
-        <div className="w-1/2 p-4">
-          <h1 className="text-4xl font-bold tracking-tight mb-4 text-black">Functional Organization</h1>
-          <p className="text-black font-bitcount">IIT Bombay is an autonomous institute and deemed university governed by a board of governors, chaired by the president of India. It operates under the guidance of the IIT Council, established by India's ministry of education (MoE) (earlier called human resource development). The director, appointed by MoE, leads the institute for a five-year term, overseeing academic matters and serving on various committees. The senate, composed of professors and nominated members, ensures academic standards. The administrative functions are managed by the registrar and senior officials. The institute advisory council, comprising industry and academic experts, provides input on policies and goals.</p>
-        </div>
-        <div className="w-1/2 p-4 flex justify-center ">
-          <img src="/campus2.jpg" alt=""  className="bg-white max-h-100 w-auto object-contain rounded-2xl "/>
-        </div>
-        
-        
-      </div>
-
-      <div className="m-4 p-4 space-y-4">
-        <h2 className="text-4xl font-bold tracking-tight mb-4 text-black">History</h2>
-        <p className="text-black font-bitcount">In 1958, IIT Bombay was established as part of a government initiative inspired by recommendations from a committee led by Sir Nalini Ranjan Sarkar. IIT Bombay's campus covers 200 hectares in Powai, Mumbai. It received significant support from UNESCO and the government of the USSR, with equipment, experts, and fellowships facilitating its growth. In 1961, an Act of Parliament granted it the status of an institution of national importance, allowing it to confer its own degrees and diplomas.</p>
-
-        <div className="w-full h-125 md:h-100 overflow-hidden rounded-xl">
-            <img 
-              src="/campus4.jpg" 
-              alt="IIT Bombay Campus" 
-              className="w-full h-full object-cover" 
-            />
-        </div>  
-
-
-      </div>
-
-      <div className="m-4 p-4 space-y-4">
-          <h2 className="text-4xl font-bold tracking-tight mb-4 text-black">Mission</h2>
-          <div className="overflow-hidden w-full h-125 md:h-100">
-            <img src="campus8.jpg" alt="" />
+      <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 md:px-10">
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="p-5 sm:p-6 md:p-8">
+              <span className="inline-flex rounded-xl bg-[#786EFE]/10 p-2.5 text-[#786EFE]">
+                <History size={18} />
+              </span>
+              <h2 className="mt-3 text-2xl font-bold text-[#333333]">History</h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-[15px] sm:leading-7">
+                Established as part of a national push for excellence in
+                technology education, IIT Dholakpur grew with a focus on
+                rigorous academics, research capacity, and regional impact in
+                Odisha. Over the years it has expanded departments, laboratories,
+                and residential facilities while building partnerships that
+                strengthen teaching and innovation.
+              </p>
+            </div>
+            <div className="min-h-56 overflow-hidden lg:min-h-full">
+              <img
+                src="/campus4.jpg"
+                alt="Campus history"
+                className="h-full w-full object-cover"
+              />
+            </div>
           </div>
-      </div>
+        </div>
+      </section>
 
-      <div className="m-4 p-4 space-y-4">
-          <h2 className="text-4xl font-bold tracking-tight mb-4 text-black">Vision</h2>
-      </div>
+      <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 md:px-10">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <span className="inline-flex rounded-xl bg-[#786EFE]/10 p-2.5 text-[#786EFE]">
+              <Target size={18} />
+            </span>
+            <h2 className="mt-3 text-xl font-bold text-[#333333]">Mission</h2>
+            <div className="mt-4 overflow-hidden rounded-xl">
+              <img
+                src="/campus8.jpg"
+                alt="Mission"
+                className="h-40 w-full object-cover sm:h-48"
+              />
+            </div>
+            <ul className="mt-4 space-y-2">
+              {missionPoints.map((point) => (
+                <li
+                  key={point}
+                  className="flex items-start gap-2 text-sm text-slate-600"
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#786EFE]" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <Footer/> 
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+            <span className="inline-flex rounded-xl bg-[#786EFE]/10 p-2.5 text-[#786EFE]">
+              <Eye size={18} />
+            </span>
+            <h2 className="mt-3 text-xl font-bold text-[#333333]">Vision</h2>
+            <div className="mt-4 overflow-hidden rounded-xl">
+              <img
+                src="/campus5.jpg"
+                alt="Vision"
+                className="h-40 w-full object-cover sm:h-48"
+              />
+            </div>
+            <ul className="mt-4 space-y-2">
+              {visionPoints.map((point) => (
+                <li
+                  key={point}
+                  className="flex items-start gap-2 text-sm text-slate-600"
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#786EFE]" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 md:px-10">
+        <div className="rounded-2xl border border-gray-100 bg-slate-50/80 p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-[#333333]">Explore more</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Continue browsing academics and campus life
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              { label: "Courses", href: "/courses" },
+              { label: "Faculty", href: "/faculty" },
+              { label: "Contact Us", href: "/contactUs" },
+              { label: "Resources", href: "/resources" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#333333] transition hover:border-[#786EFE]/40 hover:text-[#786EFE]"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
-    </>
-  )
-
-  
+  );
 }
-export default Page;

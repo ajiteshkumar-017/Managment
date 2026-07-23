@@ -1,7 +1,24 @@
 import React from 'react'
-import { MapPin, Mic, MonitorCloud, Music, BriefcaseBusiness, Users, User, Trophy, BookOpen, Phone, Mail, Menu, X, Megaphone, FileText, Bell, Newspaper } from "lucide-react";
+import { MapPin, Phone, Mail } from "lucide-react";
 
 import { FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/fa";
+import { resourceLinks } from "@/utils/ResourcePageShell";
+import Link from 'next/link';
+
+const socialMediaHandle = [
+    {
+        label: "Instagram", link: "https://instagram.com/ajiteshkumar__",icon: FaInstagram
+    },
+    {
+        label: "Facebook", link: "",icon: FaFacebookF
+    },
+    {
+        label: "LinkedIn", link: "",icon: FaLinkedinIn
+    },
+    {
+        label: "Twitter", link: "",icon: FaTwitter
+    },
+]
 
 
 function Footer() {
@@ -23,8 +40,15 @@ function Footer() {
                               </p>
       
                               <div className="flex gap-3">
-                                  {[FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter].map((Icon, idx) => (
-                                      <Icon key={idx} className="w-8 h-8 sm:w-10 sm:h-10 p-2 sm:p-3 rounded-full bg-white border border-gray-200 text-[#4B5563] hover:text-[#786EFE] hover:-translate-y-1 transition-all duration-300 cursor-pointer" />
+                                  {socialMediaHandle.length > 0 && socialMediaHandle.map((data, idx) => (
+                                      <Link
+                                      href={data.link}
+                                      key={idx}
+                                      className='w-8 h-8 sm:w-10 sm:h-10 p-2 sm:p-3 rounded-full bg-white border border-gray-200 text-[#4B5563] hover:text-[#786EFE] hover:-translate-y-1 transition-all duration-300 cursor-pointer'
+                                      rel="noopener noreferrer"
+                                      >
+                                        <data.icon className="w-full h-full" />
+                                    </Link>
                                   ))}
                               </div>
                           </div>
@@ -35,10 +59,16 @@ function Footer() {
                                   Quick Links
                               </h3>
                               <ul className="flex flex-col gap-3 sm:gap-4">
-                                  {["Home", "Courses", "Faculty", "About Us", "Contact Us"].map((link) => (
-                                      <li key={link}>
-                                          <a href="" className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
-                                              {link}
+                                  {[
+                                      { label: "Home", href: "/landingPage" },
+                                      { label: "Courses", href: "/courses" },
+                                      { label: "Faculty", href: "/faculty" },
+                                      { label: "About Us", href: "/about" },
+                                      { label: "Contact Us", href: "/contactUs" },
+                                  ].map((link) => (
+                                      <li key={link.label}>
+                                          <a href={link.href} className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
+                                              {link.label}
                                           </a>
                                       </li>
                                   ))}
@@ -51,10 +81,10 @@ function Footer() {
                                   Resources
                               </h3>
                               <ul className="flex flex-col gap-3 sm:gap-4">
-                                  {["Academic Calendar", "Library", "Placement Cell", "Student Portal", "Alumni"].map((resource) => (
-                                      <li key={resource}>
-                                          <a href="" className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
-                                              {resource}
+                                  {resourceLinks.map((resource) => (
+                                      <li key={resource.href}>
+                                          <a href={resource.href} className="text-sm sm:text-[15px] text-[#4B5563] hover:text-[#786EFE] transition-colors duration-300">
+                                              {resource.label}
                                           </a>
                                       </li>
                                   ))}

@@ -1,168 +1,215 @@
-"use client"
+"use client";
 
-import Footer from "@/utils/Footer"
-import Navbar from "@/utils/Navbar"
-import react, { useEffect } from "react"
+import Link from "next/link";
+import {
+  ArrowRight,
+  BookOpen,
+  FlaskConical,
+  GraduationCap,
+  Layers,
+} from "lucide-react";
+import Navbar from "@/utils/Navbar";
+import Footer from "@/utils/Footer";
 
+const courses = [
+  {
+    code: "CRS-001",
+    shortTitle: "B.Tech",
+    title: "Bachelor of Technology",
+    duration: "4 years",
+    focus: "Skill acquisition & core engineering",
+    description:
+      "A comprehensive undergraduate program in engineering fundamentals and applied sciences — bridging theory with industry through labs, projects, and hands-on training.",
+    highlights: [
+      "Core engineering foundations",
+      "Project-based learning",
+      "Department specializations",
+      "Industry-ready skills",
+    ],
+    icon: GraduationCap,
+  },
+  {
+    code: "CRS-002",
+    shortTitle: "M.Tech",
+    title: "Master of Technology",
+    duration: "2 years",
+    focus: "Specialization & technical leadership",
+    description:
+      "An advanced postgraduate track for deeper expertise in niche domains — system design, analytics, and optimization of complex engineering workflows.",
+    highlights: [
+      "Advanced specialization",
+      "Research-informed curriculum",
+      "Leadership readiness",
+      "Industry collaboration",
+    ],
+    icon: Layers,
+  },
+  {
+    code: "CRS-003",
+    shortTitle: "PhD",
+    title: "Doctor of Philosophy",
+    duration: "3–5 years",
+    focus: "Innovation & knowledge creation",
+    description:
+      "Original research at the frontier of technology — solving open problems and contributing new knowledge to academia and industry.",
+    highlights: [
+      "Original research",
+      "Faculty mentorship",
+      "Publications & patents",
+      "Global collaborations",
+    ],
+    icon: FlaskConical,
+  },
+];
 
-function courses() {
-    return (
-        <div className="bg-white min-h-screen">
-            <Navbar/>
+const departments = ["CSE", "ME", "CE", "EE", "AE"];
 
-            <div className="mt-4 pl-6">
-                <h2 className=" text-3xl text-black section-heading  p-4 tracking-normal font-bold">Introduction</h2>
-                <p className="text-black p-4 text-base leading-8 tracking-wide ">Our institution offers three premier academic pillars designed to bridge the gap between theoretical knowledge and industrial mastery: B.Tech, M.Tech, and PhD.
+export default function CoursesPage() {
+  return (
+    <div className="min-h-screen bg-white">
+      <Navbar />
 
-                    The B.Tech program serves as a rigorous foundation, equipping students with core engineering principles and hands-on technical skills. For those seeking leadership, our M.Tech tracks provide specialized expertise in advanced system design and niche architectural domains. Finally, our PhD program fosters groundbreaking innovation, challenging researchers to solve complex, real-world problems.
-
-                    Each course is structured into specialized departments, ensuring a focused, professional trajectory. Built for the modern engineer, our curriculum emphasizes precision, scalability, and technical excellence.</p>
-
-            </div>
-
-            <h2 className="text-3xl text-black mt-4 ml-6 p-4 tracking-normal font-bold">Courses</h2>
-
-           <div className="mt-4 p-4 ml-4">
-  <div className="grid grid-cols-1 lg:grid-cols-3 place-items-center justify-between gap-8">
-
-    {/* B.Tech */}
-    <button className="group text-left p-8 bg-white border border-gray-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-2 hover:border-[#786EFE] flex flex-col min-h-[500px]">
-
-      <div className="flex justify-between items-start mb-6 gap-2">
-        <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-[#1F2937]">
-          Bachelor of Technology
-        </h2>
-
-        <span className="text-[10px] font-mono bg-purple-100 text-[#786EFE] px-2 py-1 rounded tracking-widest uppercase">
-          CRS-001
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[#786EFE]">
-          Focus: Skill Acquisition & Core Engineering
-        </h3>
-      </div>
-
-      <p className="text-[#4B5563] text-[15px] leading-7 mb-8 flex-grow">
-        A comprehensive four-year undergraduate program focusing on the fundamentals of engineering and applied sciences. Designed to bridge the gap between theoretical concepts and industrial application through rigorous hands-on training and project-based learning.
-      </p>
-
-      <div className="pt-6 border-t border-gray-200 flex items-center justify-between group-hover:text-[#786EFE] transition-colors text-black">
-        <span className="text-xs font-semibold uppercase tracking-widest">
-          View Departments
-        </span>
-
-        <svg
-          className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 8l4 4m0 0l-4 4m4-4H3"
-          />
-        </svg>
-      </div>
-    </button>
-
-    {/* M.Tech */}
-    <button className="group text-left p-8 bg-white border border-gray-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-2 hover:border-[#786EFE] flex flex-col min-h-[500px]">
-
-      <div className="flex justify-between items-start mb-6 gap-2">
-        <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-[#1F2937]">
-          Master of Technology
-        </h2>
-
-        <span className="text-[10px] font-mono bg-purple-100 text-[#786EFE] px-2 py-1 rounded tracking-widest uppercase">
-          CRS-002
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[#786EFE]">
-          Focus: Specialization & Technical Leadership
-        </h3>
-      </div>
-
-      <p className="text-[#4B5563] text-[15px] leading-7 mb-8 flex-grow">
-        An advanced two-year postgraduate degree for professionals seeking specialization in niche technical domains. This program emphasizes architectural system design, advanced analytics, and optimization of complex industrial workflows.
-      </p>
-
-      <div className="pt-6 border-t border-gray-200 flex items-center justify-between group-hover:text-[#786EFE] transition-colors text-black">
-        <span className="text-xs font-semibold uppercase tracking-widest">
-          View Departments
-        </span>
-
-        <svg
-          className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 8l4 4m0 0l-4 4m4-4H3"
-          />
-        </svg>
-      </div>
-    </button>
-
-    {/* PhD */}
-    <button className="group text-left p-8 bg-white border border-gray-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-2 hover:border-[#786EFE] flex flex-col min-h-[500px]">
-
-      <div className="flex justify-between items-start mb-6 gap-2">
-        <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-[#1F2937]">
-          Doctor of Philosophy
-        </h2>
-
-        <span className="text-[10px] font-mono bg-purple-100 text-[#786EFE] px-2 py-1 rounded tracking-widest uppercase">
-          CRS-003
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-[#786EFE]">
-          Focus: Innovation & Knowledge Creation
-        </h3>
-      </div>
-
-      <p className="text-[#4B5563] text-[15px] leading-7 mb-8 flex-grow">
-        The pinnacle of academic achievement, focused on original research and expanding the global knowledge base. Candidates solve unsolved industry problems and pioneer new technological frontiers.
-      </p>
-
-      <div className="pt-6 border-t border-gray-200 flex items-center justify-between group-hover:text-[#786EFE] transition-colors text-black">
-        <span className="text-xs font-semibold uppercase tracking-widest">
-          View Departments
-        </span>
-
-        <svg
-          className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 8l4 4m0 0l-4 4m4-4H3"
-          />
-        </svg>
-      </div>
-    </button>
-
-  </div>
-</div>
-            <Footer />
-
+      <section className="border-b border-gray-100 bg-linear-to-br from-slate-50 via-white to-[#786EFE]/5 px-4 py-10 sm:px-6 md:px-10 md:py-14">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#786EFE]">
+            Academics
+          </p>
+          <h1 className="mt-2 font-comfortaa text-3xl font-bold text-[#333333] sm:text-4xl">
+            Courses
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+            Three academic pillars — B.Tech, M.Tech, and PhD — built for precision,
+            depth, and real-world impact.
+          </p>
         </div>
-    )
-}
+      </section>
 
-export default courses
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-10">
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-[#786EFE]/10 p-2.5 text-[#786EFE]">
+              <BookOpen size={18} />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-[#333333]">Introduction</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-[15px] sm:leading-7">
+                Our programs connect theory with industrial practice. B.Tech
+                builds core engineering strength, M.Tech develops specialized
+                technical leadership, and PhD drives original research. Each
+                pathway is organized by department so students progress with
+                focus and clarity.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6 md:px-10">
+        <h2 className="text-xl font-bold text-[#333333] sm:text-2xl">
+          Programs
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Choose a pathway that matches your academic goals
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {courses.map((course) => {
+            const Icon = course.icon;
+            return (
+              <article
+                key={course.code}
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#786EFE]/35 hover:shadow-md"
+              >
+                <div className="border-b border-gray-100 bg-linear-to-br from-[#786EFE]/8 via-white to-slate-50 px-5 py-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="inline-flex rounded-xl bg-white p-2.5 text-[#786EFE] shadow-sm ring-1 ring-gray-100">
+                      <Icon size={20} />
+                    </span>
+                    <span className="rounded-full bg-[#786EFE]/10 px-2.5 py-1 font-mono text-[10px] font-semibold tracking-wider text-[#786EFE] uppercase">
+                      {course.code}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-xs font-semibold tracking-wide text-[#786EFE] uppercase">
+                    {course.shortTitle}
+                  </p>
+                  <h3 className="mt-1 text-xl font-bold tracking-tight text-[#333333]">
+                    {course.title}
+                  </h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                      {course.duration}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5">
+                  <p className="text-xs font-semibold tracking-wide text-[#786EFE] uppercase">
+                    {course.focus}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    {course.description}
+                  </p>
+
+                  <ul className="mt-4 space-y-2">
+                    {course.highlights.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-2 text-sm text-slate-600"
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#786EFE]" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-auto pt-5">
+                    <Link
+                      href="/faculty"
+                      className="inline-flex w-full items-center justify-between rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-[#333333] transition group-hover:border-[#786EFE]/30 group-hover:bg-[#786EFE]/5 group-hover:text-[#786EFE]"
+                    >
+                      Explore faculty & departments
+                      <ArrowRight
+                        size={16}
+                        className="transition group-hover:translate-x-0.5"
+                      />
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-10 md:pb-12">
+        <div className="rounded-2xl border border-gray-100 bg-slate-50/80 p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-[#333333]">Departments</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Programs are offered across core engineering departments
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {departments.map((dept) => (
+              <span
+                key={dept}
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#333333]"
+              >
+                {dept}
+              </span>
+            ))}
+          </div>
+          <p className="mt-5 text-sm text-slate-500">
+            Questions about admissions or curriculum?{" "}
+            <Link
+              href="/contactUs"
+              className="font-semibold text-[#786EFE] hover:underline"
+            >
+              Contact us
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}

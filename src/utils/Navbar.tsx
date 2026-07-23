@@ -24,7 +24,13 @@ function Navbar() {
         const router = useRouter();
         // const toast = useToaster();
 
-    const navLinks = ["Home", "Courses", "Faculty", "About", "Contact Us"];
+    const navLinks = [
+        { label: "Home", href: "/landingPage" },
+        { label: "Courses", href: "/courses" },
+        { label: "Faculty", href: "/faculty" },
+        { label: "About", href: "/about" },
+        { label: "Contact Us", href: "/contactUs" },
+    ];
     const handleFormOpen = () => {
         console.log("Form is opening")
         setIsFormOpen(!isFormOpen)
@@ -136,8 +142,8 @@ function Navbar() {
                     {/* Desktop Navigation */}
                     <div className='hidden md:flex items-center gap-8'>
                         {navLinks.map((link) => (
-                            <a key={link} href={`/${link.toLocaleLowerCase()}`} className="relative font-medium text-sm lg:text-base text-[#333333] hover:text-[#786EFE] transition-colors duration-300 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-0 after:bg-[#786EFE] after:transition-all after:duration-300 after:-translate-x-1/2 hover:after:w-full">
-                                {link}
+                            <a key={link.label} href={link.href} className="relative font-medium text-sm lg:text-base text-[#333333] hover:text-[#786EFE] transition-colors duration-300 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-0 after:bg-[#786EFE] after:transition-all after:duration-300 after:-translate-x-1/2 hover:after:w-full">
+                                {link.label}
                             </a>
                         ))}
                     </div>
@@ -170,8 +176,8 @@ function Navbar() {
                         >
                             <div className='px-4 py-4 space-y-3'>
                                 {navLinks.map((link) => (
-                                    <a key={link} href="" className="block py-2 text-sm text-[#333333] hover:text-[#786EFE] transition-colors">
-                                        {link}
+                                    <a key={link.label} href={link.href} className="block py-2 text-sm text-[#333333] hover:text-[#786EFE] transition-colors">
+                                        {link.label}
                                     </a>
                                 ))}
                                 <div className='flex gap-2 pt-4 border-t border-gray-100'>
