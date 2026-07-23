@@ -3,9 +3,11 @@ import Connect from "@/dbConnect/connect";
 import { ExamResult } from "@/models/exam.model";
 import { Student } from "@/models/student.model";
 import { Subject } from "@/models/subject.model";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 /** Main Results page only — published exams + stats + best/worst department */
 export async function GET(_request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -168,6 +170,15 @@ export async function GET(_request: NextRequest) {
         return a.examTitle.localeCompare(b.examTitle);
       });
 
+    requestLogger.info(
+      {
+        totalDeclarations: data.length,
+        studentsCovered: uniqueStudents.size,
+        overallPassPercent,
+      },
+      "Results stats fetched",
+    );
+
     return NextResponse.json({
       success: true,
       message: "Results fetched successfully",
@@ -187,7 +198,7 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching results", error);
+    requestLogger.error({ err: error }, "Failed to fetch results");
     return NextResponse.json(
       { success: false, message: "Failed to fetch results" },
       { status: 500 },

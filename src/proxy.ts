@@ -27,7 +27,8 @@ const routeMatcher = (routes: string[], pathname: string) =>
 const isPublicRoute = (pathname: string) =>
   routeMatcher(userPublicRoutes, pathname) ||
   pathname.startsWith("/api/users/login") ||
-  pathname.startsWith("/api/users/signUp");
+  pathname.startsWith("/api/users/signUp") ||
+  pathname.startsWith("/api/users/check-email");
 
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
 

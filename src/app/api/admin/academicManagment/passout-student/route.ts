@@ -1,10 +1,12 @@
 import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import { NextRequest, NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 
 export async function POST(request:NextRequest) {
+    const requestLogger = createRequestLogger();
     try {
         
         await Connect();
@@ -14,6 +16,7 @@ export async function POST(request:NextRequest) {
         const {semester,department, batch} = body;
 
         if(!semester || !department || ! batch){
+            requestLogger.warn({ semester, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
                 {
@@ -27,6 +30,7 @@ export async function POST(request:NextRequest) {
         }
 
         if(semester === "8"){
+            requestLogger.warn({ semester, department, batch }, "Passout action not allowed for semester 8");
             console.log("This action cannot be done.")
 
             return NextResponse.json(
@@ -54,6 +58,7 @@ export async function POST(request:NextRequest) {
         )
 
         if(!result){
+            requestLogger.warn({ semester, department, batch }, "Passout update failed");
             console.log("Error in getting User detail")
 
             return NextResponse.json(
@@ -66,7 +71,10 @@ export async function POST(request:NextRequest) {
 
          console.log(result.modifiedCount);
         
-        
+        requestLogger.info(
+            { semester, department, batch, modifiedCount: result.modifiedCount },
+            "Students passed out successfully",
+        );
                 return NextResponse.json(
                     {
                         success: true,
@@ -75,6 +83,7 @@ export async function POST(request:NextRequest) {
                     }, {status: 200}
                 )
     } catch (error:any) {
+        requestLogger.error({ err: error }, "Failed to pass out students");
         console.log("Error in Passing out Student of Semester", error)
             console.log("Error Message", error?.message);
             console.log("Error Stack", error?.message?.stack);

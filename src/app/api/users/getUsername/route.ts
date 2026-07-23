@@ -6,12 +6,14 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 import { getUser } from "@/lib/getUser";
 import { jwtVerify } from "jose";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 dotenv.config();
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!) 
 
 export async function GET(request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -21,6 +23,7 @@ export async function GET(request: NextRequest) {
 
           if(!email){
             console.error("Email not found in token payload")
+            requestLogger.warn({ reason: "missing_email" }, "getUsername unauthorized");
             return NextResponse.json(
                 {
                     success: false,
@@ -38,6 +41,7 @@ export async function GET(request: NextRequest) {
 
     if (!email) {
       console.error("Email not found in token data");
+      requestLogger.warn({ reason: "missing_email" }, "getUsername unauthorized");
 
       return NextResponse.json(
         {
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       console.log("No User is linked with this email");
+      requestLogger.warn({ reason: "user_not_found", email }, "getUsername user not found");
       return NextResponse.json(
         {
           success: false,
@@ -64,6 +69,12 @@ export async function GET(request: NextRequest) {
         }
       );
     }
+
+    requestLogger.info({
+      email,
+      userId: user._id,
+      username: user.username,
+    }, "Username fetched successfully");
 
     return NextResponse.json(
       {
@@ -77,6 +88,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error in GetUsername Route:", error);
+    requestLogger.error({ err: error }, "getUsername failed");
     return NextResponse.json(
       {
         success: false,

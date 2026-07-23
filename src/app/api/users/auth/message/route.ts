@@ -6,10 +6,12 @@ import {Subject} from "@/models/subject.model"
 import { Enrollment } from "@/models/enrollement.model";
 import { Notice } from "@/models/notice.model";
 import { getUser } from "@/lib/getUser";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 
 export async function GET(request:NextRequest){
+    const requestLogger = createRequestLogger();
     try{
         await Connect();
         
@@ -18,6 +20,7 @@ export async function GET(request:NextRequest){
 
         if(!email){
             console.error("Email not found in token data")
+            requestLogger.warn({ reason: "missing_email" }, "Message unauthorized");
             return NextResponse.json(
                 {
                     success: false,
@@ -33,6 +36,7 @@ export async function GET(request:NextRequest){
 
         if(!user){
             console.error("User not found with email:", email)
+            requestLogger.warn({ reason: "user_not_found", email }, "Message user not found");
             return NextResponse.json(
                 {
                     success: false,
@@ -47,6 +51,7 @@ export async function GET(request:NextRequest){
         const noticesInfo = await Notice.find({ expirationDate: { $gt: new Date() } }).sort({ date: -1 }).limit(5);
          if(!noticesInfo){
             console.error("No Notices found in the database")
+            requestLogger.warn({ reason: "notices_not_found", userId: user._id }, "No notices found");
             return NextResponse.json(
                 {
                     success: false,
@@ -60,6 +65,12 @@ export async function GET(request:NextRequest){
 
          console.log("Notices found:", noticesInfo.length)
          console.log("Notices found are:", noticesInfo)
+
+         requestLogger.info({
+            email,
+            userId: user._id,
+            noticeCount: noticesInfo.length,
+         }, "Notices fetched successfully");
 
          return NextResponse.json(
             {
@@ -78,6 +89,7 @@ export async function GET(request:NextRequest){
 
     }catch(err){
         console.error("Error in Dashboard Route:", err)
+        requestLogger.error({ err }, "Message/notices fetch failed");
         return NextResponse.json(
             {
                 success: false,

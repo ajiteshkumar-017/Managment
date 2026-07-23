@@ -1,14 +1,17 @@
 import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import {NextResponse, NextRequest} from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function POST(request:NextRequest){
+    const requestLogger = createRequestLogger();
     try {
         await Connect();
          const body = await request.json();
          const {semester, batch, department, section} = body;
 
          if(!semester || !section || !department || !batch){
+            requestLogger.warn({ semester, section, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
                 {
@@ -36,6 +39,7 @@ export async function POST(request:NextRequest){
         )
 
         if(!result){
+            requestLogger.warn({ semester, section, department, batch }, "Semester freeze update failed");
             console.log("Error in getting User detail")
 
             return NextResponse.json(
@@ -48,7 +52,10 @@ export async function POST(request:NextRequest){
 
         console.log(result.modifiedCount);
 
-
+        requestLogger.info(
+            { semester, section, department, batch, modifiedCount: result.modifiedCount },
+            "Semester frozen successfully",
+        );
         return NextResponse.json(
             {
                 success: true,
@@ -60,6 +67,7 @@ export async function POST(request:NextRequest){
 
         
     } catch (error:any) {
+        requestLogger.error({ err: error }, "Failed to freeze semester");
         
     }
 }

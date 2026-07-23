@@ -5,8 +5,10 @@ import { Subject } from "@/models/subject.model";
 import { User } from "@/models/user";
 import { Student } from "@/models/student.model";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -59,9 +61,11 @@ export async function GET() {
       departments: new Set(data.map((d) => d.department)).size,
     };
 
+    requestLogger.info({ count: data.length }, "Enrollments fetched successfully");
+
     return NextResponse.json({ success: true, data, stats });
   } catch (error) {
-    console.error("Error fetching enrollments", error);
+    requestLogger.error({ err: error }, "Failed to fetch enrollments");
     return NextResponse.json(
       { success: false, message: "Failed to fetch enrollments" },
       { status: 500 },

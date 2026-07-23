@@ -3,9 +3,11 @@ import { Enrollment } from "@/models";
 import { Student } from "@/models/student.model";
 import { User } from "@/models/user";
 import { NextResponse, NextRequest } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 /** Students page — full table list + stats */
 export async function GET(_request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -39,6 +41,8 @@ export async function GET(_request: NextRequest) {
       admissionYear: s.admissionYear || "—",
     }));
 
+    requestLogger.info({ count: data.length }, "Students fetched successfully");
+
     return NextResponse.json(
       {
         success: true,
@@ -54,7 +58,7 @@ export async function GET(_request: NextRequest) {
       { status: 200 },
     );
   } catch (error: any) {
-    console.error("Error fetching students", error);
+    requestLogger.error({ err: error }, "Failed to fetch students");
     return NextResponse.json(
       {
         success: false,

@@ -2,8 +2,10 @@ import { NextRequest,NextResponse } from "next/server";
 import {User} from "@/models/user";
 import Connect from "@/dbConnect/connect";
 import { getUser } from "@/lib/getUser";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET(request:NextRequest) {
+    const requestLogger = createRequestLogger();
     try {
 
         await Connect();
@@ -12,6 +14,7 @@ export async function GET(request:NextRequest) {
 
         if(!email){
             console.log("No Email Found");
+            requestLogger.warn({ reason: "missing_email" }, "Profile status unauthorized");
             return NextResponse.json(
                 {
                     success: false,
@@ -24,6 +27,7 @@ export async function GET(request:NextRequest) {
 
         if(!user){
             console.log("No User Found on this Email");
+            requestLogger.warn({ reason: "user_not_found", email }, "Profile status user not found");
 
             return NextResponse.json(
                 {
@@ -32,6 +36,12 @@ export async function GET(request:NextRequest) {
                 },{status: 401}
             )
         }
+
+        requestLogger.info({
+            email,
+            userId: user._id,
+            profileCompleted: user.profileCompleted,
+        }, "Profile status checked");
 
         return NextResponse.json({
         success: true,
@@ -43,6 +53,7 @@ export async function GET(request:NextRequest) {
         console.log("Error in Getting Profile Status", error);
         console.log("Error message", error?.message);
         console.log("Error Stack", error?.message?.stack);
+        requestLogger.error({ err: error }, "Profile status check failed");
 
         return NextResponse.json(
             {

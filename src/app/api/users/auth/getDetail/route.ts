@@ -4,9 +4,11 @@ import { Student } from "@/models/student.model";
 import { User } from "@/models/user";
 import { headers } from "next/headers";
 import { NextRequest,NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 export async function POST(req:NextRequest) {
+    const requestLogger = createRequestLogger();
     try {
 
         await Connect();
@@ -20,6 +22,7 @@ export async function POST(req:NextRequest) {
         console.log("STEP 2")
         if(!semester || !department || !section){
             console.log("Please Select Any Choice in All field");
+            requestLogger.warn({ reason: "missing_fields" }, "getDetail validation failed");
             return NextResponse.json(
                 {
                     success : false,
@@ -35,6 +38,7 @@ export async function POST(req:NextRequest) {
         const email = getuser.email ;
         if(!email){
             console.log("No Email is found");
+            requestLogger.warn({ reason: "missing_email" }, "getDetail email not found");
             return NextResponse.json(
                 {
                     succcess: false,
@@ -67,6 +71,7 @@ export async function POST(req:NextRequest) {
 
         if(!user){
             console.log("No User is found");
+            requestLogger.warn({ reason: "user_not_found", email }, "getDetail user not found");
             return NextResponse.json(
                 {
                     succcess: false,
@@ -85,6 +90,7 @@ export async function POST(req:NextRequest) {
 
         if (!updatedUser){
             console.log("Error in Updating User");
+            requestLogger.warn({ reason: "student_update_failed", userId: user._id }, "getDetail student update failed");
             return NextResponse.json(
                 {
                     succcess: false,
@@ -94,6 +100,14 @@ export async function POST(req:NextRequest) {
         }
 
         console.log("STEP 8")
+        requestLogger.info({
+            email,
+            userId: user._id,
+            studentId: updatedUser._id,
+            semester,
+            department,
+            section,
+        }, "Profile details updated successfully");
         
         return NextResponse.json(
             {
@@ -107,6 +121,7 @@ export async function POST(req:NextRequest) {
         console.log("Error", err)
         console.log("Error message", err?.message)
         console.log("Error message Stack", err?.Stack)
+        requestLogger.error({ err }, "getDetail profile setup failed");
         return NextResponse.json(
             {
                 success: false,

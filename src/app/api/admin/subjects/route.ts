@@ -1,8 +1,10 @@
 import Connect from "@/dbConnect/connect";
 import { Subject } from "@/models/subject.model";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -27,9 +29,11 @@ export async function GET() {
       departments: new Set(data.map((s) => s.department)).size,
     };
 
+    requestLogger.info({ count: data.length }, "Subjects fetched successfully");
+
     return NextResponse.json({ success: true, data, stats });
   } catch (error) {
-    console.error("Error fetching subjects", error);
+    requestLogger.error({ err: error }, "Failed to fetch subjects");
     return NextResponse.json(
       { success: false, message: "Failed to fetch subjects" },
       { status: 500 },

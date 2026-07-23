@@ -5,6 +5,7 @@ import { Student } from "@/models/student.model";
 import { Subject } from "@/models/subject.model";
 import { Faculty } from "@/models/faculty.model";
 import { User } from "@/models/user";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 type Params = { params: Promise<{ department: string }> };
 
@@ -12,6 +13,7 @@ const ALL_SEMESTERS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 /** Department results page — overview + other departments + all semesters */
 export async function GET(_request: NextRequest, { params }: Params) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -19,6 +21,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const department = decodeURIComponent(rawDept || "").trim();
 
     if (!department) {
+      requestLogger.warn({}, "Department is required");
       return NextResponse.json(
         { success: false, message: "Department is required" },
         { status: 400 },
@@ -190,6 +193,8 @@ export async function GET(_request: NextRequest, { params }: Params) {
         return b.passRate - a.passRate;
       });
 
+    requestLogger.info({ department }, "Department results fetched");
+
     return NextResponse.json({
       success: true,
       data: {
@@ -211,7 +216,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error("Error fetching department results", error);
+    requestLogger.error({ err: error }, "Failed to fetch department results");
     return NextResponse.json(
       { success: false, message: "Failed to fetch department results" },
       { status: 500 },

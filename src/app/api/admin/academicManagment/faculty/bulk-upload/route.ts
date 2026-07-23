@@ -6,10 +6,12 @@ import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import z from "zod";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 type TrackedFacultyRow = z.infer<typeof facultyUploadSchema> & { __originalRow: number };
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
     const { searchParams } = new URL(request.url);
@@ -19,6 +21,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
+      requestLogger.warn({}, "Invalid payload: file required");
       return NextResponse.json({ message: "File is required" }, { status: 400 });
     }
 
@@ -29,6 +32,7 @@ export async function POST(request: NextRequest) {
     ];
 
     if (!allowedFileType.includes(file.type)) {
+      requestLogger.warn({ fileType: file.type }, "Invalid file type");
       return NextResponse.json(
         { message: "Only .xlsx, .xls, and .csv files are allowed." },
         { status: 400 },
@@ -120,6 +124,10 @@ export async function POST(request: NextRequest) {
           ),
         ).length;
 
+        requestLogger.warn(
+          { totalRows: normalizedRows.length, invalidCount: invalidRows.length, validateOnly },
+          "Faculty bulk upload validation failed",
+        );
         return NextResponse.json(
           {
             success: false,
@@ -134,6 +142,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      requestLogger.info(
+        { totalRows: normalizedRows.length, validData: validRows.length, validateOnly },
+        "Faculty bulk upload validation succeeded",
+      );
       return NextResponse.json({
         success: true,
         preview: true,
@@ -146,6 +158,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (invalidRows.length > 0 || finalValidRows.length === 0) {
+      requestLogger.warn(
+        { invalidCount: invalidRows.length, finalValidCount: finalValidRows.length },
+        "Faculty bulk upload import blocked",
+      );
       return NextResponse.json(
         {
           success: false,
@@ -179,11 +195,13 @@ export async function POST(request: NextRequest) {
 
     await Faculty.insertMany(preparedFaculty);
 
+    requestLogger.info({ importedCount: finalValidRows.length }, "Faculty bulk upload completed successfully");
     return NextResponse.json({
       success: true,
       message: `${finalValidRows.length} faculty records imported successfully`,
     });
   } catch (error) {
+    requestLogger.error({ err: error }, "Faculty bulk upload failed");
     console.error("Error in faculty bulk upload", error);
     return NextResponse.json(
       { success: false, message: "Error in faculty bulk upload" },

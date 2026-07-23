@@ -4,8 +4,10 @@ import { Subject } from "@/models/subject.model";
 import { User } from "@/models/user";
 import { Enrollment } from "@/models/enrollement.model";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -54,9 +56,11 @@ export async function GET() {
       smartEquipped: 0,
     };
 
+    requestLogger.info({ count: data.length }, "Classes fetched successfully");
+
     return NextResponse.json({ success: true, data, stats });
   } catch (error) {
-    console.error("Error fetching classes", error);
+    requestLogger.error({ err: error }, "Failed to fetch classes");
     return NextResponse.json(
       { success: false, message: "Failed to fetch classes" },
       { status: 500 },

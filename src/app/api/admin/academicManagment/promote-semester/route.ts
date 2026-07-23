@@ -1,9 +1,11 @@
 import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import {NextResponse, NextRequest} from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 export async function POST(request:NextRequest) {
+    const requestLogger = createRequestLogger();
 
     try {
 
@@ -14,6 +16,7 @@ export async function POST(request:NextRequest) {
         const {semester,section, department, batch,} = body;
 
         if(!semester || !section || !department || !batch){
+            requestLogger.warn({ semester, section, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
                 {
@@ -32,6 +35,7 @@ export async function POST(request:NextRequest) {
         })
 
         if(!user){
+            requestLogger.warn({ semester, section, department, batch }, "Semester promotion update failed");
             console.log("Error in getting User detail")
 
             return NextResponse.json(
@@ -45,6 +49,10 @@ export async function POST(request:NextRequest) {
 
         console.log("Updated Info are:", user)
 
+        requestLogger.info(
+            { semester, section, department, batch, modifiedCount: user.modifiedCount },
+            "Students promoted successfully",
+        );
         return NextResponse.json(
             {
                 success: true,
@@ -56,6 +64,7 @@ export async function POST(request:NextRequest) {
 
         
     } catch (error:any) {
+            requestLogger.error({ err: error }, "Failed to promote semester");
             console.log("Error in Promoting Semester of Students", error)
             console.log("Error Message", error?.message);
             console.log("Error Stack", error?.message?.stack);

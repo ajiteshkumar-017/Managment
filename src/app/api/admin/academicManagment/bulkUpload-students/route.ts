@@ -6,10 +6,12 @@ import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import z from "zod";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 type TrackedStudentRow = z.infer<typeof studentUploadSchema> & { __originalRow: number };
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
     const { searchParams } = new URL(request.url);
@@ -20,6 +22,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
+      requestLogger.warn({}, "Invalid payload: file required");
       return Response.json({ message: "File is required" }, { status: 400 });
     }
 
@@ -30,6 +33,7 @@ export async function POST(request: NextRequest) {
     ];
 
     if (!allowedFileType.includes(file.type)) {
+      requestLogger.warn({ fileType: file.type }, "Invalid file type");
       return Response.json(
         {
           message: "Only .xlsx, .xls, and .csv files are allowed.",
@@ -217,6 +221,10 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
       messages?.some(msg => msg.includes("Duplicate"))
     )
   ).length;
+            requestLogger.warn(
+              { totalRows: normalizedRows.length, invalidCount: invalidRows.length, validateOnly },
+              "Student bulk upload validation failed",
+            );
             return NextResponse.json(
             {
                 success: false,
@@ -232,6 +240,10 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
             { status: 400 },
             );
         }
+      requestLogger.info(
+        { totalRows: normalizedRows.length, validData: validRows.length, validateOnly },
+        "Student bulk upload validation succeeded",
+      );
       return Response.json({
         success: true,
         preview: true,
@@ -243,6 +255,10 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
     }
 
     if (invalidRows.length > 0) {
+      requestLogger.warn(
+        { invalidCount: invalidRows.length },
+        "Student bulk upload import blocked",
+      );
       return NextResponse.json(
         {
           success: false,
@@ -255,6 +271,7 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
 
 
     if (finalValidRows.length === 0) {
+      requestLogger.warn({}, "No new valid rows found to insert");
       return Response.json({ success: false, message: "No new valid rows found to insert." }, { status: 400 });
     }
     const preparedUsers = finalValidRows.map((student) => {
@@ -301,6 +318,10 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
 
     console.log("")
 
+    requestLogger.info(
+      { importedCount: finalValidRows.length, totalRows: normalizedRows.length },
+      "Student bulk upload completed successfully",
+    );
     return Response.json({
       success: true,
       preview: false,
@@ -312,6 +333,7 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
     //   data: rows,
     // });
   } catch (err: any) {
+    requestLogger.error({ err }, "Student bulk upload failed");
     console.log("Error In Bulk Upload of Students", err);
 
     return NextResponse.json(

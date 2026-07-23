@@ -7,9 +7,11 @@ import {Subject} from "@/models/subject.model"
 // import mongoose from "mongoose";
 import { Enrollment } from "@/models/enrollement.model";
 import { getUser } from "@/lib/getUser";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 export async function GET(request:NextRequest){
+    const requestLogger = createRequestLogger();
     try {
         await Connect();
 
@@ -19,6 +21,7 @@ export async function GET(request:NextRequest){
 
         if(!email){
             console.error("Email not found in token data")
+            requestLogger.warn({ reason: "missing_email" }, "Course unauthorized");
             return NextResponse.json(
                 {
                     success: false,
@@ -38,6 +41,7 @@ export async function GET(request:NextRequest){
 
         if(!user){
             console.log("No User is linked with this email")
+            requestLogger.warn({ reason: "user_not_found", email }, "Course user not found");
             return NextResponse.json(
                 {
                     success: false,
@@ -111,6 +115,12 @@ export async function GET(request:NextRequest){
 
         console.log("Data for Course table", tableData)
 
+        requestLogger.info({
+            email,
+            userId: user._id,
+            courseCount: tableData.length,
+        }, "Course data fetched successfully");
+
         return NextResponse.json(
             {
                 success: true, 
@@ -124,6 +134,7 @@ export async function GET(request:NextRequest){
 
     } catch (err:any) {
         console.log("Error is happening here: ", err)
+        requestLogger.error({ err }, "Course fetch failed");
         return NextResponse.json(
             {
                 success: false,

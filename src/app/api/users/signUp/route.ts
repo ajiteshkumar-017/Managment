@@ -3,9 +3,11 @@ import Connect from "@/dbConnect/connect";
 import bcrypt from "bcryptjs";
 import { User } from "@/models/user"
 import { Student } from "@/models/student.model";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 
 export async function POST(request: NextRequest){
+    const requestLogger = createRequestLogger();
     try {
 
         await Connect();
@@ -16,6 +18,7 @@ export async function POST(request: NextRequest){
 
         if(!email || !username || !password){
             console.log("All filed are required.");
+            requestLogger.warn({ reason: "missing_fields" }, "SignUp validation failed");
             return NextResponse.json(
                 {
                     success: false,
@@ -33,6 +36,7 @@ export async function POST(request: NextRequest){
 
         if(existingUser){
             console.log("User Already Exits");
+            requestLogger.warn({ reason: "user_exists", email }, "User already exists");
             return NextResponse.json(
                 {
                     success: false,
@@ -62,6 +66,7 @@ export async function POST(request: NextRequest){
 
             if(!newUser){
                 console.log("Error in Creating User");
+                requestLogger.warn({ reason: "user_create_failed", email }, "Failed to create user");
                 return NextResponse.json(
                     {
                         success: false,
@@ -84,6 +89,7 @@ export async function POST(request: NextRequest){
 
             if(!newStudentUser){
                 console.log("Error in Creating User");
+                requestLogger.warn({ reason: "student_create_failed", userId: newUser._id }, "Failed to create student");
                 return NextResponse.json(
                     {
                         success: false,
@@ -95,7 +101,14 @@ export async function POST(request: NextRequest){
                 )
             }
             console.log("New Student User",newStudentUser)
-            console.log("Succesfully Signed in")
+            console.log("Succesfully Signed in");
+            requestLogger.info({
+                studentId: newStudentUser._id,
+                userId: newUser._id,
+                department: newStudentUser.department,
+                email: newUser.email,
+            }, "SignUp Completed Successfully");
+            
 
 
 
@@ -107,7 +120,8 @@ export async function POST(request: NextRequest){
             },{status: 200})
         
     } catch (error:any) {
-        console.log("Server Error, Error in SignUp Backend", error)
+        console.log("Server Error, Error in SignUp Backend", error);
+        requestLogger.error({ err: error }, "Failed to create student");
         return NextResponse.json(
             {
                 success: false,

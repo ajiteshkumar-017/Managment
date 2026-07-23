@@ -2,8 +2,10 @@ import Connect from "@/dbConnect/connect";
 import { Faculty } from "@/models/faculty.model";
 import { User } from "@/models/user";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -34,9 +36,11 @@ export async function GET() {
       resigned: data.filter((f) => f.status === "Resigned").length,
     };
 
+    requestLogger.info({ count: data.length }, "Faculty fetched successfully");
+
     return NextResponse.json({ success: true, data, stats });
   } catch (error) {
-    console.error("Error fetching faculty list", error);
+    requestLogger.error({ err: error }, "Failed to fetch faculty");
     return NextResponse.json(
       { success: false, message: "Failed to fetch faculty list" },
       { status: 500 },

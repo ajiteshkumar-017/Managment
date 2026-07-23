@@ -5,6 +5,7 @@ import { Subject } from "@/models/subject.model";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { Faculty } from "@/models/faculty.model";
 import { User } from "@/models/user";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 type Params = {
   params: Promise<{ department: string; semester: string; name: string }>;
@@ -12,6 +13,7 @@ type Params = {
 
 /** Subject detail page — performance + faculty + HOD */
 export async function GET(_request: NextRequest, { params }: Params) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -26,6 +28,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const subjectName = decodeURIComponent(rawName || "").trim();
 
     if (!department || !semester || !subjectName) {
+      requestLogger.warn(
+        { department, semester, subjectName },
+        "Department, semester and subject are required",
+      );
       return NextResponse.json(
         { success: false, message: "Department, semester and subject are required" },
         { status: 400 },
@@ -45,6 +51,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
       }).lean());
 
     if (!resolvedSubject) {
+      requestLogger.warn(
+        { department, semester, subjectName },
+        "Subject not found",
+      );
       return NextResponse.json(
         { success: false, message: "Subject not found" },
         { status: 404 },
@@ -123,6 +133,11 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const hod = (hodFaculty as any)?.userId?.username || "—";
     const hodEmail = (hodFaculty as any)?.userId?.email || "";
 
+    requestLogger.info(
+      { department, semester, subjectName, passRate, students: total },
+      "Subject results fetched",
+    );
+
     return NextResponse.json({
       success: true,
       data: {
@@ -144,7 +159,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error("Error fetching subject results", error);
+    requestLogger.error({ err: error }, "Failed to fetch subject results");
     return NextResponse.json(
       { success: false, message: "Failed to fetch subject results" },
       { status: 500 },

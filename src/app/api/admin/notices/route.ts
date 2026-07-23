@@ -2,8 +2,10 @@ import Connect from "@/dbConnect/connect";
 import { Notice } from "@/models/notice.model";
 import { User } from "@/models/user";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -41,9 +43,11 @@ export async function GET() {
       upcoming: data.filter((n) => n.status === "Upcoming").length,
     };
 
+    requestLogger.info({ count: data.length }, "Notices fetched successfully");
+
     return NextResponse.json({ success: true, data, stats });
   } catch (error) {
-    console.error("Error fetching notices", error);
+    requestLogger.error({ err: error }, "Failed to fetch notices");
     return NextResponse.json(
       { success: false, message: "Failed to fetch notices" },
       { status: 500 },

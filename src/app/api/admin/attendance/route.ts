@@ -7,8 +7,10 @@ import { Subject } from "@/models/subject.model";
 import { Student } from "@/models/student.model";
 import { User } from "@/models/user";
 import { NextResponse } from "next/server";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET() {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -140,6 +142,15 @@ export async function GET() {
       createdAt: { $gte: monthStart },
     });
 
+    requestLogger.info(
+      {
+        sessionCount: sessions.length,
+        overallRate,
+        subjectAlertCount: subjectAlerts.length,
+      },
+      "Attendance data fetched successfully",
+    );
+
     return NextResponse.json({
       success: true,
       data: {
@@ -159,7 +170,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching attendance stats", error);
+    requestLogger.error({ err: error }, "Failed to fetch attendance data");
     return NextResponse.json(
       { success: false, message: "Failed to fetch attendance data" },
       { status: 500 },

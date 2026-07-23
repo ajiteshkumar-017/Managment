@@ -11,6 +11,7 @@ import {
 import { NextResponse, NextRequest } from "next/server";
 import Connect from "@/dbConnect/connect";
 import { ExamResult } from "@/models/exam.model";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 async function recentActivity() {
   const [students, notices, results] = await Promise.all([
@@ -106,6 +107,7 @@ async function attendanceOverview() {
 }
 
 export async function GET(_request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
 
@@ -131,6 +133,16 @@ export async function GET(_request: NextRequest) {
       attendanceOverview(),
     ]);
 
+    requestLogger.info(
+      {
+        totalStudents: totalStudent,
+        totalFaculty,
+        totalSubjects: totalSubject,
+        totalClasses,
+      },
+      "Dashboard data fetched successfully",
+    );
+
     return NextResponse.json({
       success: true,
       message: "Dashboard Data",
@@ -150,7 +162,7 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching dashboard data", error);
+    requestLogger.error({ err: error }, "Failed to fetch dashboard data");
     return NextResponse.json(
       { success: false, error: "Failed to fetch dashboard data" },
       { status: 500 },

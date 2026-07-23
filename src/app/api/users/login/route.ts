@@ -5,6 +5,7 @@ import { User } from "@/models/user"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 import { SignJWT } from 'jose'
+import { createRequestLogger } from "@/lib/requestLogger";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ console.log("MongoDB URL:", process.env.MONGODB_URL!);
 
 
 export async function POST(request: NextRequest){
+    const requestLogger = createRequestLogger();
     try {
         console.log("Coming to Login Backend");
          await Connect();
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest){
 
         if(!email || !password){
             console.log("All field are required");
+            requestLogger.warn({ reason: "missing_fields" }, "Login validation failed");
             return NextResponse.json(
                 {
                     success: false,
@@ -52,6 +55,7 @@ export async function POST(request: NextRequest){
 
         if(!user){
             console.log("Invalid Credential. Please Try again")
+            requestLogger.warn({ reason: "user_not_found", email }, "Invalid login credentials");
             return NextResponse.json(
                 {
                     success: false,
@@ -68,6 +72,7 @@ export async function POST(request: NextRequest){
 
         if (!isPasswordValid){
             console.log("Invalid Credential, Please try again.")
+            requestLogger.warn({ reason: "invalid_password", email }, "Invalid login credentials");
             return NextResponse.json(
                 {
                     success: false,
@@ -124,8 +129,11 @@ export async function POST(request: NextRequest){
                 });
 
         console.log("Generated The response")   
-        
-        
+        requestLogger.info({
+            userId: user._id,
+            email: user.email,
+            role: user.role,
+        }, "SignIn Completed Successfully");
 
         return response;
 
@@ -151,6 +159,7 @@ export async function POST(request: NextRequest){
         console.log("Error in Login BAckend", error);
         console.error("JWT_SECRET value is:", process.env.JWT_SECRET!);
         console.error("The actual login error is:", error);
+        requestLogger.error({ err: error }, "Login failed");
 
             return NextResponse.json({
             errorName: error.name || "RuntimeError",

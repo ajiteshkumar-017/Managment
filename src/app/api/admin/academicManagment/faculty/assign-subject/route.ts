@@ -2,14 +2,20 @@ import Connect from "@/dbConnect/connect";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername, resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
     const body = await request.json();
     const { facultyUsername, subjectCode, semester, section, department, academicYear } = body;
 
     if (!facultyUsername || !subjectCode || !semester || !department || !academicYear) {
+      requestLogger.warn(
+        { facultyUsername, subjectCode, semester, department, academicYear },
+        "Invalid payload",
+      );
       return NextResponse.json(
         { success: false, message: "All required fields must be provided" },
         { status: 400 },
@@ -20,6 +26,7 @@ export async function POST(request: NextRequest) {
     const subject = await resolveSubjectByCode(subjectCode);
 
     if (!faculty || !subject) {
+      requestLogger.warn({ facultyUsername, subjectCode }, "Faculty or subject not found");
       return NextResponse.json(
         { success: false, message: "Faculty or subject not found" },
         { status: 404 },
@@ -35,6 +42,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
+      requestLogger.warn({ facultyUsername, subjectCode, semester, academicYear }, "Faculty already assigned to subject");
       return NextResponse.json(
         { success: false, message: "This faculty is already assigned to this subject" },
         { status: 409 },
@@ -50,12 +58,17 @@ export async function POST(request: NextRequest) {
       academicYear,
     });
 
+    requestLogger.info(
+      { facultyUsername, subjectCode, semester, department, academicYear },
+      "Faculty assigned to subject successfully",
+    );
     return NextResponse.json({
       success: true,
       message: "Faculty assigned to subject successfully",
       data: assignment,
     });
   } catch (error) {
+    requestLogger.error({ err: error }, "Failed to assign faculty to subject");
     console.error("Error assigning faculty to subject", error);
     return NextResponse.json(
       { success: false, message: "Failed to assign faculty to subject" },

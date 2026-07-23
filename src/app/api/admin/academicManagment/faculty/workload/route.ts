@@ -3,14 +3,17 @@ import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.mode
 import { Class } from "@/models/class.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername } from "@/app/api/admin/academicManagment/utils";
+import { createRequestLogger } from "@/lib/requestLogger";
 
 export async function GET(request: NextRequest) {
+  const requestLogger = createRequestLogger();
   try {
     await Connect();
     const { searchParams } = new URL(request.url);
     const facultyUsername = searchParams.get("facultyUsername");
 
     if (!facultyUsername) {
+      requestLogger.warn({}, "Invalid payload: facultyUsername required");
       return NextResponse.json(
         { success: false, message: "Faculty username is required" },
         { status: 400 },
@@ -19,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     const faculty = await resolveFacultyByUsername(facultyUsername);
     if (!faculty) {
+      requestLogger.warn({ facultyUsername }, "Faculty not found");
       return NextResponse.json(
         { success: false, message: "Faculty not found" },
         { status: 404 },
@@ -30,6 +34,14 @@ export async function GET(request: NextRequest) {
       Class.find({ facultyId: faculty.userId }).populate("subjectId", "subjectName subjectCode"),
     ]);
 
+    requestLogger.info(
+      {
+        facultyUsername,
+        subjectAssignments: subjectAssignments.length,
+        classAssignments: classAssignments.length,
+      },
+      "Faculty workload fetched successfully",
+    );
     return NextResponse.json({
       success: true,
       data: {
@@ -41,6 +53,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    requestLogger.error({ err: error }, "Failed to fetch faculty workload");
     console.error("Error fetching faculty workload", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch faculty workload" },
