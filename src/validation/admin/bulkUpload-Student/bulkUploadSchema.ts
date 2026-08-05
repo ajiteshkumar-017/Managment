@@ -8,7 +8,6 @@ export const studentUploadSchema = z.object({
 
     rollNo: z.string({ message: "Roll number is required" }).trim().min(6, "Roll number is required"),
 
-
     semester: z.coerce.number({ message: "Semester is required" }).min(1).max(8),
 
     section: z.string({ message: "Section is required" }).trim().min(1),

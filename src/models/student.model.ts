@@ -1,20 +1,29 @@
 import mongoose, {Schema, Document, models, model} from "mongoose";
+import {
+    DEPARTMENT,
+    SEMESTER,
+    STATUS,
+    type DepartmentType,
+    type SemesterType,
+    type StatusType,
+} from "@/constant/Constant";
 
 export interface IStudent extends Document {
     userId: mongoose.Types.ObjectId,
     rollNumber : string,
-    department : string,
-    semester: number,
-    status: string,
+    department : DepartmentType,
+    semester: SemesterType,
+    status: StatusType,
     section: string,
     batch: string,
-    admissionYear: string
+    admissionYear: string,
+    lastPromoted: Date,
 }
 
 const studentSchema = new Schema(
     {
         userId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,   
             ref: "User"
         },
         rollNumber: {
@@ -23,28 +32,15 @@ const studentSchema = new Schema(
         },
         department : {
             type: String,
+            enum: DEPARTMENT,
             required: false
         },
         semester: {
             type: Number,
+            enum: SEMESTER,
             required: false
         },
         section:{
-            type: String,
-            required: false
-        },
-        lastSem:{
-
-        },
-
-        examStatus:{
-            type: String,
-            enum: ["passed", "back", "failed", "not_attended"],
-            default: "not_attended",
-            required: false
-        },
-
-        status: {
             type: String,
             required: false
         },
@@ -55,6 +51,11 @@ const studentSchema = new Schema(
         admissionYear: {
             type: String,
             required: false
+        },
+        status: {
+            type: String,
+            enum: STATUS,
+            required: false,
         },
         lastPromoted: {
             type: Date,

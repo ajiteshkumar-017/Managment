@@ -18,6 +18,7 @@ export async function GET() {
       department: s.department || "—",
       credits: s.credits ?? 0,
       totalClasses: s.totalClasses ?? 0,
+      IspracticalSubject: Boolean(s.IspracticalSubject),
       status: s.status === "inactive" ? "Inactive" : "Active",
       type: "Core",
     }));

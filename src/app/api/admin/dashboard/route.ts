@@ -10,14 +10,14 @@ import {
 } from "@/models/index";
 import { NextResponse, NextRequest } from "next/server";
 import Connect from "@/dbConnect/connect";
-import { ExamResult } from "@/models/exam.model";
+import { ResultBatch } from "@/models/resultBatch.model";
 import { createRequestLogger } from "@/lib/requestLogger";
 
 async function recentActivity() {
   const [students, notices, results] = await Promise.all([
     Student.find().sort({ createdAt: -1 }).limit(3).lean(),
     Notice.find().sort({ createdAt: -1 }).limit(2).lean(),
-    ExamResult.find().sort({ createdAt: -1 }).limit(2).lean(),
+    ResultBatch.find().sort({ createdAt: -1 }).limit(2).lean(),
   ]);
 
   const activities: string[] = [];
@@ -29,7 +29,7 @@ async function recentActivity() {
     activities.push(`Notice published: ${n.title}`);
   }
   for (const r of results) {
-    activities.push(`Result ${r.examResult || "updated"} (${r.examType || "exam"})`);
+    activities.push(`Result ${r.title || "updated"} (${r.ExamType || "exam"})`);
   }
 
   return activities.slice(0, 6);

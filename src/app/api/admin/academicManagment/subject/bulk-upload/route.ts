@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
       semester: row.Semester,
       department: row.Department,
       totalClasses: row.TotalClasses ?? 0,
+      IspracticalSubject:
+        row.IspracticalSubject ?? row.IsPracticalSubject ?? row.Practical ?? false,
     }));
 
     const validRows: TrackedSubjectRow[] = [];
@@ -174,10 +176,11 @@ export async function POST(request: NextRequest) {
       subjectCode: subject.subjectCode.trim().toUpperCase(),
       subjectName: subject.subjectName,
       credits: subject.credits,
-      semester: String(subject.semester),
+      semester: Number(subject.semester),
       department: subject.department,
       totalClasses: subject.totalClasses || 0,
-      status: "active",
+      status: "active" as const,
+      IspracticalSubject: Boolean(subject.IspracticalSubject),
     }));
 
     await Subject.insertMany(preparedSubjects);

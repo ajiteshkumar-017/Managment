@@ -1,13 +1,22 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
+import {
+    DEPARTMENT,
+    SEMESTER,
+    STATUS,
+    type DepartmentType,
+    type SemesterType,
+    type StatusType,
+} from "@/constant/Constant";
 
 export interface ISubject extends Document {
-    semester: string,
+    semester: SemesterType,
     credits: number,
     subjectCode: string,
     subjectName: string,
     totalClasses: number,
-    department: string,
-    status: "active" | "inactive"
+    department: DepartmentType,
+    IspracticalSubject: boolean,
+    status: StatusType
 }
 
 const subjectSchema = new Schema(
@@ -17,7 +26,8 @@ const subjectSchema = new Schema(
             required: true
         },
         semester: {
-            type:String,
+            type: Number,
+            enum: SEMESTER,
             required: true
         },
         subjectCode: {
@@ -35,12 +45,17 @@ const subjectSchema = new Schema(
         },
         department: {
             type: String,
+            enum: DEPARTMENT,
             required: true,
             default: "CSE"
         },
+        IspracticalSubject: {
+            type: Boolean,
+            required: true
+        },
         status: {
             type: String,
-            enum: ["active", "inactive"],
+            enum: STATUS,
             default: "active"
         }
     }, { timestamps: true }

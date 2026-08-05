@@ -43,15 +43,23 @@ const navigation = [
   const router = useRouter()
   const pathname = usePathname()
 
-  const NavItem = ({ info }: { info: typeof navigation[0] }) => {
-    const isActive = pathname === info.link
+  const NavItem = ({
+    info,
+    collapsed = false,
+  }: {
+    info: typeof navigation[0]
+    collapsed?: boolean
+  }) => {
+    const isActive = pathname === info.link || pathname.startsWith(info.link + "/")
     return (
       <div
         key={info.link}
-        onClick={() => { router.push(info.link); setOpen(true) }}
+        title={collapsed ? info.name : undefined}
+        onClick={() => { router.push(info.link); if (!collapsed) setOpen(true) }}
         className={`
-          flex items-center gap-3 py-2.5 px-3 rounded-xl cursor-pointer
+          flex items-center rounded-xl cursor-pointer
           transition-all duration-150 font-comfortaa
+          ${collapsed ? "justify-center p-2.5" : "gap-3 py-2.5 px-3"}
           ${isActive
             ? "bg-indigo-50 text-indigo-600"
             : "text-slate-500 hover:bg-slate-100 hover:text-indigo-500"
@@ -61,7 +69,7 @@ const navigation = [
         <span className={isActive ? "text-indigo-600" : "text-slate-400"}>
           {info.icon}
         </span>
-        <h3 className="font-semibold text-sm">{info.name}</h3>
+        {!collapsed && <h3 className="font-semibold text-sm">{info.name}</h3>}
       </div>
     )
   }
@@ -73,7 +81,7 @@ const navigation = [
         <aside className="hidden lg:flex flex-col sticky top-0 min-h-screen w-56 shrink-0 border-r border-slate-100 shadow-sm bg-white px-4 py-5 self-stretch">
           
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2 text-indigo-600">
+            <div className="flex items-center gap-2 text-indigo-600 ml-8">
               <TrendingUp size={24} />
               <h2 className="font-comfortaa font-bold text-base text-slate-800">Bubble</h2>
             </div>
@@ -93,15 +101,23 @@ const navigation = [
           </nav>
         </aside>
       ) : (
-        
-        <div className="hidden lg:flex flex-col items-center py-5 px-2 shrink-0 bg-white border-r border-slate-100 shadow-sm self-stretch">
-          <button
-            onClick={() => setOpen(true)}
-            className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
-          >
-            <ArrowRightFromLine size={16} className="text-slate-500" />
-          </button>
-        </div>
+        <aside className="hidden lg:flex flex-col sticky top-0 min-h-screen w-14 shrink-0 border-r border-slate-100 shadow-sm bg-white px-2 py-5 self-stretch">
+          <div className="flex flex-col items-center mb-6">
+            <button
+              onClick={() => setOpen(true)}
+              title="Expand sidebar"
+              className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+            >
+              <ArrowRightFromLine size={16} className="text-slate-500" />
+            </button>
+          </div>
+
+          <nav className="flex flex-col gap-1 items-center">
+            {navigation.map((info) => (
+              <NavItem key={info.link} info={info} collapsed />
+            ))}
+          </nav>
+        </aside>
       )}
 
      

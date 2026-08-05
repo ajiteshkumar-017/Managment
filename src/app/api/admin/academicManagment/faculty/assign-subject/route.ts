@@ -3,6 +3,7 @@ import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.mode
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername, resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { SemesterType } from "@/constant/Constant";
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -33,10 +34,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const semesterNum = Number(semester) as SemesterType;
+
     const existing = await SubjectFacultyAssignment.findOne({
       facultyId: faculty._id,
       subjectId: subject._id,
-      semester: String(semester),
+      semester: semesterNum,
       section: section || "ALL",
       academicYear,
     });
@@ -52,7 +55,7 @@ export async function POST(request: NextRequest) {
     const assignment = await SubjectFacultyAssignment.create({
       facultyId: faculty._id,
       subjectId: subject._id,
-      semester: String(semester),
+      semester: semesterNum,
       section: section || "ALL",
       department,
       academicYear,

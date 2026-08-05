@@ -1,11 +1,12 @@
 import mongoose, {Schema, Document,model, models} from "mongoose";
+import { DEPARTMENT, type DepartmentType } from "@/constant/Constant";
 
 
 interface IFaculty extends Document{
     userId: mongoose.Types.ObjectId,
     designation: string,
     salary: number,
-    department: string,
+    department: DepartmentType,
     status: string,
     joinedAt: Date,
     lastPromoted: string,
@@ -29,7 +30,8 @@ const facultySchema = new Schema(
             type: Number
         },
         department: {
-            type: String
+            type: String,
+            enum: DEPARTMENT,
         },
         status: {
             type: String

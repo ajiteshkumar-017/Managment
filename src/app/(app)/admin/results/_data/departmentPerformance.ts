@@ -1,7 +1,7 @@
 export type PerformanceLevel = "poor" | "warning" | "good" | "none";
 
 export type SemesterPerformance = {
-  semester: string;
+  semester: number;
   students: number;
   subjects: number;
   passRate: number;
@@ -136,24 +136,24 @@ const DEPARTMENT_OVERVIEWS: Record<string, DepartmentOverview> = {
 
 const SEMESTERS_BY_DEPT: Record<string, SemesterPerformance[]> = {
   AE: [
-    { semester: "1", students: 32, subjects: 6, passRate: 82.4, avgCgpa: 7.6, failed: 6 },
-    { semester: "2", students: 30, subjects: 6, passRate: 78.1, avgCgpa: 7.3, failed: 7 },
-    { semester: "3", students: 31, subjects: 6, passRate: 68.2, avgCgpa: 6.8, failed: 10 },
-    { semester: "4", students: 29, subjects: 6, passRate: 71.5, avgCgpa: 7.0, failed: 8 },
-    { semester: "5", students: 33, subjects: 6, passRate: 64.9, avgCgpa: 6.5, failed: 12 },
-    { semester: "6", students: 31, subjects: 6, passRate: 76.8, avgCgpa: 7.2, failed: 7 },
-    { semester: "7", students: 32, subjects: 5, passRate: 69.4, avgCgpa: 6.9, failed: 10 },
-    { semester: "8", students: 31, subjects: 4, passRate: 85.2, avgCgpa: 7.8, failed: 5 },
+    { semester: 1, students: 32, subjects: 6, passRate: 82.4, avgCgpa: 7.6, failed: 6 },
+    { semester: 2, students: 30, subjects: 6, passRate: 78.1, avgCgpa: 7.3, failed: 7 },
+    { semester: 3, students: 31, subjects: 6, passRate: 68.2, avgCgpa: 6.8, failed: 10 },
+    { semester: 4, students: 29, subjects: 6, passRate: 71.5, avgCgpa: 7.0, failed: 8 },
+    { semester: 5, students: 33, subjects: 6, passRate: 64.9, avgCgpa: 6.5, failed: 12 },
+    { semester: 6, students: 31, subjects: 6, passRate: 76.8, avgCgpa: 7.2, failed: 7 },
+    { semester: 7, students: 32, subjects: 5, passRate: 69.4, avgCgpa: 6.9, failed: 10 },
+    { semester: 8, students: 31, subjects: 4, passRate: 85.2, avgCgpa: 7.8, failed: 5 },
   ],
   CSE: [
-    { semester: "1", students: 70, subjects: 6, passRate: 91.2, avgCgpa: 8.4, failed: 6 },
-    { semester: "2", students: 72, subjects: 6, passRate: 90.5, avgCgpa: 8.3, failed: 7 },
-    { semester: "3", students: 68, subjects: 6, passRate: 93.1, avgCgpa: 8.7, failed: 5 },
-    { semester: "4", students: 71, subjects: 6, passRate: 92.8, avgCgpa: 8.6, failed: 5 },
-    { semester: "5", students: 69, subjects: 6, passRate: 89.4, avgCgpa: 8.2, failed: 7 },
-    { semester: "6", students: 70, subjects: 6, passRate: 94.0, avgCgpa: 8.9, failed: 4 },
-    { semester: "7", students: 72, subjects: 5, passRate: 91.7, avgCgpa: 8.5, failed: 6 },
-    { semester: "8", students: 73, subjects: 4, passRate: 95.2, avgCgpa: 9.0, failed: 4 },
+    { semester: 1, students: 70, subjects: 6, passRate: 91.2, avgCgpa: 8.4, failed: 6 },
+    { semester: 2, students: 72, subjects: 6, passRate: 90.5, avgCgpa: 8.3, failed: 7 },
+    { semester: 3, students: 68, subjects: 6, passRate: 93.1, avgCgpa: 8.7, failed: 5 },
+    { semester: 4, students: 71, subjects: 6, passRate: 92.8, avgCgpa: 8.6, failed: 5 },
+    { semester: 5, students: 69, subjects: 6, passRate: 89.4, avgCgpa: 8.2, failed: 7 },
+    { semester: 6, students: 70, subjects: 6, passRate: 94.0, avgCgpa: 8.9, failed: 4 },
+    { semester: 7, students: 72, subjects: 5, passRate: 91.7, avgCgpa: 8.5, failed: 6 },
+    { semester: 8, students: 73, subjects: 4, passRate: 95.2, avgCgpa: 9.0, failed: 4 },
   ],
 };
 
@@ -197,7 +197,7 @@ const SUBJECTS_BY_DEPT_SEM: Record<string, Record<string, SubjectPerformance[]>>
 
 function defaultSemesters(): SemesterPerformance[] {
   return Array.from({ length: 8 }, (_, i) => ({
-    semester: String(i + 1),
+    semester: i + 1,
     students: 40,
     subjects: 6,
     passRate: 80 + (i % 3) * 2,

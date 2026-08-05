@@ -2,6 +2,12 @@ import {NextRequest, NextResponse} from "next/server"
 import { Student } from "@/models/student.model"
 import Connect from "@/dbConnect/connect";
 import { createRequestLogger } from "@/lib/requestLogger";
+import {
+    DEPARTMENT,
+    SEMESTER,
+    type DepartmentType,
+    type SemesterType,
+} from "@/constant/Constant";
 
 export async function POST(request:NextRequest){
     const requestLogger = createRequestLogger();
@@ -12,8 +18,12 @@ export async function POST(request:NextRequest){
         const body = await request.json();
 
         const {semester, section, department, batch} = body;
+        const semesterTyped = SEMESTER.find((s) => s === Number(semester));
+        const departmentTyped = DEPARTMENT.find(
+            (d) => d === String(department || "").toUpperCase(),
+        ) as DepartmentType | undefined;
 
-        if(!semester || !section || !department || !batch){
+        if(!semesterTyped || !section || !departmentTyped || !batch){
             requestLogger.warn({ semester, section, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
@@ -27,20 +37,22 @@ export async function POST(request:NextRequest){
             )
         }
 
-        const result = await Student.updateMany(
-            {
-                department,
-                semester,
-                section,
-                batch,
-                status : "On Hold",
+        const sectionKey = String(section).toUpperCase();
+        const filter: Record<string, unknown> = {
+            department: departmentTyped,
+            semester: semesterTyped as SemesterType,
+            batch,
+            status: "inactive",
+        };
+        if (sectionKey !== "ALL") {
+            filter.section = section;
+        }
+
+        const result = await Student.updateMany(filter, {
+            $set: {
+                status: "active",
             },
-            {
-                $set : {
-                    status: "Active"
-                }
-            }
-        )
+        });
 
         if(!result){
             requestLogger.warn({ semester, section, department, batch }, "Semester activation update failed");

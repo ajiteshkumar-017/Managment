@@ -26,11 +26,11 @@ import toast from "react-hot-toast";
 import axios from "axios";
 
 const quickActions = [
-  { heading: "Add Student", link: "/admin/students" },
-  { heading: "Add Faculty", link: "/admin/faculty" },
-  { heading: "Add Subject", link: "/admin/subjects" },
-  { heading: "Create Classes", link: "/admin/classes" },
-  { heading: "Publish Notice", link: "/admin/notices" },
+  { heading: "Add Student", link: "/admin/students?add=1" },
+  { heading: "Add Faculty", link: "/admin/faculty?add=1" },
+  { heading: "Add Subject", link: "/admin/subjects?add=1" },
+  { heading: "Create Classes", link: "/admin/classes?add=1" },
+  { heading: "Publish Notice", link: "/admin/notices?add=1" },
 ];
 
 function AdminDashboard() {

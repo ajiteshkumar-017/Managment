@@ -2,6 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
+import AdminModal, {
+  adminFieldClass,
+  adminLabelClass,
+  adminPrimaryBtnClass,
+  adminSecondaryBtnClass,
+} from "@/utils/Admin/AdminModal";
 import {
   BookOpenCheck,
   Building2,
@@ -14,6 +20,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type SubjectRow = {
   subjectCode: string;
@@ -23,6 +30,7 @@ type SubjectRow = {
   status: "Active" | "Inactive";
   type: "Core" | "Elective";
   credits: number;
+  IspracticalSubject: boolean;
 };
 
 type SubjectStats = {
@@ -55,8 +63,34 @@ const PAGE_SIZE = 5;
 
 const formatCount = (n: number) => n.toLocaleString();
 
+type ApiSubject = {
+  code?: string;
+  name?: string;
+  subjectCode?: string;
+  subjectName?: string;
+  semester?: string | number;
+  department?: string;
+  credits?: number;
+  status?: string;
+  type?: string;
+  IspracticalSubject?: boolean;
+};
+
 function normalizeSubjectType(type?: string): SubjectRow["type"] {
   return type?.toLowerCase() === "elective" ? "Elective" : "Core";
+}
+
+function mapApiSubjectToRow(s: ApiSubject): SubjectRow {
+  return {
+    subjectCode: s.code || s.subjectCode || "—",
+    subjectName: s.name || s.subjectName || "—",
+    semester: String(s.semester ?? ""),
+    department: s.department || "—",
+    credits: s.credits ?? 0,
+    status: s.status === "Inactive" ? "Inactive" : "Active",
+    type: normalizeSubjectType(s.type),
+    IspracticalSubject: Boolean(s.IspracticalSubject),
+  };
 }
 
 function statusClass(status: SubjectRow["status"]) {
@@ -72,6 +106,9 @@ function typeClass(type: SubjectRow["type"]) {
 }
 
 function AdminSubjects() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
@@ -97,6 +134,7 @@ function AdminSubjects() {
     semester: "1",
     credits: "4",
     status: "Active" as SubjectRow["status"],
+    IspracticalSubject: false,
   });
 
   useEffect(() => {
@@ -106,42 +144,82 @@ function AdminSubjects() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  const refreshSubjects = async () => {
+    const list = await axios.get("/api/admin/subjects");
+    if (!list.data?.success) return false;
+    const data: SubjectRow[] = (list.data.data || []).map(mapApiSubjectToRow);
+    setRows(data);
+    setStats({
+      total: list.data.stats?.total ?? data.length,
+      active: list.data.stats?.active ?? 0,
+      inactive: list.data.stats?.inactive ?? 0,
+      departments: list.data.stats?.departments ?? 0,
+    });
+    return true;
+  };
+
+  const handleUpdateSubject = async () => {
+    try {
+      const res = await axios.patch(
+        "/api/admin/academicManagment/subject/update",
+        {
+          subjectCode: selectedSubject?.subjectCode,
+          newSubjectCode: form.subjectCode.trim().toUpperCase(),
+          subjectName: form.subjectName.trim(),
+          credits: Number(form.credits),
+          semester: Number(form.semester),
+          department: form.department,
+          IspracticalSubject: form.IspracticalSubject,
+        },
+      );
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Failed to update subject");
+      }
+      toast.success("Subject updated");
+      setEdit(false);
+      await refreshSubjects();
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to update subject";
+      toast.error(message);
+    }
+  };
+
+  const handleAddSubject = async () => {
+    try {
+      const res = await axios.post("/api/admin/academicManagment/subject", {
+        subjectCode: form.subjectCode.trim().toUpperCase(),
+        subjectName: form.subjectName.trim(),
+        credits: Number(form.credits),
+        semester: Number(form.semester),
+        department: form.department,
+        IspracticalSubject: form.IspracticalSubject,
+      });
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Failed to add subject");
+      }
+      toast.success("Subject added");
+      setShowModal(false);
+      await refreshSubjects();
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to add subject";
+      toast.error(message);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("/api/admin/subjects");
-        if (!res.data?.success) {
-          throw new Error(res.data?.message || "Failed to fetch subjects");
-        }
-        const data: SubjectRow[] = (res.data.data || []).map(
-          (s: {
-            code?: string;
-            name?: string;
-            subjectCode?: string;
-            subjectName?: string;
-            semester?: string | number;
-            department?: string;
-            credits?: number;
-            status?: string;
-            type?: string;
-          }) => ({
-            subjectCode: s.code || s.subjectCode || "—",
-            subjectName: s.name || s.subjectName || "—",
-            semester: String(s.semester ?? ""),
-            department: s.department || "—",
-            credits: s.credits ?? 0,
-            status: s.status === "Inactive" ? "Inactive" : "Active",
-            type: normalizeSubjectType(s.type),
-          }),
-        );
-        setRows(data);
-        setStats({
-          total: res.data.stats?.total ?? data.length,
-          active: res.data.stats?.active ?? 0,
-          inactive: res.data.stats?.inactive ?? 0,
-          departments: res.data.stats?.departments ?? 0,
-        });
+        const ok = await refreshSubjects();
+        if (!ok) throw new Error("Failed to fetch subjects");
       } catch (err: unknown) {
         const message =
           axios.isAxiosError(err)
@@ -258,6 +336,7 @@ function AdminSubjects() {
       semester: row.semester,
       credits: String(row.credits),
       status: row.status,
+      IspracticalSubject: row.IspracticalSubject,
     });
     setView(true);
   };
@@ -272,6 +351,7 @@ function AdminSubjects() {
       semester: row.semester,
       credits: String(row.credits),
       status: row.status,
+      IspracticalSubject: row.IspracticalSubject,
     });
     setEdit(true);
   };
@@ -285,9 +365,16 @@ function AdminSubjects() {
       semester: "1",
       credits: "4",
       status: "Active",
+      IspracticalSubject: false,
     });
     setShowModal(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    openAdd();
+    router.replace(pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   const getPagination = (page: number, total: number) => {
     const pages: (number | string)[] = [];
@@ -311,47 +398,47 @@ function AdminSubjects() {
   };
 
   const SubjectFormFields = ({ disabled = false }: { disabled?: boolean }) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Subject Code</label>
+          <label className={adminLabelClass}>Subject Code</label>
           <input
             disabled={disabled}
             value={form.subjectCode}
             onChange={(e) => setForm((p) => ({ ...p, subjectCode: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
             placeholder="CSE301"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Subject Name</label>
+          <label className={adminLabelClass}>Subject Name</label>
           <input
             disabled={disabled}
             value={form.subjectName}
             onChange={(e) => setForm((p) => ({ ...p, subjectName: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
             placeholder="Database Management Systems"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Type</label>
+          <label className={adminLabelClass}>Type</label>
           <select
             disabled={disabled}
             value={form.type}
             onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as SubjectRow["type"] }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
           >
             <option value="Core">Core</option>
             <option value="Elective">Elective</option>
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+          <label className={adminLabelClass}>Department</label>
           <select
             disabled={disabled}
             value={form.department}
             onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
           >
             {["CSE", "ME", "CE", "AE"].map((d) => (
               <option key={d} value={d}>{d}</option>
@@ -359,12 +446,12 @@ function AdminSubjects() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Semester</label>
+          <label className={adminLabelClass}>Semester</label>
           <select
             disabled={disabled}
             value={form.semester}
             onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
           >
             {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
               <option key={n} value={String(n)}>{n}</option>
@@ -372,7 +459,7 @@ function AdminSubjects() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Credits</label>
+          <label className={adminLabelClass}>Credits</label>
           <input
             disabled={disabled}
             type="number"
@@ -380,8 +467,22 @@ function AdminSubjects() {
             max={10}
             value={form.credits}
             onChange={(e) => setForm((p) => ({ ...p, credits: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className={adminFieldClass}
           />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="inline-flex w-full cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50/40">
+            <input
+              disabled={disabled}
+              type="checkbox"
+              checked={form.IspracticalSubject}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, IspracticalSubject: e.target.checked }))
+              }
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            Practical subject
+          </label>
         </div>
       </div>
     </div>
@@ -676,70 +777,60 @@ function AdminSubjects() {
         </div>
       </div>
 
-      {/* Add modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Add Subject</h3>
-              <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-slate-100 text-black">
-                <X size={22} />
-              </button>
-            </div>
-            <SubjectFormFields />
-            <button
-              type="button"
-              onClick={() => {
-                toast.success("Subject added (connect API when ready)");
-                setShowModal(false);
-              }}
-              className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-            >
-              Submit
+      <AdminModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add Subject"
+        description="Create a new subject for academic scheduling and results."
+        icon={<BookOpenCheck size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setShowModal(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleAddSubject} className={adminPrimaryBtnClass}>
+              Add Subject
             </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <SubjectFormFields />
+      </AdminModal>
 
-      {/* Edit modal */}
-      {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Edit Subject</h3>
-              <button type="button" onClick={() => setEdit(false)} className="rounded-full p-2 hover:bg-slate-100">
-                <X size={22} />
-              </button>
-            </div>
-            <SubjectFormFields />
-            <button
-              type="button"
-              onClick={() => {
-                toast.success("Subject updated (connect API when ready)");
-                setEdit(false);
-              }}
-              className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
-            >
+      <AdminModal
+        open={edit}
+        onClose={() => setEdit(false)}
+        title="Edit Subject"
+        description="Update subject details and keep records in sync."
+        icon={<Pen size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setEdit(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleUpdateSubject} className={adminPrimaryBtnClass}>
               Save Changes
             </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <SubjectFormFields />
+      </AdminModal>
 
-      {/* View modal */}
-      {view && selectedSubject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Subject Details</h3>
-              <button type="button" onClick={() => setView(false)} className="rounded-full p-2 hover:bg-slate-100">
-                <X size={22} />
-              </button>
-            </div>
-            <SubjectFormFields disabled />
-          </div>
-        </div>
-      )}
+      <AdminModal
+        open={view && Boolean(selectedSubject)}
+        onClose={() => setView(false)}
+        title="Subject Details"
+        description="Read-only preview of the selected subject."
+        icon={<Eye size={20} />}
+        footer={
+          <button type="button" onClick={() => setView(false)} className={adminSecondaryBtnClass}>
+            Close
+          </button>
+        }
+      >
+        <SubjectFormFields disabled />
+      </AdminModal>
     </div>
   );
 }

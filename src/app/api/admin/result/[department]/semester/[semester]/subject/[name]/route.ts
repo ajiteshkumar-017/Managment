@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Connect from "@/dbConnect/connect";
-import { ExamResult } from "@/models/exam.model";
+import { SubjectResult } from "@/models/subjectResult";
 import { Subject } from "@/models/subject.model";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { Faculty } from "@/models/faculty.model";
 import { User } from "@/models/user";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { SEMESTER, type SemesterType } from "@/constant/Constant";
 
 type Params = {
   params: Promise<{ department: string; semester: string; name: string }>;
@@ -26,14 +27,23 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const department = decodeURIComponent(rawDept || "").trim();
     const semester = decodeURIComponent(rawSem || "").trim();
     const subjectName = decodeURIComponent(rawName || "").trim();
+    const semesterNum = Number(semester);
+    const semesterTyped: SemesterType | undefined = SEMESTER.includes(
+      semesterNum as SemesterType,
+    )
+      ? (semesterNum as SemesterType)
+      : undefined;
 
-    if (!department || !semester || !subjectName) {
+    if (!department || !semester || !subjectName || semesterTyped === undefined) {
       requestLogger.warn(
         { department, semester, subjectName },
         "Department, semester and subject are required",
       );
       return NextResponse.json(
-        { success: false, message: "Department, semester and subject are required" },
+        {
+          success: false,
+          message: "Department, semester and subject are required",
+        },
         { status: 400 },
       );
     }
@@ -43,11 +53,13 @@ export async function GET(_request: NextRequest, { params }: Params) {
       department: { $regex: `^${escapeRegex(department)}$`, $options: "i" },
     }).lean();
 
-    // Fallback: match by name only if dept filter misses
     const resolvedSubject =
       subject ||
       (await Subject.findOne({
-        subjectName: { $regex: `^${escapeRegex(subjectName)}$`, $options: "i" },
+        subjectName: {
+          $regex: `^${escapeRegex(subjectName)}$`,
+          $options: "i",
+        },
       }).lean());
 
     if (!resolvedSubject) {
@@ -61,51 +73,56 @@ export async function GET(_request: NextRequest, { params }: Params) {
       );
     }
 
-    const subjectId = (resolvedSubject as any)._id;
+    const subjectId = resolvedSubject._id;
 
-    const rows = await ExamResult.aggregate([
-      {
-        $match: {
-          examPublishedStatus: "published",
-          subjectId,
-        },
-      },
+    const rows = await SubjectResult.aggregate([
+      { $match: { subjectId } },
       {
         $lookup: {
-          from: "students",
-          localField: "studentId",
+          from: "semesterresults",
+          localField: "semesterResultId",
           foreignField: "_id",
-          as: "studentData",
+          as: "sr",
         },
       },
-      { $unwind: "$studentData" },
+      { $unwind: "$sr" },
+      {
+        $lookup: {
+          from: "resultbatches",
+          localField: "sr.resultBatch",
+          foreignField: "_id",
+          as: "batch",
+        },
+      },
+      { $unwind: "$batch" },
       {
         $match: {
-          "studentData.department": {
+          "batch.status": "published",
+          "batch.department": {
             $regex: `^${escapeRegex(department)}$`,
             $options: "i",
           },
-          $expr: {
-            $eq: [{ $toString: "$studentData.semester" }, String(semester)],
-          },
+          "batch.semester": semesterNum,
         },
       },
     ]);
 
     const total = rows.length;
-    const passed = rows.filter((r) => r.examResult === "passed").length;
+    const passed = rows.filter((r) => r.resultStatus === "passed").length;
     const failed = rows.filter(
-      (r) => r.examResult === "failed" || r.examResult === "back",
+      (r) => r.resultStatus === "failed" || r.resultStatus === "back",
     ).length;
     const passRate = total ? Math.round((passed / total) * 1000) / 10 : 0;
+    const marksSum = rows.reduce(
+      (sum, r) => sum + (typeof r.obtainedMarks === "number" ? r.obtainedMarks : 0),
+      0,
+    );
+    const avgMarks = total ? Math.round((marksSum / total) * 10) / 10 : 0;
 
     const assignment = await SubjectFacultyAssignment.findOne({
       subjectId,
       department: { $regex: `^${escapeRegex(department)}$`, $options: "i" },
-      $or: [
-        { semester: String(semester) },
-        { semester: Number(semester) as any },
-      ],
+      semester: semesterTyped,
     })
       .populate({
         path: "facultyId",
@@ -117,7 +134,11 @@ export async function GET(_request: NextRequest, { params }: Params) {
     let faculty = "Unassigned";
     let facultyEmail = "";
 
-    const fac = (assignment as any)?.facultyId;
+    const fac = (
+      assignment as {
+        facultyId?: { userId?: { username?: string; email?: string } };
+      } | null
+    )?.facultyId;
     if (fac?.userId) {
       faculty = fac.userId.username || "Faculty";
       facultyEmail = fac.userId.email || "";
@@ -130,8 +151,11 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .populate({ path: "userId", model: User, select: "username email" })
       .lean();
 
-    const hod = (hodFaculty as any)?.userId?.username || "—";
-    const hodEmail = (hodFaculty as any)?.userId?.email || "";
+    const hodUser = (
+      hodFaculty as { userId?: { username?: string; email?: string } } | null
+    )?.userId;
+    const hod = hodUser?.username || "—";
+    const hodEmail = hodUser?.email || "";
 
     requestLogger.info(
       { department, semester, subjectName, passRate, students: total },
@@ -144,10 +168,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
         department,
         semester,
         subject: {
-          name: (resolvedSubject as any).subjectName,
-          code: (resolvedSubject as any).subjectCode,
+          name: resolvedSubject.subjectName,
+          code: resolvedSubject.subjectCode,
           passRate,
-          avgMarks: 0,
+          avgMarks,
           students: total,
           failed,
           faculty,

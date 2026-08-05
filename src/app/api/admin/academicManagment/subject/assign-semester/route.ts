@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest) {
 
     const updated = await Subject.findByIdAndUpdate(
       subject._id,
-      { semester: String(semester) },
+      { semester: Number(semester) },
       { new: true },
     );
 

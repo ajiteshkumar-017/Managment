@@ -1,12 +1,20 @@
 import mongoose, { Schema, Document, model, models } from "mongoose";
+import {
+  DEPARTMENT,
+  SEMESTER,
+  ACADEMIC_YEAR,
+  type DepartmentType,
+  type SemesterType,
+  type AcademicYearType,
+} from "@/constant/Constant";
 
 export interface ISubjectFacultyAssignment extends Document {
   facultyId: mongoose.Types.ObjectId;
   subjectId: mongoose.Types.ObjectId;
-  semester: string;
+  semester: SemesterType;
   section: string;
-  department: string;
-  academicYear: string;
+  department: DepartmentType;
+  academicYear: AcademicYearType;
 }
 
 const subjectFacultyAssignmentSchema = new Schema(
@@ -22,7 +30,8 @@ const subjectFacultyAssignmentSchema = new Schema(
       required: true,
     },
     semester: {
-      type: String,
+      type: Number,
+      enum: SEMESTER,
       required: true,
     },
     section: {
@@ -31,10 +40,12 @@ const subjectFacultyAssignmentSchema = new Schema(
     },
     department: {
       type: String,
+      enum: DEPARTMENT,
       required: true,
     },
     academicYear: {
       type: String,
+      enum: ACADEMIC_YEAR,
       required: true,
     },
   },

@@ -132,7 +132,7 @@ function SubjectPerformanceDetailPage() {
   const level = getPerformanceLevel(meta.passRate, Boolean(meta.hasResults));
 
   const stats = [
-    { label: "Pass %", value: meta.hasResults ? `${meta.passRate}%` : "—", hint: performanceLabel(level), icon: <Percent size={20} />, color: "bg-orange-100 text-orange-600" },
+    { label: "Pass %", value: `${meta.passRate}%`, hint: performanceLabel(level), icon: <Percent size={20} />, color: "bg-orange-100 text-orange-600" },
     { label: "Avg Marks", value: String(meta.avgMarks), hint: "Out of 100", icon: <BookOpen size={20} />, color: "bg-indigo-100 text-indigo-600" },
     { label: "Students", value: String(meta.students), hint: "Exam records", icon: <Users size={20} />, color: "bg-cyan-100 text-cyan-600" },
     { label: "Failed", value: String(meta.failed), hint: "Below pass mark", icon: <UserX size={20} />, color: "bg-red-100 text-red-600" },
@@ -279,7 +279,7 @@ function SubjectPerformanceDetailPage() {
               type="button"
               onClick={handleExport}
               disabled={exporting}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 self-stretch rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-start"
             >
               <Download size={18} />
               {exporting ? "Exporting..." : "Export"}

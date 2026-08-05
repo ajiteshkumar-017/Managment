@@ -2,7 +2,16 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
+import AdminModal, {
+  adminFieldClass,
+  adminFormGridClass,
+  adminLabelClass,
+  adminPrimaryBtnClass,
+  adminSecondaryBtnClass,
+} from "@/utils/Admin/AdminModal";
 import {
+  AlertTriangle,
+  ArrowBigUpDash,
   Eye,
   GraduationCap,
   Pen,
@@ -15,6 +24,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type StudentRow = {
   rollNo: string;
@@ -22,6 +32,7 @@ type StudentRow = {
   semester: string;
   department: string;
   section: string;
+  batch?: string;
   status: "Active" | "Graduated" | "Blacklisted" | "Restricted";
 };
 
@@ -63,6 +74,9 @@ function statusClass(status: StudentRow["status"]) {
 }
 
 function AdminStudents() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
@@ -74,6 +88,9 @@ function AdminStudents() {
   const [selectedStudent, setSelectedStudent] = useState<StudentRow | null>(null);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [promoteTarget, setPromoteTarget] = useState<StudentRow | null>(null);
+  const [promoting, setPromoting] = useState(false);
   const [stats, setStats] = useState<StudentStats>({
     total: 0,
     active: 0,
@@ -115,6 +132,7 @@ function AdminStudents() {
             semester: String(s.semester ?? ""),
             department: s.department || "—",
             section: s.section || "—",
+            batch: s.batch || "",
             status: capitalizeStatus(s.status),
           })),
         );
@@ -255,6 +273,74 @@ function AdminStudents() {
     setShowModal(true);
   };
 
+  const openPromoteConfirm = (row: StudentRow) => {
+    if (row.status !== "Active") {
+      toast.error("Only active students can be promoted");
+      return;
+    }
+    if (Number(row.semester) >= 8) {
+      toast.error("Student is already in the final semester");
+      return;
+    }
+    setPromoteTarget(row);
+    setConfirmOpen(true);
+  };
+
+  const refreshStudents = async () => {
+    const res = await axios.get("/api/admin/students");
+    if (!res.data?.success) return;
+    const list = Array.isArray(res.data.data) ? res.data.data : [];
+    setRows(
+      list.map((s: any) => ({
+        rollNo: s.rollNumber || s.rollNo || "—",
+        name: s.name || "—",
+        semester: String(s.semester ?? ""),
+        department: s.department || "—",
+        section: s.section || "—",
+        batch: s.batch || "",
+        status: capitalizeStatus(s.status),
+      })),
+    );
+    setStats({
+      total: res.data.stats?.totalStudent ?? list.length,
+      active: res.data.stats?.activeStudent ?? 0,
+      graduated: res.data.stats?.graduated ?? 0,
+      newEnrollments: res.data.stats?.newEnrollement ?? 0,
+    });
+  };
+
+  const handlePromoteStudent = async () => {
+    if (!promoteTarget) return;
+    try {
+      setPromoting(true);
+      const res = await axios.post("/api/admin/students/promote", {
+        rollNumber: promoteTarget.rollNo,
+      });
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Failed to promote student");
+      }
+      toast.success(res.data.message || "Student promoted");
+      setConfirmOpen(false);
+      setPromoteTarget(null);
+      await refreshStudents();
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to promote student";
+      toast.error(message);
+    } finally {
+      setPromoting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    openAdd();
+    router.replace(pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
+
   const getPagination = (page: number, total: number) => {
     const pages: (number | string)[] = [];
     const siblingCount = largeScreen ? 2 : 1;
@@ -274,34 +360,34 @@ function AdminStudents() {
   };
 
   const StudentFormFields = ({ disabled = false }: { disabled?: boolean }) => (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className={adminFormGridClass}>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Roll Number</label>
+        <label className={adminLabelClass}>Roll Number</label>
         <input
           disabled={disabled}
           value={form.rollNo}
           onChange={(e) => setForm((p) => ({ ...p, rollNo: e.target.value }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
           placeholder="CSE21001"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Full Name</label>
+        <label className={adminLabelClass}>Full Name</label>
         <input
           disabled={disabled}
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
           placeholder="Student name"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+        <label className={adminLabelClass}>Department</label>
         <select
           disabled={disabled}
           value={form.department}
           onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
         >
           {["CSE", "ME", "CE", "AE"].map((d) => (
             <option key={d} value={d}>{d}</option>
@@ -309,12 +395,12 @@ function AdminStudents() {
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Semester</label>
+        <label className={adminLabelClass}>Semester</label>
         <select
           disabled={disabled}
           value={form.semester}
           onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
         >
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <option key={n} value={String(n)}>{n}</option>
@@ -322,12 +408,12 @@ function AdminStudents() {
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Section</label>
+        <label className={adminLabelClass}>Section</label>
         <select
           disabled={disabled}
           value={form.section}
           onChange={(e) => setForm((p) => ({ ...p, section: e.target.value }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
         >
           {["A", "B", "C", "D"].map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -335,12 +421,12 @@ function AdminStudents() {
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+        <label className={adminLabelClass}>Status</label>
         <select
           disabled={disabled}
           value={form.status}
           onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StudentRow["status"] }))}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={adminFieldClass}
         >
           {filterOptions[3].options.map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -440,7 +526,7 @@ function AdminStudents() {
           </div>
 
           <div className="mt-6 hidden lg:block overflow-hidden rounded-2xl border border-slate-200">
-            <div className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_0.7fr] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+            <div className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_1fr] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
               {["#", "Roll No", "Name", "Dept", "Sem", "Sec", "Status", "Actions"].map((head) => (
                 <div key={head} className="min-w-0 truncate text-center">{head}</div>
               ))}
@@ -453,7 +539,7 @@ function AdminStudents() {
               </div>
             ) : (
               paginatedRows.map((row, index) => (
-                <div key={row.rollNo} className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_0.7fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
+                <div key={row.rollNo} className="grid grid-cols-[0.4fr_0.9fr_1.2fr_0.6fr_0.5fr_0.5fr_0.7fr_1fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
                   <div className="text-center text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</div>
                   <div className="truncate text-center font-semibold text-indigo-700">{row.rollNo}</div>
                   <div className="truncate text-center font-medium text-slate-900">{row.name}</div>
@@ -466,6 +552,15 @@ function AdminStudents() {
                   <div className="flex justify-center gap-2">
                     <button type="button" onClick={() => openView(row)} className="rounded-lg bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200" title="View"><Eye size={16} /></button>
                     <button type="button" onClick={() => openEdit(row)} className="rounded-lg bg-indigo-50 p-2 text-indigo-600 transition hover:bg-indigo-100" title="Edit"><Pen size={16} /></button>
+                    <button
+                      type="button"
+                      onClick={() => openPromoteConfirm(row)}
+                      className="rounded-lg bg-emerald-50 p-2 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Promote"
+                      disabled={row.status !== "Active" || Number(row.semester) >= 8}
+                    >
+                      <ArrowBigUpDash size={16} />
+                    </button>
                   </div>
                 </div>
               ))
@@ -498,6 +593,14 @@ function AdminStudents() {
                     <div className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
                       <button type="button" onClick={() => openView(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-100 py-2.5 text-sm font-medium text-slate-700"><Eye size={16} /> View</button>
                       <button type="button" onClick={() => openEdit(row)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-50 py-2.5 text-sm font-medium text-indigo-700"><Pen size={16} /> Edit</button>
+                      <button
+                        type="button"
+                        onClick={() => openPromoteConfirm(row)}
+                        disabled={row.status !== "Active" || Number(row.semester) >= 8}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 py-2.5 text-sm font-medium text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ArrowBigUpDash size={16} /> Promote
+                      </button>
                     </div>
                   </article>
                 </li>
@@ -517,43 +620,119 @@ function AdminStudents() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Add Student</h3>
-              <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-slate-100 text-slate-900"><X size={22} /></button>
-            </div>
-            <StudentFormFields />
-            <button type="button" onClick={() => { toast.success("Student added (connect API when ready)"); setShowModal(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Submit</button>
+      <AdminModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add Student"
+        description="Enroll a new student into the academic system."
+        icon={<UserPlus size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setShowModal(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Student added (connect API when ready)");
+                setShowModal(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Add Student
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <StudentFormFields />
+      </AdminModal>
 
-      {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Edit Student</h3>
-              <button type="button" onClick={() => setEdit(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <StudentFormFields />
-            <button type="button" onClick={() => { toast.success("Student updated (connect API when ready)"); setEdit(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Save Changes</button>
+      <AdminModal
+        open={edit}
+        onClose={() => setEdit(false)}
+        title="Edit Student"
+        description="Update student profile and academic details."
+        icon={<Pen size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setEdit(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Student updated (connect API when ready)");
+                setEdit(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Save Changes
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <StudentFormFields />
+      </AdminModal>
 
-      {view && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Student Details</h3>
-              <button type="button" onClick={() => setView(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <StudentFormFields disabled />
+      <AdminModal
+        open={view && Boolean(selectedStudent)}
+        onClose={() => setView(false)}
+        title="Student Details"
+        description="Read-only preview of the selected student."
+        icon={<Eye size={20} />}
+        footer={
+          <button type="button" onClick={() => setView(false)} className={adminSecondaryBtnClass}>
+            Close
+          </button>
+        }
+      >
+        <StudentFormFields disabled />
+      </AdminModal>
+
+      <AdminModal
+        open={confirmOpen}
+        onClose={() => {
+          if (promoting) return;
+          setConfirmOpen(false);
+          setPromoteTarget(null);
+        }}
+        title="Confirm Promotion"
+        description={
+          promoteTarget
+            ? `Promote ${promoteTarget.name} (${promoteTarget.rollNo}) from semester ${promoteTarget.semester} to ${Number(promoteTarget.semester) + 1}?`
+            : "Confirm student promotion"
+        }
+        icon={<AlertTriangle size={20} />}
+        maxWidthClassName="max-w-md"
+        zIndexClassName="z-[60]"
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={promoting}
+              onClick={() => {
+                setConfirmOpen(false);
+                setPromoteTarget(null);
+              }}
+              className={adminSecondaryBtnClass}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={promoting}
+              onClick={handlePromoteStudent}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-sm shadow-red-600/20 transition hover:bg-red-700 active:scale-[0.99] disabled:opacity-60"
+            >
+              {promoting ? "Promoting..." : "Yes, Promote"}
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-sm leading-relaxed text-slate-600">
+          This will move the student to the next semester. Please confirm before continuing.
+        </p>
+      </AdminModal>
     </div>
   );
 }

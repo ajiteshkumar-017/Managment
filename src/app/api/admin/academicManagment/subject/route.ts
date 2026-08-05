@@ -2,6 +2,7 @@ import Connect from "@/dbConnect/connect";
 import { Subject } from "@/models/subject.model";
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { SemesterType } from "@/constant/Constant";
 
 export async function GET() {
   const requestLogger = createRequestLogger();
@@ -25,7 +26,15 @@ export async function POST(request: NextRequest) {
   try {
     await Connect();
     const body = await request.json();
-    const { subjectCode, subjectName, credits, semester, department, totalClasses } = body;
+    const {
+      subjectCode,
+      subjectName,
+      credits,
+      semester,
+      department,
+      totalClasses,
+      IspracticalSubject,
+    } = body;
 
     if (!subjectCode || !subjectName || !credits || !semester || !department) {
       requestLogger.warn({ subjectCode, subjectName, credits, semester, department }, "Invalid payload");
@@ -48,9 +57,10 @@ export async function POST(request: NextRequest) {
       subjectCode,
       subjectName,
       credits,
-      semester: String(semester),
+      semester: Number(semester) as SemesterType,
       department,
       totalClasses: totalClasses || 0,
+      IspracticalSubject: Boolean(IspracticalSubject),
       status: "active",
     });
 

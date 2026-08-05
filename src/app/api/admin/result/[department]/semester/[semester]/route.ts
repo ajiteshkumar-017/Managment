@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Connect from "@/dbConnect/connect";
-import { ExamResult } from "@/models/exam.model";
+import { SubjectResult } from "@/models/subjectResult";
 import { Subject } from "@/models/subject.model";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { Faculty } from "@/models/faculty.model";
 import { User } from "@/models/user";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { SEMESTER, type SemesterType } from "@/constant/Constant";
 
 type Params = {
   params: Promise<{ department: string; semester: string }>;
@@ -20,8 +21,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const { department: rawDept, semester: rawSem } = await params;
     const department = decodeURIComponent(rawDept || "").trim();
     const semester = decodeURIComponent(rawSem || "").trim();
+    const semesterNum = Number(semester);
+    const semesterTyped: SemesterType | undefined = SEMESTER.includes(
+      semesterNum as SemesterType,
+    )
+      ? (semesterNum as SemesterType)
+      : undefined;
 
-    if (!department || !semester) {
+    if (!department || !semester || semesterTyped === undefined) {
       requestLogger.warn(
         { department, semester },
         "Department and semester are required",
@@ -37,36 +44,38 @@ export async function GET(_request: NextRequest, { params }: Params) {
       $options: "i",
     };
 
-    // All subjects for this department + semester
     const allSubjects = await Subject.find({
       department: deptRegex,
-      $or: [
-        { semester: String(semester) },
-        { semester: Number(semester) as any },
-      ],
+      semester: semesterTyped,
       status: { $ne: "inactive" },
     })
       .sort({ subjectCode: 1 })
       .lean();
 
-    // Published performance for these subjects
-    const rows = await ExamResult.aggregate([
-      { $match: { examPublishedStatus: "published" } },
+    const rows = await SubjectResult.aggregate([
       {
         $lookup: {
-          from: "students",
-          localField: "studentId",
+          from: "semesterresults",
+          localField: "semesterResultId",
           foreignField: "_id",
-          as: "studentData",
+          as: "sr",
         },
       },
-      { $unwind: "$studentData" },
+      { $unwind: "$sr" },
+      {
+        $lookup: {
+          from: "resultbatches",
+          localField: "sr.resultBatch",
+          foreignField: "_id",
+          as: "batch",
+        },
+      },
+      { $unwind: "$batch" },
       {
         $match: {
-          "studentData.department": deptRegex,
-          $expr: {
-            $eq: [{ $toString: "$studentData.semester" }, String(semester)],
-          },
+          "batch.status": "published",
+          "batch.department": deptRegex,
+          "batch.semester": semesterTyped,
         },
       },
       {
@@ -77,30 +86,34 @@ export async function GET(_request: NextRequest, { params }: Params) {
           as: "subjectData",
         },
       },
-      {
-        $unwind: {
-          path: "$subjectData",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+      { $unwind: "$subjectData" },
     ]);
+
+    console.log("Rows: ", rows[0]);
 
     const bySubject = new Map<
       string,
-      { total: number; passed: number }
+      { total: number; passed: number; marksSum: number }
     >();
 
     for (const r of rows) {
       const code = r.subjectData?.subjectCode || "—";
-      const entry = bySubject.get(code) || { total: 0, passed: 0 };
+      const entry = bySubject.get(code) || {
+        total: 0,
+        passed: 0,
+        marksSum: 0,
+      };
       entry.total += 1;
-      if (r.examResult === "passed") entry.passed += 1;
+      if (r.resultStatus === "passed") entry.passed += 1;
+      if (typeof r.obtainedMarks === "number") {
+        entry.marksSum += r.obtainedMarks;
+      }
       bySubject.set(code, entry);
     }
 
     const assignments = await SubjectFacultyAssignment.find({
       department: deptRegex,
-      $or: [{ semester: String(semester) }, { semester: Number(semester) as any }],
+      semester: semesterTyped,
     })
       .populate({
         path: "facultyId",
@@ -110,10 +123,20 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .populate({ path: "subjectId", model: Subject, select: "subjectCode" })
       .lean();
 
-    const facultyByCode = new Map<string, { faculty: string; facultyEmail: string }>();
+      console.log("Assignments: ", assignments[0]);
+
+    const facultyByCode = new Map<
+      string,
+      { faculty: string; facultyEmail: string }
+    >();
     for (const a of assignments) {
-      const code = (a as any).subjectId?.subjectCode;
-      const user = (a as any).facultyId?.userId;
+      const code = (a as { subjectId?: { subjectCode?: string } }).subjectId
+        ?.subjectCode;
+      const user = (
+        a as {
+          facultyId?: { userId?: { username?: string; email?: string } };
+        }
+      ).facultyId?.userId;
       if (!code || !user) continue;
       facultyByCode.set(code, {
         faculty: user.username || "Faculty",
@@ -121,7 +144,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       });
     }
 
-    const subjects = allSubjects.map((s: any) => {
+    const subjects = allSubjects.map((s) => {
       const code = s.subjectCode || "—";
       const perf = bySubject.get(code);
       const fac = facultyByCode.get(code);
@@ -132,7 +155,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
         passRate: perf?.total
           ? Math.round((perf.passed / perf.total) * 1000) / 10
           : 0,
-        avgMarks: 0,
+        avgMarks: perf?.total
+          ? Math.round((perf.marksSum / perf.total) * 10) / 10
+          : 0,
         students: perf?.total || 0,
         failed: perf ? perf.total - perf.passed : 0,
         faculty: fac?.faculty || "—",

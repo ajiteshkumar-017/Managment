@@ -2,6 +2,12 @@ import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import {NextResponse, NextRequest} from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
+import {
+    DEPARTMENT,
+    SEMESTER,
+    type DepartmentType,
+    type SemesterType,
+} from "@/constant/Constant";
 
 
 export async function POST(request:NextRequest) {
@@ -14,8 +20,12 @@ export async function POST(request:NextRequest) {
         const body = await request.json();
 
         const {semester,section, department, batch,} = body;
+        const semesterTyped = SEMESTER.find((s) => s === Number(semester));
+        const departmentTyped = DEPARTMENT.find(
+            (d) => d === String(department || "").toUpperCase(),
+        ) as DepartmentType | undefined;
 
-        if(!semester || !section || !department || !batch){
+        if(!semesterTyped || !section || !departmentTyped || !batch){
             requestLogger.warn({ semester, section, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
@@ -29,10 +39,21 @@ export async function POST(request:NextRequest) {
             )
         }
 
-        const user = await Student.updateMany({semester,department,section,batch, status: "Active"}, {
-            $inc : {semester: 1},
-            
-        })
+        const sectionKey = String(section).toUpperCase();
+        const filter: Record<string, unknown> = {
+            semester: semesterTyped as SemesterType,
+            department: departmentTyped,
+            batch,
+            status: "active",
+        };
+        if (sectionKey !== "ALL") {
+            filter.section = section;
+        }
+
+        const user = await Student.updateMany(filter, {
+            $inc: { semester: 1 },
+            $set: { lastPromoted: new Date() },
+        });
 
         if(!user){
             requestLogger.warn({ semester, section, department, batch }, "Semester promotion update failed");

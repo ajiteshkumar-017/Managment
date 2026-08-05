@@ -2,6 +2,12 @@ import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import {NextResponse, NextRequest} from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
+import {
+    DEPARTMENT,
+    SEMESTER,
+    type DepartmentType,
+    type SemesterType,
+} from "@/constant/Constant";
 
 export async function POST(request:NextRequest){
     const requestLogger = createRequestLogger();
@@ -9,8 +15,12 @@ export async function POST(request:NextRequest){
         await Connect();
          const body = await request.json();
          const {semester, batch, department, section} = body;
+         const semesterTyped = SEMESTER.find((s) => s === Number(semester));
+         const departmentTyped = DEPARTMENT.find(
+             (d) => d === String(department || "").toUpperCase(),
+         ) as DepartmentType | undefined;
 
-         if(!semester || !section || !department || !batch){
+         if(!semesterTyped || !section || !departmentTyped || !batch){
             requestLogger.warn({ semester, section, department, batch }, "Invalid payload");
             console.error("All fields are Required");
             return NextResponse.json(
@@ -24,19 +34,22 @@ export async function POST(request:NextRequest){
             )
         }
 
-        const result = await Student.updateMany(
-            {
-                semester,
-                section,
-                department,
-                batch,
-                status: "Active"
-            }, {
-                $set : {
-                    status: "On Hold"
-                }
-            }
-        )
+        const sectionKey = String(section).toUpperCase();
+        const filter: Record<string, unknown> = {
+            semester: semesterTyped as SemesterType,
+            department: departmentTyped,
+            batch,
+            status: "active",
+        };
+        if (sectionKey !== "ALL") {
+            filter.section = section;
+        }
+
+        const result = await Student.updateMany(filter, {
+            $set: {
+                status: "inactive",
+            },
+        });
 
         if(!result){
             requestLogger.warn({ semester, section, department, batch }, "Semester freeze update failed");
@@ -68,6 +81,12 @@ export async function POST(request:NextRequest){
         
     } catch (error:any) {
         requestLogger.error({ err: error }, "Failed to freeze semester");
-        
+        return NextResponse.json(
+            {
+                success: false,
+                message: "Error in Freezing Semester of the Students",
+            },
+            { status: 500 },
+        );
     }
 }

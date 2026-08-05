@@ -146,7 +146,7 @@ function SemesterSubjectsPage() {
               type="button"
               onClick={handleExport}
               disabled={exporting}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 self-stretch rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-start"
             >
               <Download size={18} />
               {exporting ? "Exporting..." : "Export"}

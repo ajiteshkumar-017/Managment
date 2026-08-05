@@ -96,7 +96,7 @@ export default function AdminNavbar() {
       {/* ================= DESKTOP SIDEBAR (matches admin Bar: w-56) ================= */}
       <aside
         className="
-          sticky top-6 hidden h-fit w-56 shrink-0
+          sticky top-0 hidden h-screen w-56 shrink-0
           flex-col rounded-2xl border border-slate-100
           bg-white px-4 py-5 shadow-sm lg:flex
         "
@@ -118,7 +118,7 @@ export default function AdminNavbar() {
           ))}
         </nav>
 
-        <div className="mt-8">
+        <div className="mt-auto pt-6">
           <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3.5 text-center">
             <h3 className="text-xs font-bold text-slate-800">Academic Calendar</h3>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">

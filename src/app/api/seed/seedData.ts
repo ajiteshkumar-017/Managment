@@ -7,12 +7,17 @@ import { Enrollment } from "@/models/enrollement.model";
 import { Faculty } from "@/models/faculty.model";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { Student } from "@/models/student.model";
-import { ExamResult } from "@/models/exam.model";
+// import { ExamResult } from "@/models/exam.model";
+import { ResultBatch } from "@/models/resultBatch.model";
+import { SemesterResult } from "@/models/semesterResult";
+import { SubjectResult } from "@/models/subjectResult";
 
 export async function seedDatabase() {
   await Connect();
 
-  await ExamResult.deleteMany({});
+  await SubjectResult.deleteMany({});
+  await SemesterResult.deleteMany({});
+  await ResultBatch.deleteMany({});
   await Enrollment.deleteMany({});
   await Class.deleteMany({});
   await SubjectFacultyAssignment.deleteMany({});
@@ -31,42 +36,49 @@ export async function seedDatabase() {
       email: "ajiteshk007@gmail.com",
       password: await bcrypt.hash("Ajitesh@123", 10),
       role: "student",
+      profileCompleted: true,
     },
     {
       username: "Admin User",
       email: "ajiteshk017@gmail.com",
       password: passwordAdmin,
       role: "admin",
+      profileCompleted: true,
     },
     {
       username: "Dr. Maya Patel",
       email: "maya.patel@test.edu",
       password: passwordFaculty,
       role: "faculty",
+      profileCompleted: true,
     },
     {
       username: "Prof. Arjun Singh",
       email: "arjun.singh@test.edu",
       password: await bcrypt.hash("Faculty@321", 10),
       role: "faculty",
+      profileCompleted: true,
     },
     {
       username: "Riya Sharma",
       email: "riya.sharma@test.edu",
       password: passwordStudent,
       role: "student",
+      profileCompleted: true,
     },
     {
       username: "Vikram Rao",
       email: "vikram.rao@test.edu",
       password: passwordStudent,
       role: "student",
+      profileCompleted: true,
     },
     {
       username: "Neha Gupta",
       email: "neha.gupta@test.edu",
       password: passwordStudent,
       role: "student",
+      profileCompleted: true,
     },
   ]);
 
@@ -78,8 +90,7 @@ export async function seedDatabase() {
   const studentUser3 = users[5];
   const studentUser4 = users[6];
 
-  // Student profiles (needed for ExamResult.studentId + department stats)
-  // Use insertMany — Student.create([...]) fails Mongoose TS overloads
+  // Student: userId, rollNumber, department, semester, section, batch, admissionYear, status, lastPromoted
   const students = await Student.insertMany([
     {
       userId: studentUser1._id,
@@ -88,9 +99,9 @@ export async function seedDatabase() {
       semester: 5,
       section: "A",
       status: "active",
-      batch: "2021-25",
+      batch: "2021-2025",
       admissionYear: "2021",
-      examStatus: "passed",
+      lastPromoted: new Date("2025-07-01"),
     },
     // Linked to ajiteshk017@gmail.com (admin) — used for seeded exam results
     {
@@ -100,9 +111,9 @@ export async function seedDatabase() {
       semester: 5,
       section: "A",
       status: "active",
-      batch: "2021-25",
+      batch: "2021-2025",
       admissionYear: "2021",
-      examStatus: "passed",
+      lastPromoted: new Date("2025-07-01"),
     },
     {
       userId: studentUser2._id,
@@ -111,9 +122,9 @@ export async function seedDatabase() {
       semester: 7,
       section: "B",
       status: "active",
-      batch: "2020-24",
+      batch: "2020-2024",
       admissionYear: "2020",
-      examStatus: "passed",
+      lastPromoted: new Date("2025-07-01"),
     },
     {
       userId: studentUser3._id,
@@ -122,9 +133,9 @@ export async function seedDatabase() {
       semester: 5,
       section: "A",
       status: "active",
-      batch: "2021-25",
+      batch: "2021-2025",
       admissionYear: "2021",
-      examStatus: "failed",
+      lastPromoted: new Date("2025-07-01"),
     },
     {
       userId: studentUser4._id,
@@ -133,9 +144,9 @@ export async function seedDatabase() {
       semester: 6,
       section: "C",
       status: "active",
-      batch: "2021-25",
+      batch: "2021-2025",
       admissionYear: "2021",
-      examStatus: "passed",
+      lastPromoted: new Date("2025-07-01"),
     },
   ]);
 
@@ -154,6 +165,7 @@ export async function seedDatabase() {
       status: "active",
       joinedAt: new Date("2022-08-01"),
       lastPromoted: "2024-08-01",
+      prominentWork: "Distributed systems research and OS curriculum design",
     },
     {
       userId: facultyUser2._id,
@@ -163,6 +175,8 @@ export async function seedDatabase() {
       status: "active",
       joinedAt: new Date("2021-07-01"),
       lastPromoted: "2023-07-01",
+      patents: ["IN-2023-COMP-NET-001"],
+      prominentWork: "Computer networks and campus network security",
     },
   ]);
 
@@ -171,54 +185,60 @@ export async function seedDatabase() {
       subjectCode: "CSE301",
       subjectName: "Operating Systems",
       credits: 4,
-      semester: "5",
+      semester: 5,
       department: "CSE",
       totalClasses: 40,
+      IspracticalSubject: true,
       status: "active",
     },
     {
       subjectCode: "CSE302",
       subjectName: "Database Management Systems",
       credits: 4,
-      semester: "5",
+      semester: 5,
       department: "CSE",
       totalClasses: 42,
+      IspracticalSubject: true,
       status: "active",
     },
     {
       subjectCode: "CSE401",
       subjectName: "Computer Networks",
       credits: 3,
-      semester: "7",
+      semester: 7,
       department: "CSE",
       totalClasses: 36,
+      IspracticalSubject: false,
       status: "active",
     },
     {
       subjectCode: "CSE402",
       subjectName: "Software Engineering",
       credits: 3,
-      semester: "7",
+      semester: 7,
       department: "CSE",
       totalClasses: 38,
+      IspracticalSubject: false,
       status: "active",
     },
     {
       subjectCode: "ME201",
       subjectName: "Thermodynamics",
       credits: 4,
-      semester: "5",
+      semester: 5,
       department: "ME",
       totalClasses: 40,
+      IspracticalSubject: true,
       status: "active",
     },
     {
       subjectCode: "CE301",
       subjectName: "Structural Analysis",
       credits: 4,
-      semester: "6",
+      semester: 6,
       department: "CE",
       totalClasses: 40,
+      IspracticalSubject: false,
       status: "active",
     },
   ]);
@@ -227,26 +247,26 @@ export async function seedDatabase() {
     {
       facultyId: faculties[0]._id,
       subjectId: subjects[0]._id,
-      semester: "5",
+      semester: 5,
       section: "A",
       department: "CSE",
-      academicYear: "2025-26",
+      academicYear: "2025-2026",
     },
     {
       facultyId: faculties[0]._id,
       subjectId: subjects[1]._id,
-      semester: "5",
+      semester: 5,
       section: "ALL",
       department: "CSE",
-      academicYear: "2025-26",
+      academicYear: "2025-2026",
     },
     {
       facultyId: faculties[1]._id,
       subjectId: subjects[2]._id,
-      semester: "7",
+      semester: 7,
       section: "B",
       department: "CSE",
-      academicYear: "2025-26",
+      academicYear: "2025-2026",
     },
   ]);
 
@@ -277,7 +297,6 @@ export async function seedDatabase() {
     },
   ]);
 
-  // Enrollment.studentId refs User (not Student)
   const enrollments = await Enrollment.insertMany([
     {
       studentId: studentUser1._id,
@@ -305,127 +324,254 @@ export async function seedDatabase() {
     },
   ]);
 
-  // Dummy published exam results — primary set linked to ajiteshk017@gmail.com (adminUser)
-  const examResults = await ExamResult.insertMany([
-    // --- Linked to ajiteshk017@gmail.com ---
-    {
-      userId: adminUser._id,
-      studentId: studentAdminLinked._id,
-      subjectId: subjects[0]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-15"),
-    },
-    {
-      userId: adminUser._id,
-      studentId: studentAdminLinked._id,
-      subjectId: subjects[1]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-15"),
-    },
-    {
-      userId: adminUser._id,
-      studentId: studentAdminLinked._id,
-      subjectId: subjects[2]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-16"),
-    },
-    {
-      userId: adminUser._id,
-      studentId: studentAdminLinked._id,
-      subjectId: subjects[3]._id,
-      examType: "Mid Sem",
-      examPublishedStatus: "published",
-      examResult: "failed",
-      examResultDate: new Date("2026-06-16"),
-    },
-    {
-      userId: adminUser._id,
-      studentId: studentAdminLinked._id,
-      subjectId: subjects[1]._id,
-      examType: "End Sem",
-      examPublishedStatus: "pending",
-      examResult: "not_attended",
-      examResultDate: new Date("2026-07-01"),
-    },
+  // ExamResult: studentId, subjectId, obtainedMarks?, maximumMarks?, examType, examPublishedStatus, examResult, examResultDate
+  // const examResults = await ExamResult.insertMany([
+  //   {
+  //     studentId: studentAdminLinked._id,
+  //     subjectId: subjects[0]._id,
+  //     obtainedMarks: 78,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-15"),
+  //   },
+  //   {
+  //     studentId: studentAdminLinked._id,
+  //     subjectId: subjects[1]._id,
+  //     obtainedMarks: 82,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-15"),
+  //   },
+  //   {
+  //     studentId: studentAdminLinked._id,
+  //     subjectId: subjects[2]._id,
+  //     obtainedMarks: 71,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-16"),
+  //   },
+  //   {
+  //     studentId: studentAdminLinked._id,
+  //     subjectId: subjects[3]._id,
+  //     obtainedMarks: 28,
+  //     maximumMarks: 50,
+  //     examType: "Mid Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "failed",
+  //     examResultDate: new Date("2026-06-16"),
+  //   },
+  //   {
+  //     studentId: studentAdminLinked._id,
+  //     subjectId: subjects[1]._id,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "pending",
+  //     examResult: "not_attended",
+  //     examResultDate: new Date("2026-07-01"),
+  //   },
+  //   {
+  //     studentId: studentAjitesh._id,
+  //     subjectId: subjects[0]._id,
+  //     obtainedMarks: 88,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-15"),
+  //   },
+  //   {
+  //     studentId: studentAjitesh._id,
+  //     subjectId: subjects[1]._id,
+  //     obtainedMarks: 85,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-15"),
+  //   },
+  //   {
+  //     studentId: studentRiya._id,
+  //     subjectId: subjects[2]._id,
+  //     obtainedMarks: 74,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-16"),
+  //   },
+  //   {
+  //     studentId: studentRiya._id,
+  //     subjectId: subjects[3]._id,
+  //     obtainedMarks: 22,
+  //     maximumMarks: 50,
+  //     examType: "Mid Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "failed",
+  //     examResultDate: new Date("2026-06-16"),
+  //   },
+  //   {
+  //     studentId: studentVikram._id,
+  //     subjectId: subjects[4]._id,
+  //     obtainedMarks: 31,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "failed",
+  //     examResultDate: new Date("2026-06-18"),
+  //   },
+  //   {
+  //     studentId: studentVikram._id,
+  //     subjectId: subjects[4]._id,
+  //     obtainedMarks: 35,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "failed",
+  //     examResultDate: new Date("2026-06-19"),
+  //   },
+  //   {
+  //     studentId: studentNeha._id,
+  //     subjectId: subjects[5]._id,
+  //     obtainedMarks: 79,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-20"),
+  //   },
+  //   {
+  //     studentId: studentNeha._id,
+  //     subjectId: subjects[5]._id,
+  //     obtainedMarks: 81,
+  //     maximumMarks: 100,
+  //     examType: "End Sem",
+  //     examPublishedStatus: "published",
+  //     examResult: "passed",
+  //     examResultDate: new Date("2026-06-21"),
+  //   },
+  // ]);
 
-    // --- Other students (for department pass-rate stats) ---
+  // ResultBatch: title, department, semester, academicYear, ExamType, batch, subjectId, status
+  const resultBatches = await ResultBatch.insertMany([
     {
-      userId: studentUser1._id,
-      studentId: studentAjitesh._id,
+      title: "CSE Sem 5 End Sem 2025-26",
+      department: "CSE",
+      semester: 5,
+      academicYear: "2025-2026",
+      ExamType: "End Sem",
+      batch: "2021-25",
       subjectId: subjects[0]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-15"),
+      status: "published",
     },
     {
-      userId: studentUser1._id,
-      studentId: studentAjitesh._id,
-      subjectId: subjects[1]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-15"),
-    },
-    {
-      userId: studentUser2._id,
-      studentId: studentRiya._id,
+      title: "CSE Sem 7 Mid Sem 2025-26",
+      department: "CSE",
+      semester: 7,
+      academicYear: "2025-2026",
+      ExamType: "Mid Sem",
+      batch: "2020-24",
       subjectId: subjects[2]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-16"),
+      status: "published",
+    },
+  ]);
+
+  // SemesterResult: studentId, semester, resultBatch, CGPA, SGPA, rank, passStatus, passStatusDate, hadBack
+  const semesterResults = await SemesterResult.insertMany([
+    {
+      studentId: studentAjitesh._id,
+      semester: 5,
+      resultBatch: resultBatches[0]._id,
+      CGPA: 8.4,
+      SGPA: 8.6,
+      rank: 3,
+      passStatus: "Pass",
+      passStatusDate: new Date("2026-06-25"),
+      hadBack: false,
     },
     {
-      userId: studentUser2._id,
+      studentId: studentAdminLinked._id,
+      semester: 5,
+      resultBatch: resultBatches[0]._id,
+      CGPA: 8.1,
+      SGPA: 8.2,
+      rank: 5,
+      passStatus: "Pass",
+      passStatusDate: new Date("2026-06-25"),
+      hadBack: false,
+    },
+    {
       studentId: studentRiya._id,
+      semester: 7,
+      resultBatch: resultBatches[1]._id,
+      CGPA: 7.5,
+      SGPA: 7.2,
+      rank: 12,
+      passStatus: "Pass",
+      passStatusDate: new Date("2026-06-26"),
+      hadBack: true,
+    },
+  ]);
+
+  // SubjectResult: semesterResultId, subjectId, grade, maximumMarks, obtainedMarks, creditsEarned, resultStatus
+  const subjectResults = await SubjectResult.insertMany([
+    {
+      semesterResultId: semesterResults[0]._id,
+      subjectId: subjects[0]._id,
+      grade: "A",
+      maximumMarks: 100,
+      obtainedMarks: 88,
+      creditsEarned: 4,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[0]._id,
+      subjectId: subjects[1]._id,
+      grade: "A-",
+      maximumMarks: 100,
+      obtainedMarks: 85,
+      creditsEarned: 4,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[1]._id,
+      subjectId: subjects[0]._id,
+      grade: "B+",
+      maximumMarks: 100,
+      obtainedMarks: 78,
+      creditsEarned: 4,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[1]._id,
+      subjectId: subjects[1]._id,
+      grade: "A",
+      maximumMarks: 100,
+      obtainedMarks: 82,
+      creditsEarned: 4,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[2]._id,
+      subjectId: subjects[2]._id,
+      grade: "B",
+      maximumMarks: 100,
+      obtainedMarks: 74,
+      creditsEarned: 3,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[2]._id,
       subjectId: subjects[3]._id,
-      examType: "Mid Sem",
-      examPublishedStatus: "published",
-      examResult: "failed",
-      examResultDate: new Date("2026-06-16"),
-    },
-    {
-      userId: studentUser3._id,
-      studentId: studentVikram._id,
-      subjectId: subjects[4]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "failed",
-      examResultDate: new Date("2026-06-18"),
-    },
-    {
-      userId: studentUser3._id,
-      studentId: studentVikram._id,
-      subjectId: subjects[4]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "failed",
-      examResultDate: new Date("2026-06-19"),
-    },
-    {
-      userId: studentUser4._id,
-      studentId: studentNeha._id,
-      subjectId: subjects[5]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-20"),
-    },
-    {
-      userId: studentUser4._id,
-      studentId: studentNeha._id,
-      subjectId: subjects[5]._id,
-      examType: "End Sem",
-      examPublishedStatus: "published",
-      examResult: "passed",
-      examResultDate: new Date("2026-06-21"),
+      grade: "C",
+      maximumMarks: 50,
+      obtainedMarks: 22,
+      creditsEarned: 0,
+      resultStatus: "failed",
     },
   ]);
 
@@ -437,10 +583,9 @@ export async function seedDatabase() {
     assignments,
     classes,
     enrollments,
-    examResults,
+    resultBatches,
+    semesterResults,
+    subjectResults,
     linkedEmail: "ajiteshk017@gmail.com",
-    linkedExamResultCount: examResults.filter(
-      (r) => String(r.userId) === String(adminUser._id),
-    ).length,
   };
 }

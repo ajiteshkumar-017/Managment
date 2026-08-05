@@ -47,12 +47,12 @@ export async function POST(request:NextRequest) {
                 semester,
                 department,
                 batch,
-                status: "Active"
+                status: "active"
             },
 
             {
                 $set: {
-                    status: "Graduated"
+                    status: "graduated"
                 }
             }
         )

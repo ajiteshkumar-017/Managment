@@ -262,7 +262,7 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
       return NextResponse.json(
         {
           success: false,
-          message: "Import blocked. The data file contains database conflicts or validation issues.",
+          message: "Import blocked. The data file contains conflicts issues.",
           invalidRows,
         },
         { status: 400 }
@@ -316,7 +316,7 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
 
     await Student.insertMany(preparedStudents);
 
-    console.log("")
+    console.log("Created Student with reference to User");
 
     requestLogger.info(
       { importedCount: finalValidRows.length, totalRows: normalizedRows.length },

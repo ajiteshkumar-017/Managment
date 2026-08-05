@@ -1,8 +1,15 @@
 "use client"
 
 import Bar from '@/utils/Admin/Bar'
+import AdminModal, {
+  adminFieldClass,
+  adminFormGridClass,
+  adminLabelClass,
+  adminPrimaryBtnClass,
+  adminSecondaryBtnClass,
+} from '@/utils/Admin/AdminModal'
 // import { ArrowBigUpDash, ArrowRight, CalendarPlus, Shuffle, User2Icon, UserCircle2Icon } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowBigUpDash,
   PauseCircle,
@@ -24,7 +31,6 @@ import {
   ArrowRight,
   Presentation,
   Layers3,
-  X,
   AlertTriangle,
   Send,
   DownloadIcon,
@@ -218,6 +224,9 @@ function academicManagment() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean | null>(false)
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const pendingActionRef = useRef<(() => unknown | Promise<unknown>) | null>(null);
 
   // const [validateDataOnly, setValidateDataOnly] = useState(true);
   const [validationDone, setValidationDone] = useState(false);
@@ -234,8 +243,11 @@ function academicManagment() {
     selectedFacultyUsername: "",
     selectedSubjectCode: "",
     semester: "1",
+    toSemester: "2",
     section: "ALL",
     department: "CSE",
+    batch: "2025-26",
+    reason: "",
     academicYear: "2025-26",
     classCode: "",
     room: "",
@@ -247,6 +259,12 @@ function academicManagment() {
     credits: "4",
     totalClasses: "40",
   });
+
+  const STUDENT_OP_ROUTES: Record<string, string> = {
+    "Freeze Semester": "/api/admin/academicManagment/freeze-semester",
+    "Promote Semester": "/api/admin/academicManagment/promote-semester",
+    "Activate Semester": "/api/admin/academicManagment/activate-semester",
+  };
 
   const resetModalState = () => {
     setSelectedFile(null);
@@ -271,6 +289,37 @@ function academicManagment() {
     resetModalState();
   };
 
+  const requestConfirm = (message: string, action: () => unknown | Promise<unknown>) => {
+    setConfirmMessage(message);
+    pendingActionRef.current = action;
+    setConfirmOpen(true);
+  };
+
+  const cancelConfirm = () => {
+    setConfirmOpen(false);
+    pendingActionRef.current = null;
+  };
+
+  const handleConfirm = async () => {
+    const action = pendingActionRef.current;
+    setConfirmOpen(false);
+    pendingActionRef.current = null;
+    if (action) await action();
+  };
+
+  const confirmOperation = (action: () => unknown | Promise<unknown>, customMessage?: string) => {
+    requestConfirm(
+      customMessage ||
+        `Are you sure you want to proceed with "${modelType || "this operation"}"?`,
+      action,
+    );
+  };
+
+  const modalMeta = useMemo(() => {
+    const allOps = [...studentOperations, ...facultyOperations, ...subjectOperations];
+    return allOps.find((op) => op.title === modelType);
+  }, [modelType]);
+
   useEffect(() => {
     if (!showModal) return;
 
@@ -292,7 +341,16 @@ function academicManagment() {
   }, [showModal]);
 
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "semester") {
+        const current = Number(value);
+        if (!Number.isNaN(current)) {
+          next.toSemester = String(Math.min(8, current + 1));
+        }
+      }
+      return next;
+    });
   };
 
   const getBulkConfig = () => bulkUploadConfig[modelType];
@@ -354,10 +412,10 @@ function academicManagment() {
 
 
   // }
-  const handleImportofBulkStudents = async (e: React.FormEvent) => {
+  const handleImportofBulkStudents = async (e?: React.FormEvent) => {
     try {
 
-      e.preventDefault();
+      e?.preventDefault();
       if (!selectedFile) {
         console.log("Error in File");
         toast.error("Please select a file first");
@@ -536,6 +594,37 @@ function academicManagment() {
       closeModal();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Operation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitStudentSemesterOperation = async () => {
+    const endpoint = STUDENT_OP_ROUTES[modelType];
+    if (!endpoint) {
+      toast.error("Operation route not configured");
+      return;
+    }
+    if (!form.semester || !form.section || !form.department || !form.batch) {
+      toast.error("Semester, section, department and batch are required");
+      return;
+    }
+    try {
+      setLoading(true);
+      const payload: Record<string, unknown> = {
+        semester: Number(form.semester),
+        section: form.section,
+        department: form.department,
+        batch: form.batch,
+      };
+      if (modelType === "Freeze Semester" && form.reason.trim()) {
+        payload.reason = form.reason.trim();
+      }
+      const res = await axios.post(endpoint, payload);
+      toast.success(res.data.message || `${modelType} completed`);
+      closeModal();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `${modelType} failed`);
     } finally {
       setLoading(false);
     }
@@ -798,268 +887,179 @@ function academicManagment() {
         </div>
       </div>
 
-      {
-        showModal && (
-          <div className='fixed inset-0 bg-black/50 flex justify-center items-center'>
-            <div className='h-auto max-h-[90vh] overflow-y-auto w-full max-w-2xl bg-white shadow-sm border border-slate-200 rounded-xl p-6 mx-4'>
-              <div className='flex justify-between items-center text-black border-b pb-3 mb-4'>
-                <h3 className='text-lg font-bold font-comfortaa'>{modelType}</h3>
-                <button
-                  className='rounded-full hover:bg-slate-100 p-2 cursor-pointer transition'
-                  onClick={closeModal}
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              {
-                modelType === "Freeze Semester" && (
-                  <>
-                    <div className='gap-2 flex'>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Semester</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">Semester</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
-                          <option value="3">3</option>
-                        </select>
-                      </div>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Section</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">Section</option>
-                          <option value="ALL">All </option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                        </select>
-                      </div>
-
-
-
+      <AdminModal
+        open={showModal}
+        onClose={closeModal}
+        title={modelType || "Academic Operation"}
+        description="Complete the required fields to continue this academic operation."
+        icon={modalMeta?.icon ?? <SquareTerminal size={20} />}
+      >
+              {(modelType === "Freeze Semester" ||
+                modelType === "Promote Semester" ||
+                modelType === "Activate Semester" ||
+                modelType === "Passout Student") && (
+                <>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>
+                        {modelType === "Promote Semester" ? "From Semester" : "Semester"}
+                      </label>
+                      <select
+                        className={adminFieldClass}
+                        value={form.semester}
+                        onChange={(e) => updateForm("semester", e.target.value)}
+                      >
+                        {(modelType === "Passout Student" ? [8] : [1, 2, 3, 4, 5, 6, 7, 8]).map((n) => (
+                          <option key={n} value={String(n)}>{n}</option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className='gap-2 flex'>
-
-
-
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'> Department</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester"> Department</option>
-                          <option value="CSE">Computer Science and Engineering</option>
-                          <option value="ME">Mechanical Engineering</option>
-                          <option value="CE">Civil Engineering</option>
+                    {modelType === "Promote Semester" && (
+                      <div>
+                        <label className={adminLabelClass}>Promote to Semester</label>
+                        <select
+                          className={adminFieldClass}
+                          value={form.toSemester}
+                          onChange={(e) => updateForm("toSemester", e.target.value)}
+                          disabled
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                            <option key={n} value={String(n)}>{n}</option>
+                          ))}
                         </select>
+                        <p className="mt-1 text-xs text-slate-500">Students move to the next semester automatically.</p>
                       </div>
+                    )}
+
+                    <div>
+                      <label className={adminLabelClass}>Section</label>
+                      <select
+                        className={adminFieldClass}
+                        value={form.section}
+                        onChange={(e) => updateForm("section", e.target.value)}
+                      >
+                        {["ALL", "A", "B", "C", "D", "E"].map((s) => (
+                          <option key={s} value={s}>{s === "ALL" ? "All" : s}</option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className='gap-2 flex'>
-
-
-
-                      <div className='w-full  flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'> Reason for Freezing of the Department</label>
-                        <textarea name="" id="" className='text-black p-2 border-2 my-2'>
-
-                        </textarea>
-                      </div>
+                    <div>
+                      <label className={adminLabelClass}>Department</label>
+                      <select
+                        className={adminFieldClass}
+                        value={form.department}
+                        onChange={(e) => updateForm("department", e.target.value)}
+                      >
+                        {DEPARTMENTS.map((d) => (
+                          <option key={d.value} value={d.value}>{d.label}</option>
+                        ))}
+                      </select>
                     </div>
 
-
-                    <button className='flex gap-3 p-3 w-full justify-center items-center bg-blue-500 mt-4 cursor-pointer rounded-xl font-bold font-comfortaa hover:bg-blue-700 transition-all duration-300  '>
-                      <span>
-                        <Send size={18} />
-                      </span>
-                      Submit
-                    </button>
-                  </>
-                )
-              }
-
-              {
-                modelType === "Promote Semester" && (
-                  <>
-                    <div className='gap-2 flex'>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>From Semester</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">From Semester</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
-                          <option value="3">3</option>
-                        </select>
-                      </div>
-
-
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Promote to Semester</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">To Semester</option>
-                          <option value="1">1</option>
-                          <option value="2">2</option>
-                          <option value="3">3</option>
-                        </select>
-                      </div>
+                    <div>
+                      <label className={adminLabelClass}>Batch</label>
+                      <select
+                        className={adminFieldClass}
+                        value={form.batch}
+                        onChange={(e) => updateForm("batch", e.target.value)}
+                      >
+                        {["2026-27", "2025-26", "2024-25", "2023-24"].map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className='gap-2 flex'>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Section</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">Section</option>
-                          <option value="ALL">All </option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                        </select>
+                    {modelType === "Freeze Semester" && (
+                      <div className="lg:col-span-2">
+                        <label className={adminLabelClass}>Reason for Freezing</label>
+                        <textarea
+                          rows={3}
+                          className={`${adminFieldClass} resize-none`}
+                          value={form.reason}
+                          onChange={(e) => updateForm("reason", e.target.value)}
+                          placeholder="Optional reason for freezing this semester group"
+                        />
                       </div>
+                    )}
+                  </div>
 
-
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'> Department</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester"> Department</option>
-                          <option value="CSE">Computer Science and Engineering</option>
-                          <option value="ME">Mechanical Engineering</option>
-                          <option value="CE">Civil Engineering</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <button className='flex gap-3 p-3 w-full justify-center items-center bg-blue-500 mt-4 cursor-pointer rounded-xl font-bold font-comfortaa hover:bg-blue-700 transition-all duration-300  '>
-                      <span>
-                        <Send size={18} />
-                      </span>
-                      Submit
-                    </button>
-                  </>
-                )
-              }
-
-              {
-                modelType === "Passout Student" && (
-                  <>
-                    <div className='gap-2 flex'>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>From Semester</label>
-                        <select name="" id="" className='text-black p-2'>
-
-                          <option value="8">8</option>
-
-                        </select>
-                      </div>
-
-
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'> Department</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester"> Department</option>
-                          <option value="CSE">Computer Science and Engineering</option>
-                          <option value="ME">Mechanical Engineering</option>
-                          <option value="CE">Civil Engineering</option>
-                        </select>
-                      </div>
-
-
-
-                    </div>
-
-                    <div className='gap-2 flex'>
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Section</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="promote Semester">Section</option>
-                          <option value="ALL">All </option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                        </select>
-                      </div>
-
-                      <div className='w-full lg:w-1/2 flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg'>
-                        <label htmlFor="" className='text-black'>Choose the Batch</label>
-                        <select name="" id="" className='text-black p-2'>
-                          <option value="">Batch</option>
-                          <option value="">2026-27</option>
-                          <option value="">2025-26</option>
-                          <option value="CE">2024-25</option>
-                        </select>
-                      </div>
-
-
-
-                    </div>
-
-                    <button className='flex gap-3 p-3 w-full justify-center items-center bg-blue-500 mt-4 cursor-pointer rounded-xl font-bold font-comfortaa hover:bg-blue-700 transition-all duration-300  '>
-                      <span>
-                        <Send size={18} />
-                      </span>
-                      Submit
-                    </button>
-                  </>
-                )
-              }
+                  <button
+                    type="button"
+                    className={`${adminPrimaryBtnClass} mt-6`}
+                    onClick={() => {
+                      if (modelType === "Passout Student") {
+                        confirmOperation(() =>
+                          toast.success("Passout flow coming soon (connect API when ready)"),
+                        );
+                        return;
+                      }
+                      if (modelType === "Promote Semester") {
+                        const next = String(Math.min(8, Number(form.semester) + 1));
+                        updateForm("toSemester", next);
+                      }
+                      confirmOperation(submitStudentSemesterOperation);
+                    }}
+                  >
+                    <Send size={18} />
+                    Submit
+                  </button>
+                </>
+              )}
 
               {modelType === "Assign Faculty To Subject" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Faculty</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Faculty</label>
+                      <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                         <option value="">Select faculty</option>
                         {facultyList.map((f) => (
                           <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Subject</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Subject</label>
+                      <select className={adminFieldClass} value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
                         <option value="">Select subject</option>
                         {subjectList.map((s) => (
                           <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Semester</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Semester</label>
+                      <select className={adminFieldClass} value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
                         {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Section</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.section} onChange={(e) => updateForm("section", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Section</label>
+                      <select className={adminFieldClass} value={form.section} onChange={(e) => updateForm("section", e.target.value)}>
                         {["ALL","A","B","C","D","E"].map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Department</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Department</label>
+                      <select className={adminFieldClass} value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
                         {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Academic Year</label>
-                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.academicYear} onChange={(e) => updateForm("academicYear", e.target.value)} placeholder="2025-26" />
+                    <div>
+                      <label className={adminLabelClass}>Academic Year</label>
+                      <input className={adminFieldClass} value={form.academicYear} onChange={(e) => updateForm("academicYear", e.target.value)} placeholder="2025-26" />
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_SUBJECT, {
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_SUBJECT, {
                       facultyUsername: form.selectedFacultyUsername,
                       subjectCode: form.selectedSubjectCode,
                       semester: form.semester,
                       section: form.section,
                       department: form.department,
                       academicYear: form.academicYear,
-                    }, "Faculty assigned to subject")}>
+                    }, "Faculty assigned to subject"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1067,40 +1067,40 @@ function academicManagment() {
 
               {modelType === "Assign Faculty To Class" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Faculty</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Faculty</label>
+                      <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                         <option value="">Select faculty</option>
                         {facultyList.map((f) => (
                           <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Subject</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Subject</label>
+                      <select className={adminFieldClass} value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
                         <option value="">Select subject</option>
                         {subjectList.map((s) => (
                           <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Subject Code</label>
-                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder="CSE301-A" />
+                    <div>
+                      <label className={adminLabelClass}>Subject Code</label>
+                      <input className={adminFieldClass} value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder="CSE301-A" />
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Room</label>
-                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.room} onChange={(e) => updateForm("room", e.target.value)} placeholder="Lab 201" />
+                    <div>
+                      <label className={adminLabelClass}>Room</label>
+                      <input className={adminFieldClass} value={form.room} onChange={(e) => updateForm("room", e.target.value)} placeholder="Lab 201" />
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_CLASS, {
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => submitFacultyOperation(API_ROUTES.FACULTY.ASSIGN_CLASS, {
                       facultyUsername: form.selectedFacultyUsername,
                       subjectCode: form.selectedSubjectCode,
                       classCode: form.classCode,
                       room: form.room,
-                    }, "Faculty assigned to class")}>
+                    }, "Faculty assigned to class"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1108,24 +1108,24 @@ function academicManagment() {
 
               {modelType === "Transfer Department" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Faculty</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Faculty</label>
+                      <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                         <option value="">Select faculty</option>
                         {facultyList.map((f) => (
                           <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">New Department</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.newDepartment} onChange={(e) => updateForm("newDepartment", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>New Department</label>
+                      <select className={adminFieldClass} value={form.newDepartment} onChange={(e) => updateForm("newDepartment", e.target.value)}>
                         {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.TRANSFER_DEPARTMENT, { facultyUsername: form.selectedFacultyUsername, newDepartment: form.newDepartment }, "Department transferred")}>
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => submitFacultyOperation(API_ROUTES.FACULTY.TRANSFER_DEPARTMENT, { facultyUsername: form.selectedFacultyUsername, newDepartment: form.newDepartment }, "Department transferred"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1133,16 +1133,16 @@ function academicManagment() {
 
               {modelType === "Faculty Workload" && (
                 <>
-                  <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                    <label className="text-black mb-1">Faculty</label>
-                    <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div>
+                    <label className={adminLabelClass}>Faculty</label>
+                    <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                       <option value="">Select faculty</option>
                       {facultyList.map((f) => (
                         <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                       ))}
                     </select>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all" onClick={fetchFacultyWorkload}>
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(fetchFacultyWorkload, `Load workload for selected faculty?`)}>
                     <BriefcaseBusiness size={18} /> Load Workload
                   </button>
                   {workload && (
@@ -1166,26 +1166,26 @@ function academicManagment() {
 
               {modelType === "Faculty Availability" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Faculty</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Faculty</label>
+                      <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                         <option value="">Select faculty</option>
                         {facultyList.map((f) => (
                           <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Availability</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.availability} onChange={(e) => updateForm("availability", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Availability</label>
+                      <select className={adminFieldClass} value={form.availability} onChange={(e) => updateForm("availability", e.target.value)}>
                         <option value="Available">Available</option>
                         <option value="Unavailable">Unavailable</option>
                         <option value="On Leave">On Leave</option>
                       </select>
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => submitFacultyOperation(API_ROUTES.FACULTY.AVAILABILITY, { facultyUsername: form.selectedFacultyUsername, availability: form.availability }, "Availability updated")}>
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => submitFacultyOperation(API_ROUTES.FACULTY.AVAILABILITY, { facultyUsername: form.selectedFacultyUsername, availability: form.availability }, "Availability updated"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1193,26 +1193,26 @@ function academicManagment() {
 
               {modelType === "Faculty Status Update" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Faculty</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Faculty</label>
+                      <select className={adminFieldClass} value={form.selectedFacultyUsername} onChange={(e) => updateForm("selectedFacultyUsername", e.target.value)}>
                         <option value="">Select faculty</option>
                         {facultyList.map((f) => (
                           <option key={f.username} value={f.username}>{f.username || "Unknown faculty"}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Status</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Status</label>
+                      <select className={adminFieldClass} value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                         <option value="on leave">On Leave</option>
                       </select>
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-emerald-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-emerald-700 transition-all" onClick={() => patchFacultyOperation(API_ROUTES.FACULTY.STATUS, { facultyUsername: form.selectedFacultyUsername, status: form.status }, "Faculty status updated")}>
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => patchFacultyOperation(API_ROUTES.FACULTY.STATUS, { facultyUsername: form.selectedFacultyUsername, status: form.status }, "Faculty status updated"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1220,37 +1220,37 @@ function academicManagment() {
 
               {modelType === "Add Subject" && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Subject Code</label>
-                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} />
+                  <div className={adminFormGridClass}>
+                    <div>
+                      <label className={adminLabelClass}>Subject Code</label>
+                      <input className={adminFieldClass} value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} />
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Subject Name</label>
-                      <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} />
+                    <div>
+                      <label className={adminLabelClass}>Subject Name</label>
+                      <input className={adminFieldClass} value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} />
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Credits</label>
-                      <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} />
+                    <div>
+                      <label className={adminLabelClass}>Credits</label>
+                      <input type="number" className={adminFieldClass} value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} />
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Semester</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Semester</label>
+                      <select className={adminFieldClass} value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
                         {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Department</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                    <div>
+                      <label className={adminLabelClass}>Department</label>
+                      <select className={adminFieldClass} value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
                         {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
                     </div>
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                      <label className="text-black mb-1">Total Classes</label>
-                      <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} />
+                    <div>
+                      <label className={adminLabelClass}>Total Classes</label>
+                      <input type="number" className={adminFieldClass} value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} />
                     </div>
                   </div>
-                  <button className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all" onClick={() => postSubjectOperation(API_ROUTES.SUBJECT.LIST, form, "Subject added")}>
+                  <button className={`${adminPrimaryBtnClass} mt-6`} onClick={() => confirmOperation(() => postSubjectOperation(API_ROUTES.SUBJECT.LIST, form, "Subject added"))}>
                     <Send size={18} /> Submit
                   </button>
                 </>
@@ -1258,10 +1258,10 @@ function academicManagment() {
 
               {(modelType === "Update Subject" || modelType === "Assign To Semester" || modelType === "Assign To Department" || modelType === "Activate Subject") && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg lg:col-span-2">
-                      <label className="text-black mb-1">Subject</label>
-                      <select className="text-black p-2 rounded-lg border border-slate-200" value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
+                  <div className={adminFormGridClass}>
+                    <div className="lg:col-span-2">
+                      <label className={adminLabelClass}>Subject</label>
+                      <select className={adminFieldClass} value={form.selectedSubjectCode} onChange={(e) => updateForm("selectedSubjectCode", e.target.value)}>
                         <option value="">Select subject</option>
                         {subjectList.map((s) => (
                           <option key={s.subjectCode} value={s.subjectCode}>{s.subjectCode} — {s.subjectName}</option>
@@ -1271,21 +1271,21 @@ function academicManagment() {
 
                     {modelType === "Update Subject" && (
                       <>
-                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                          <label className="text-black mb-1">Subject Code</label>
-                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
+                        <div>
+                          <label className={adminLabelClass}>Subject Code</label>
+                          <input className={adminFieldClass} value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
                         </div>
-                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                          <label className="text-black mb-1">Subject Name</label>
-                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} placeholder='Enter Subject Name' />
+                        <div>
+                          <label className={adminLabelClass}>Subject Name</label>
+                          <input className={adminFieldClass} value={form.subjectName} onChange={(e) => updateForm("subjectName", e.target.value)} placeholder='Enter Subject Name' />
                         </div>
-                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                          <label className="text-black mb-1">Credits</label>
-                          <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} placeholder='Enter Credits' />
+                        <div>
+                          <label className={adminLabelClass}>Credits</label>
+                          <input type="number" className={adminFieldClass} value={form.credits} onChange={(e) => updateForm("credits", e.target.value)} placeholder='Enter Credits' />
                         </div>
-                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                          <label className="text-black mb-1">Total Classes</label>
-                          <input type="number" className="text-black p-2 rounded-lg border border-slate-200" value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} placeholder='Enter Subject Name' />
+                        <div>
+                          <label className={adminLabelClass}>Total Classes</label>
+                          <input type="number" className={adminFieldClass} value={form.totalClasses} onChange={(e) => updateForm("totalClasses", e.target.value)} placeholder='Enter Subject Name' />
                         </div>
                       </>
                     )}
@@ -1293,14 +1293,14 @@ function academicManagment() {
                     {modelType === "Assign To Semester" && (
                       <>
                       <div>
-                        <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                          <label className="text-black mb-1">Subject Code</label>
-                          <input className="text-black p-2 rounded-lg border border-slate-200" value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
+                        <div>
+                          <label className={adminLabelClass}>Subject Code</label>
+                          <input className={adminFieldClass} value={form.subjectCode} onChange={(e) => updateForm("subjectCode", e.target.value)} placeholder='Enter Subject Code' />
                         </div>
                       </div>
-                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                        <label className="text-black mb-1">Semester</label>
-                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
+                      <div>
+                        <label className={adminLabelClass}>Semester</label>
+                        <select className={adminFieldClass} value={form.semester} onChange={(e) => updateForm("semester", e.target.value)}>
                           {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
                         </select>
                       </div>
@@ -1309,18 +1309,18 @@ function academicManagment() {
                     )}
 
                     {modelType === "Assign To Department" && (
-                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                        <label className="text-black mb-1">Department</label>
-                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
+                      <div>
+                        <label className={adminLabelClass}>Department</label>
+                        <select className={adminFieldClass} value={form.department} onChange={(e) => updateForm("department", e.target.value)}>
                           {DEPARTMENTS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                         </select>
                       </div>
                     )}
 
                     {modelType === "Activate Subject" && (
-                      <div className="flex flex-col m-2 p-2 shadow-sm border border-slate-200 rounded-lg">
-                        <label className="text-black mb-1">Status</label>
-                        <select className="text-black p-2 rounded-lg border border-slate-200" value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
+                      <div>
+                        <label className={adminLabelClass}>Status</label>
+                        <select className={adminFieldClass} value={form.status} onChange={(e) => updateForm("status", e.target.value)}>
                           <option value="active">Active</option>
                           <option value="inactive">Inactive</option>
                         </select>
@@ -1329,10 +1329,10 @@ function academicManagment() {
                   </div>
 
                   <button
-                    className="flex gap-3 p-3 w-full justify-center items-center bg-violet-600 mt-4 cursor-pointer rounded-xl font-bold text-white hover:bg-violet-700 transition-all"
-                    onClick={() => {
+                    className={`${adminPrimaryBtnClass} mt-6`}
+                    onClick={() => confirmOperation(() => {
                       if (modelType === "Update Subject") {
-                        patchSubjectOperation(API_ROUTES.SUBJECT.UPDATE, {
+                        return patchSubjectOperation(API_ROUTES.SUBJECT.UPDATE, {
                           subjectCode: form.selectedSubjectCode,
                           newSubjectCode: form.subjectCode,
                           subjectName: form.subjectName,
@@ -1342,13 +1342,13 @@ function academicManagment() {
                           totalClasses: form.totalClasses,
                         }, "Subject updated");
                       } else if (modelType === "Assign To Semester") {
-                        patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_SEMESTER, { subjectCode: form.selectedSubjectCode, semester: form.semester }, "Semester assigned");
+                        return patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_SEMESTER, { subjectCode: form.selectedSubjectCode, semester: form.semester }, "Semester assigned");
                       } else if (modelType === "Assign To Department") {
-                        patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_DEPARTMENT, { subjectCode: form.selectedSubjectCode, department: form.department }, "Department assigned");
+                        return patchSubjectOperation(API_ROUTES.SUBJECT.ASSIGN_DEPARTMENT, { subjectCode: form.selectedSubjectCode, department: form.department }, "Department assigned");
                       } else {
-                        patchSubjectOperation(API_ROUTES.SUBJECT.ACTIVATE, { subjectCode: form.selectedSubjectCode, status: form.status }, "Subject status updated");
+                        return patchSubjectOperation(API_ROUTES.SUBJECT.ACTIVATE, { subjectCode: form.selectedSubjectCode, status: form.status }, "Subject status updated");
                       }
-                    }}
+                    })}
                   >
                     <Send size={18} /> Submit
                   </button>
@@ -1575,14 +1575,14 @@ function academicManagment() {
                     {/* Footer */}
                     <div className="flex flex-col lg:flex-row gap-4 mt-8">
 
-                      <button className="w-full py-3 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-all cursor-pointer" onClick={() => setModal(false)}>
+                      <button className="w-full py-3 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-all cursor-pointer" onClick={closeModal}>
                         Cancel
                       </button>
 
                       <button className={`w-full flex justify-center items-center gap-2 py-2.5 text-sm  bg-indigo-600 rounded-xl font-bold text-white hover:bg-indigo-700 transition-all duration-300 cursor-pointer  ${loading || !validationDone || hasValidationErrors
                         ? "bg-slate-200 text-slate-400 cursor-not-allowed opacity-70" // ❌ Locked style (Grayed out)
                         : "bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-sm shadow-indigo-100" // ✅ Active style (Indigo)
-                        }`} onClick={handleImportofBulkStudents} disabled={loading || !validationDone || hasValidationErrors}>
+                        }`} onClick={() => confirmOperation(() => handleImportofBulkStudents(), `Import validated records for "${modelType}"?`)} disabled={loading || !validationDone || hasValidationErrors}>
                         <Send size={18} />
                         Import Records
                       </button>
@@ -1591,10 +1591,35 @@ function academicManagment() {
                   </>
                 )
               }
-            </div>
+      </AdminModal>
+
+      <AdminModal
+        open={confirmOpen}
+        onClose={cancelConfirm}
+        title="Confirm Operation"
+        description={confirmMessage}
+        icon={<AlertTriangle size={20} />}
+        maxWidthClassName="max-w-md"
+        zIndexClassName="z-[60]"
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={cancelConfirm} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-sm shadow-red-600/20 transition hover:bg-red-700 active:scale-[0.99]"
+            >
+              Yes, Confirm
+            </button>
           </div>
-        )
-      }
+        }
+      >
+        <p className="text-sm leading-relaxed text-slate-600">
+          This will update academic records. Please review the details before confirming.
+        </p>
+      </AdminModal>
     </div>
   )
 }

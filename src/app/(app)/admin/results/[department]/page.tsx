@@ -153,7 +153,8 @@ function DepartmentResultsPage() {
                 Back to Results
               </Link>
               <h1 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">
-                {overview.code || department} · {overview.name || department}
+                {overview.code || department
+                } 
               </h1>
               <p className="mt-1 text-sm text-slate-600">
                 Department performance overview
@@ -164,7 +165,7 @@ function DepartmentResultsPage() {
               type="button"
               onClick={handleExport}
               disabled={exporting}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 self-stretch rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-start"
             >
               <Download size={18} />
               {exporting ? "Exporting..." : "Export"}
@@ -283,7 +284,7 @@ function DepartmentResultsPage() {
                             <div className="text-center font-medium text-slate-700">{row.failed}</div>
                             <div className="flex justify-center">
                               <Link
-                                href={`/admin/results/${encodeURIComponent(department)}/semester/${encodeURIComponent(row.semester)}`}
+                                href={`/admin/results/${encodeURIComponent(department)}/semester/${encodeURIComponent(String(row.semester))}`}
                                 className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
                               >
                                 View Subjects
@@ -315,7 +316,7 @@ function DepartmentResultsPage() {
                               </p>
                               <p className="mt-1 text-xs text-slate-500">{row.failed} failed · {performanceLabel(level)}</p>
                               <Link
-                                href={`/admin/results/${encodeURIComponent(department)}/semester/${encodeURIComponent(row.semester)}`}
+                                href={`/admin/results/${encodeURIComponent(department)}/semester/${encodeURIComponent(String(row.semester))}`}
                                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
                               >
                                 <BookOpen size={16} />

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import Connect from "@/dbConnect/connect";
-import { ExamResult } from "@/models/exam.model";
-import { Student } from "@/models/student.model";
-import { Subject } from "@/models/subject.model";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { ResultBatch } from "@/models/resultBatch.model";
+import { SemesterResult } from "@/models/semesterResult";
 
 /** Main Results page only — published exams + stats + best/worst department */
 export async function GET(_request: NextRequest) {
@@ -11,59 +11,91 @@ export async function GET(_request: NextRequest) {
   try {
     await Connect();
 
-    const results = await ExamResult.find()
-      .populate({
-        path: "studentId",
-        model: Student,
-        select: "department semester section rollNumber",
-      })
-      .populate({
-        path: "subjectId",
-        model: Subject,
-        select: "subjectCode subjectName department",
-      })
-      .sort({ examResultDate: -1 })
-      .lean();
+    const [publishedBatches, draftBatches] = await Promise.all([
+      ResultBatch.find({ status: "published" }).lean(),
+      ResultBatch.find({ status: { $in: ["draft", "unpublished"] } }).lean(),
+    ]);
 
-    const published = results.filter(
-      (r: any) => r.examPublishedStatus === "published",
-    );
-    const draft = results.filter(
-      (r: any) => r.examPublishedStatus === "pending",
-    );
-    const passed = published.filter((r: any) => r.examResult === "passed");
-    const failed = published.filter(
-      (r: any) => r.examResult === "failed" || r.examResult === "back",
+    const publishedBatchIds = publishedBatches.map(
+      (b) => b._id as mongoose.Types.ObjectId,
     );
 
-    const uniqueStudents = new Set(
-      results
-        .map((r: any) => String(r.studentId?._id || r.studentId || ""))
-        .filter(Boolean),
-    );
+    const semesterResults = publishedBatchIds.length
+      ? await SemesterResult.find({
+          resultBatch: { $in: publishedBatchIds },
+        // mongoose FilterQuery + Schema.Types.ObjectId mismatch
+        } as Record<string, unknown>)
+          .select("studentId resultBatch passStatus passStatusDate")
+          .lean()
+      : [];
+
+    const byBatch = new Map<
+      string,
+      {
+        total: number;
+        passed: number;
+        students: Set<string>;
+        latestDate: Date | null;
+      }
+    >();
+
+    const uniqueStudents = new Set<string>();
+    let totalPassed = 0;
+    let totalFailed = 0;
+
+    for (const sr of semesterResults) {
+      const batchId = String(sr.resultBatch);
+      const entry = byBatch.get(batchId) || {
+        total: 0,
+        passed: 0,
+        students: new Set<string>(),
+        latestDate: null,
+      };
+
+      entry.total += 1;
+      if (sr.passStatus === "Pass") {
+        entry.passed += 1;
+        totalPassed += 1;
+      } else if (sr.passStatus === "Fail") {
+        totalFailed += 1;
+      }
+
+      const sid = String(sr.studentId || "");
+      if (sid) {
+        entry.students.add(sid);
+        uniqueStudents.add(sid);
+      }
+
+      if (sr.passStatusDate) {
+        const d = new Date(sr.passStatusDate);
+        if (!entry.latestDate || d > entry.latestDate) entry.latestDate = d;
+      }
+
+      byBatch.set(batchId, entry);
+    }
 
     const overallPassPercent =
-      published.length > 0
-        ? Math.round((passed.length / published.length) * 1000) / 10
+      semesterResults.length > 0
+        ? Math.round((totalPassed / semesterResults.length) * 1000) / 10
         : 0;
 
-    const byDepartment = await ExamResult.aggregate([
-      { $match: { examPublishedStatus: "published" } },
+    const byDepartment = await SemesterResult.aggregate([
       {
         $lookup: {
-          from: "students",
-          localField: "studentId",
+          from: "resultbatches",
+          localField: "resultBatch",
           foreignField: "_id",
-          as: "studentData",
+          as: "batch",
         },
       },
-      { $unwind: "$studentData" },
+      { $unwind: "$batch" },
+      { $match: { "batch.status": "published" } },
       {
         $group: {
-          _id: "$studentData.department",
+          _id: "$batch.department",
           totalExamTaken: { $sum: 1 },
           passedExam: {
-            $sum: { $cond: [{ $eq: ["$examResult", "passed"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$passStatus", "Pass"] }, 1, 0] },
           },
         },
       },
@@ -94,81 +126,33 @@ export async function GET(_request: NextRequest) {
       { $sort: { passPercentage: -1 } },
     ]);
 
-    // Published exams table — one row per subject + exam type + dept + semester
-    const examMap = new Map<
-      string,
-      {
-        id: string;
-        examTitle: string;
-        examType: string;
-        department: string;
-        semester: string;
-        section: string;
-        publishedDate: Date | null;
-        subjectCode: string;
-        total: number;
-        passed: number;
-        students: Set<string>;
-      }
-    >();
+    const data = publishedBatches
+      .map((batch) => {
+        const batchStats = byBatch.get(String(batch._id)) || {
+          total: 0,
+          passed: 0,
+          students: new Set<string>(),
+          latestDate: null as Date | null,
+        };
 
-    for (const r of published as any[]) {
-      const student = r.studentId as any;
-      const subject = r.subjectId as any;
-      const department = student?.department || subject?.department || "—";
-      const semester = String(student?.semester ?? "—");
-      const examType = mapExamType(r.examType);
-      const subjectCode = subject?.subjectCode || "—";
-      const examTitle = subject?.subjectName || r.examType || "Exam";
-      const key = `${subjectCode}|${examType}|${department}|${semester}`.toLowerCase();
-
-      const entry = examMap.get(key) || {
-        id: String(r._id),
-        examTitle,
-        examType,
-        department,
-        semester,
-        section: student?.section || "—",
-        publishedDate: r.examResultDate ? new Date(r.examResultDate) : null,
-        subjectCode,
-        total: 0,
-        passed: 0,
-        students: new Set<string>(),
-      };
-
-      entry.total += 1;
-      if (r.examResult === "passed") entry.passed += 1;
-      const sid = String(student?._id || r.studentId || "");
-      if (sid) entry.students.add(sid);
-
-      if (r.examResultDate) {
-        const d = new Date(r.examResultDate);
-        if (!entry.publishedDate || d > entry.publishedDate) {
-          entry.publishedDate = d;
-        }
-      }
-
-      examMap.set(key, entry);
-    }
-
-    const data = Array.from(examMap.values())
-      .map((e) => ({
-        id: e.id,
-        examTitle: e.examTitle,
-        examType: e.examType,
-        department: e.department,
-        semester: e.semester,
-        section: e.section,
-        publishedDate: e.publishedDate ? formatDate(e.publishedDate) : "—",
-        studentsCount: e.students.size || e.total,
-        passRate: e.total ? Math.round((e.passed / e.total) * 1000) / 10 : 0,
-        status: "Published",
-        subjectCode: e.subjectCode,
-      }))
-      .sort((a, b) => {
-        // Newest published first (string date is en-GB — fall back to title)
-        return a.examTitle.localeCompare(b.examTitle);
-      });
+        return {
+          id: String(batch._id),
+          examTitle: batch.title || "Result Publication",
+          examType: mapExamType(batch.ExamType),
+          department: batch.department || "—",
+          semester: Number(batch.semester ?? "—"),
+          section: "—",
+          publishedDate: batchStats.latestDate
+            ? formatDate(batchStats.latestDate)
+            : "—",
+          studentsCount: batchStats.students.size || batchStats.total,
+          passRate: batchStats.total
+            ? Math.round((batchStats.passed / batchStats.total) * 1000) / 10
+            : 0,
+          status: "Published" as const,
+        };
+      })
+      .sort((a, b) => a.examTitle.localeCompare(b.examTitle));
 
     requestLogger.info(
       {
@@ -186,13 +170,13 @@ export async function GET(_request: NextRequest) {
       stats: {
         totalDeclarations: data.length,
         published: data.length,
-        draft: draft.length,
+        draft: draftBatches.length,
         studentsCovered: uniqueStudents.size,
       },
       performance: {
         overallPassPercent,
-        totalPassed: passed.length,
-        totalFailed: failed.length,
+        totalPassed,
+        totalFailed,
         bestDepartment: byDepartment[0] || null,
         worstDepartment: byDepartment[byDepartment.length - 1] || null,
       },

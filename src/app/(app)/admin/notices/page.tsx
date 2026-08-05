@@ -2,6 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
+import AdminModal, {
+  adminFieldClass,
+  adminLabelClass,
+  adminPrimaryBtnClass,
+  adminSecondaryBtnClass,
+} from "@/utils/Admin/AdminModal";
 import {
   Bell,
   CalendarClock,
@@ -14,6 +20,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type NoticeRow = {
   title: string;
@@ -50,6 +57,9 @@ function statusClass(status: NoticeRow["status"]) {
 }
 
 function AdminNotices() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -77,12 +87,30 @@ function AdminNotices() {
     body: "",
   });
 
+  const openAdd = () => {
+    setForm({
+      title: "",
+      type: "Important",
+      audience: "All",
+      publishedDate: "",
+      expiryDate: "",
+      body: "",
+    });
+    setShowModal(true);
+  };
+
   useEffect(() => {
     const onResize = () => setLargeScreen(window.innerWidth >= 1024);
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    openAdd();
+    router.replace(pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   useEffect(() => {
     const fetchNotices = async () => {
@@ -209,35 +237,76 @@ function AdminNotices() {
   };
 
   const NoticeFormFields = ({ disabled = false }: { disabled?: boolean }) => (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Notice Title</label>
-        <input disabled={disabled} value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Notice title" />
+        <label className={adminLabelClass}>Notice Title</label>
+        <input
+          disabled={disabled}
+          value={form.title}
+          onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+          className={adminFieldClass}
+          placeholder="Notice title"
+        />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Notice Body</label>
-        <textarea disabled={disabled} value={form.body} onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))} rows={4} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Write notice content..." />
+        <label className={adminLabelClass}>Notice Body</label>
+        <textarea
+          disabled={disabled}
+          value={form.body}
+          onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
+          rows={4}
+          className={`${adminFieldClass} resize-none`}
+          placeholder="Write notice content..."
+        />
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Topic</label>
-          <select disabled={disabled} value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            {filterOptions[0].options.map((t) => (<option key={t} value={t}>{t}</option>))}
+          <label className={adminLabelClass}>Topic</label>
+          <select
+            disabled={disabled}
+            value={form.type}
+            onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
+            className={adminFieldClass}
+          >
+            {filterOptions[0].options.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Audience</label>
-          <select disabled={disabled} value={form.audience} onChange={(e) => setForm((p) => ({ ...p, audience: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            {filterOptions[2].options.map((a) => (<option key={a} value={a}>{a}</option>))}
+          <label className={adminLabelClass}>Audience</label>
+          <select
+            disabled={disabled}
+            value={form.audience}
+            onChange={(e) => setForm((p) => ({ ...p, audience: e.target.value }))}
+            className={adminFieldClass}
+          >
+            {filterOptions[2].options.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Published Date</label>
-          <input disabled={disabled} type="text" value={form.publishedDate} onChange={(e) => setForm((p) => ({ ...p, publishedDate: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="12 May 2026" />
+          <label className={adminLabelClass}>Published Date</label>
+          <input
+            disabled={disabled}
+            type="text"
+            value={form.publishedDate}
+            onChange={(e) => setForm((p) => ({ ...p, publishedDate: e.target.value }))}
+            className={adminFieldClass}
+            placeholder="12 May 2026"
+          />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Expiry Date</label>
-          <input disabled={disabled} type="text" value={form.expiryDate} onChange={(e) => setForm((p) => ({ ...p, expiryDate: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="25 May 2026" />
+          <label className={adminLabelClass}>Expiry Date</label>
+          <input
+            disabled={disabled}
+            type="text"
+            value={form.expiryDate}
+            onChange={(e) => setForm((p) => ({ ...p, expiryDate: e.target.value }))}
+            className={adminFieldClass}
+            placeholder="25 May 2026"
+          />
         </div>
       </div>
     </div>
@@ -259,7 +328,7 @@ function AdminNotices() {
               <h1 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">Notices</h1>
               <p className="mt-1 text-sm text-slate-600">Publish and manage institutional announcements</p>
             </div>
-            <button type="button" onClick={() => setShowModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">
+            <button type="button" onClick={openAdd} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">
               <PlusCircle size={18} /> Add Notice
             </button>
           </div>
@@ -397,43 +466,74 @@ function AdminNotices() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Add Notice</h3>
-              <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-slate-100 text-slate-900"><X size={22} /></button>
-            </div>
-            <NoticeFormFields />
-            <button type="button" onClick={() => { toast.success("Notice published (connect API when ready)"); setShowModal(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Submit</button>
+      <AdminModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add Notice"
+        description="Publish a new announcement to students and faculty."
+        icon={<Megaphone size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setShowModal(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Notice published (connect API when ready)");
+                setShowModal(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Publish Notice
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <NoticeFormFields />
+      </AdminModal>
 
-      {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Edit Notice</h3>
-              <button type="button" onClick={() => setEdit(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <NoticeFormFields />
-            <button type="button" onClick={() => { toast.success("Notice updated (connect API when ready)"); setEdit(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Save Changes</button>
+      <AdminModal
+        open={edit}
+        onClose={() => setEdit(false)}
+        title="Edit Notice"
+        description="Update notice details and republish changes."
+        icon={<Pen size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setEdit(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Notice updated (connect API when ready)");
+                setEdit(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Save Changes
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <NoticeFormFields />
+      </AdminModal>
 
-      {view && selectedNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Notice Details</h3>
-              <button type="button" onClick={() => setView(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <NoticeFormFields disabled />
-          </div>
-        </div>
-      )}
+      <AdminModal
+        open={view && Boolean(selectedNotice)}
+        onClose={() => setView(false)}
+        title="Notice Details"
+        description="Read-only preview of the selected notice."
+        icon={<Eye size={20} />}
+        footer={
+          <button type="button" onClick={() => setView(false)} className={adminSecondaryBtnClass}>
+            Close
+          </button>
+        }
+      >
+        <NoticeFormFields disabled />
+      </AdminModal>
     </div>
   );
 }

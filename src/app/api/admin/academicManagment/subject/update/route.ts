@@ -9,7 +9,16 @@ export async function PATCH(request: NextRequest) {
   try {
     await Connect();
     const body = await request.json();
-    const { subjectCode, newSubjectCode, subjectName, credits, semester, department, totalClasses } = body;
+    const {
+      subjectCode,
+      newSubjectCode,
+      subjectName,
+      credits,
+      semester,
+      department,
+      totalClasses,
+      IspracticalSubject,
+    } = body;
 
     if (!subjectCode) {
       requestLogger.warn({}, "Invalid payload: subjectCode required");
@@ -32,9 +41,12 @@ export async function PATCH(request: NextRequest) {
       ...(newSubjectCode && { subjectCode: newSubjectCode }),
       ...(subjectName && { subjectName }),
       ...(credits && { credits }),
-      ...(semester && { semester: String(semester) }),
+      ...(semester && { semester: Number(semester) }),
       ...(department && { department }),
       ...(totalClasses !== undefined && { totalClasses }),
+      ...(IspracticalSubject !== undefined && {
+        IspracticalSubject: Boolean(IspracticalSubject),
+      }),
     };
 
     const updated = await Subject.findByIdAndUpdate(

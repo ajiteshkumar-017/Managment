@@ -2,6 +2,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Bar from "@/utils/Admin/Bar";
+import AdminModal, {
+  adminPrimaryBtnClass,
+  adminSecondaryBtnClass,
+} from "@/utils/Admin/AdminModal";
 import {
   Building2,
   Eye,
@@ -15,6 +19,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type ClassRow = {
   classNo: string;
@@ -53,6 +58,9 @@ function statusClass(status: ClassRow["status"]) {
 }
 
 function AdminClasses() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
@@ -216,6 +224,12 @@ function AdminClasses() {
     });
     setShowModal(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    openAdd();
+    router.replace(pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   const getPagination = (page: number, total: number) => {
     const pages: (number | string)[] = [];
@@ -426,43 +440,74 @@ function AdminClasses() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Add Class</h3>
-              <button type="button" onClick={() => setShowModal(false)} className="rounded-full p-2 hover:bg-slate-100 text-slate-900"><X size={22} /></button>
-            </div>
-            <ClassFormFields />
-            <button type="button" onClick={() => { toast.success("Class added (connect API when ready)"); setShowModal(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Submit</button>
+      <AdminModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add Class"
+        description="Create a new class room allocation and schedule entry."
+        icon={<School size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setShowModal(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Class added (connect API when ready)");
+                setShowModal(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Add Class
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <ClassFormFields />
+      </AdminModal>
 
-      {edit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Edit Class</h3>
-              <button type="button" onClick={() => setEdit(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <ClassFormFields />
-            <button type="button" onClick={() => { toast.success("Class updated (connect API when ready)"); setEdit(false); }} className="mt-6 w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition hover:bg-indigo-700">Save Changes</button>
+      <AdminModal
+        open={edit}
+        onClose={() => setEdit(false)}
+        title="Edit Class"
+        description="Update class room, subject, and faculty assignment."
+        icon={<Pen size={20} />}
+        footer={
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setEdit(false)} className={adminSecondaryBtnClass}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Class updated (connect API when ready)");
+                setEdit(false);
+              }}
+              className={adminPrimaryBtnClass}
+            >
+              Save Changes
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <ClassFormFields />
+      </AdminModal>
 
-      {view && selectedClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold font-comfortaa text-slate-900">Class Details</h3>
-              <button type="button" onClick={() => setView(false)} className="rounded-full p-2 hover:bg-slate-100"><X size={22} /></button>
-            </div>
-            <ClassFormFields disabled />
-          </div>
-        </div>
-      )}
+      <AdminModal
+        open={view && Boolean(selectedClass)}
+        onClose={() => setView(false)}
+        title="Class Details"
+        description="Read-only preview of the selected class."
+        icon={<Eye size={20} />}
+        footer={
+          <button type="button" onClick={() => setView(false)} className={adminSecondaryBtnClass}>
+            Close
+          </button>
+        }
+      >
+        <ClassFormFields disabled />
+      </AdminModal>
     </div>
   );
 }

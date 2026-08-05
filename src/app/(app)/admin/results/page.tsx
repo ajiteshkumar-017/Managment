@@ -27,6 +27,10 @@ import {
 import axios from "axios";
 import toast from "react-hot-toast";
 import { exportPublishedExamsReport } from "./_data/exportReport";
+import AddResultModal, {
+  type AddResultFormValues,
+} from "./_components/AddResultModal";
+import UploadMarksheetModal from "./_components/UploadMarksheetModal";
 
 type ExamType = "Mid Sem" | "End Sem" | "Internal" | "Supplementary";
 type ResultStatus = "Published" | "Draft" | "Scheduled";
@@ -102,10 +106,21 @@ const filterOptions = [
 ];
 
 const resultOperations = [
-  { title: "Bulk Marks Upload", icon: <Upload size={16} />, color: "bg-indigo-100 text-indigo-600", opensFormModal: true },
-  { title: "Publish All Drafts", icon: <Send size={16} />, color: "bg-emerald-100 text-emerald-600", opensFormModal: false },
-  { title: "Download Template", icon: <FileSpreadsheet size={16} />, color: "bg-violet-100 text-violet-600", opensFormModal: false },
+  { title: "Upload Marksheet", icon: <Upload size={16} />, color: "bg-indigo-100 text-indigo-600", action: "upload" as const },
+  { title: "Download Template", icon: <FileSpreadsheet size={16} />, color: "bg-violet-100 text-violet-600", action: "template" as const },
 ];
+
+type DraftRow = {
+  id: string;
+  examTitle: string;
+  examType: string;
+  department: string;
+  semester: string;
+  academicYear?: string;
+  studentsCount: number;
+  status: string;
+  updatedAt?: string;
+};
 
 const PAGE_SIZE = 5;
 
@@ -163,7 +178,7 @@ function ResultFormFields({
           onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as ResultRow["status"] }))}
           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          {filterOptions[3].options.map((s) => (
+          {RESULT_STATUSES.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
@@ -419,6 +434,10 @@ function AdminResults() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [documentsById, setDocumentsById] = useState<Record<string, StoredDocument>>({});
   const [exporting, setExporting] = useState(false);
+  const [drafts, setDrafts] = useState<DraftRow[]>([]);
+  const [draftModalOpen, setDraftModalOpen] = useState(false);
+  const [creatingDraft, setCreatingDraft] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -428,32 +447,29 @@ function AdminResults() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get("/api/admin/result/getStatsData");
-        if (!res.data?.success) {
-          throw new Error(res.data?.message || "Failed to fetch results");
-        }
+  const fetchPublished = async () => {
+    const res = await axios.get("/api/admin/result/getStatsData");
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Failed to fetch results");
+    }
 
-        const data: ResultRow[] = (res.data.data || []).map((r: ResultRow) => ({
-          id: String(r.id),
-          examTitle: r.examTitle || "Exam",
-          examType: normalizeExamType(r.examType),
-          department: r.department || "—",
-          semester: String(r.semester ?? "—"),
-          section: r.section || "—",
-          publishedDate: r.publishedDate || "—",
-          studentsCount: Number(r.studentsCount) || 0,
-          passRate: Number(r.passRate) || 0,
-          status: normalizeStatus(r.status),
-          result: r.result,
-          subjectCode: r.subjectCode,
-          studentName: r.studentName,
-        }));
+    const data: ResultRow[] = (res.data.data || []).map((r: ResultRow) => ({
+      id: String(r.id),
+      examTitle: r.examTitle || "Exam",
+      examType: normalizeExamType(r.examType),
+      department: r.department || "—",
+      semester: String(r.semester ?? "—"),
+      section: r.section || "—",
+      publishedDate: r.publishedDate || "—",
+      studentsCount: Number(r.studentsCount) || 0,
+      passRate: Number(r.passRate) || 0,
+      status: normalizeStatus(r.status),
+      result: r.result,
+      subjectCode: r.subjectCode,
+      studentName: r.studentName,
+    }));
 
-        setRows(data);
+    setRows(data);
         setStats({
           totalDeclarations: res.data.stats?.totalDeclarations ?? data.length,
           published: res.data.stats?.published ?? 0,
@@ -467,19 +483,46 @@ function AdminResults() {
           bestDepartment: res.data.performance?.bestDepartment || null,
           worstDepartment: res.data.performance?.worstDepartment || null,
         });
-      } catch (err: unknown) {
-        const message = axios.isAxiosError(err)
-          ? err.response?.data?.message || err.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to fetch results";
-        toast.error(message);
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+      };
+
+  const fetchDrafts = async () => {
+    const res = await axios.get("/api/admin/result/draft");
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Failed to fetch drafts");
+    }
+    const list = (res.data.data || []).map((d: DraftRow) => ({
+      id: String(d.id),
+      examTitle: d.examTitle || "Untitled draft",
+      examType: d.examType || "—",
+      department: d.department || "—",
+      semester: String(d.semester ?? "—"),
+      academicYear: d.academicYear,
+      studentsCount: Number(d.studentsCount) || 0,
+      status: "Draft",
+      updatedAt: d.updatedAt,
+    }));
+    setDrafts(list);
+    setStats((prev) => ({ ...prev, draft: list.length }));
+  };
+
+  const refreshAll = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchPublished(), fetchDrafts()]);
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to fetch results";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshAll();
   }, []);
 
   useEffect(() => {
@@ -641,10 +684,19 @@ function AdminResults() {
   };
 
   const openCreateModal = () => {
-    setForm(defaultForm);
-    resetAttachedFile();
-    setSelectedResult(null);
-    setModalMode("create");
+    setDraftModalOpen(true);
+  };
+
+  const handleAddResult = async (values: AddResultFormValues) => {
+    // Selection confirmed — modal advances to Download Template step
+    toast.success(
+      `Ready: ${values.department} · Sem ${values.semester} · Batch ${values.batch} · ${values.ExamType}`,
+    );
+  };
+
+  const openDraftEditor = (_draft: DraftRow) => {
+    // Continue-editing flow will open the marks upload step next
+    setDraftModalOpen(true);
   };
 
   const openView = (row: ResultRow) => {
@@ -655,6 +707,11 @@ function AdminResults() {
   };
 
   const openEdit = (row: ResultRow) => {
+    // Published results are locked — only drafts are editable via DraftResultModal
+    if (row.status === "Published") {
+      toast.error("Published results are locked and cannot be edited");
+      return;
+    }
     setSelectedResult(row);
     populateForm(row);
     resetAttachedFile();
@@ -766,25 +823,15 @@ function AdminResults() {
     }
   };
 
-  const handleOperation = (title: string, opensFormModal?: boolean) => {
-    if (opensFormModal) {
+  const handleOperation = (action?: "upload" | "template") => {
+    if (action === "upload") {
+      setUploadModalOpen(true);
+      return;
+    }
+    if (action === "template") {
       openCreateModal();
       return;
     }
-    if (title === "Download Template") {
-      const csv =
-        "examTitle,examType,department,semester,section,studentRoll,result\nData Structures,End Sem,CSE,3,A,CSE2021001,passed\n";
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "result_upload_template.csv";
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success("Template downloaded");
-      return;
-    }
-    toast(`${title} — connect API when ready`, { icon: "ℹ️" });
   };
 
   const handleExportPublished = () => {
@@ -870,12 +917,12 @@ function AdminResults() {
                 Publish exam results, manage marks, and track student performance
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 self-start">
+            <div className="flex w-full flex-col gap-2 self-stretch sm:w-auto sm:flex-row sm:items-center sm:self-start">
               <button
                 type="button"
                 onClick={handleExportPublished}
                 disabled={exporting || loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/40 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
                 <Download size={18} />
                 {exporting ? "Exporting..." : "Export"}
@@ -883,10 +930,10 @@ function AdminResults() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 sm:w-auto"
               >
                 <PlusCircle size={18} />
-                Publish Result
+                Add Result
               </button>
             </div>
           </div>
@@ -941,13 +988,15 @@ function AdminResults() {
 
           <div className="mt-8">
             <h2 className="text-lg font-bold text-slate-900">Result Operations</h2>
-            <p className="mt-1 text-sm text-slate-500">Bulk upload and publish tools</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Download a prefilled template, fill marks, then upload to validate and publish
+            </p>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {resultOperations.map((op) => (
                 <button
                   key={op.title}
                   type="button"
-                  onClick={() => handleOperation(op.title, op.opensFormModal)}
+                  onClick={() => handleOperation(op.action)}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30"
                 >
                   <span className={`rounded-lg p-2.5 ${op.color}`}>{op.icon}</span>
@@ -955,6 +1004,59 @@ function AdminResults() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mt-10">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Draft Results</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Incomplete work saved here — continue editing, then publish when marks are ready
+                </p>
+              </div>
+            </div>
+
+            {loading ? (
+              <p className="mt-4 text-sm text-slate-500">Loading drafts…</p>
+            ) : drafts.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center text-sm text-slate-500">
+                No drafts yet. Create a result draft to start entering marks.
+              </div>
+            ) : (
+              <ul className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {drafts.map((draft) => (
+                  <li key={draft.id}>
+                    <article className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-bold text-slate-900">{draft.examTitle}</h3>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {draft.department} · Sem {draft.semester}
+                            {draft.academicYear ? ` · ${draft.academicYear}` : ""} · {draft.examType}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {draft.studentsCount} student{draft.studentsCount === 1 ? "" : "s"} entered
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-600/15">
+                          Draft
+                        </span>
+                      </div>
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() => openDraftEditor(draft)}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                        >
+                          <Pen size={16} />
+                          Continue Editing
+                        </button>
+                      </div>
+                    </article>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="mt-10">
@@ -1168,6 +1270,21 @@ function AdminResults() {
           </div>
         </div>
       )}
+
+      <AddResultModal
+        open={draftModalOpen}
+        onClose={() => setDraftModalOpen(false)}
+        onSubmit={handleAddResult}
+        submitting={creatingDraft}
+      />
+
+      <UploadMarksheetModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onPublished={() => {
+          refreshAll().catch(() => undefined);
+        }}
+      />
     </div>
   );
 }
