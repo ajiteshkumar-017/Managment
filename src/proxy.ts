@@ -11,6 +11,7 @@ const userPublicRoutes = [
   "/contactUs",
   "/faculty",
   "/resources",
+  
 ];
 
 /**
@@ -27,6 +28,8 @@ const userProtectedRoutes = [
   "/result",
   "/messages",
   "/setUp",
+  "/timetable",
+  "/calendar",
 ];
 
 const routeMatcher = (routes: string[], pathname: string) =>
@@ -39,7 +42,8 @@ const isPublicRoute = (pathname: string) =>
   pathname.startsWith("/api/users/check-email") ||
   pathname.startsWith("/api/test-email") ||
   pathname.startsWith("/api/contact") ||
-  pathname.startsWith("/api/faculty");
+  pathname.startsWith("/api/faculty") ||
+  pathname.startsWith("/api/users/auth/google");
 
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
 
@@ -82,10 +86,11 @@ function denyUnauthenticated(request: NextRequest, clearCookie = false) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Allow login / signup APIs through
+  // Allow login / signup / Google OAuth APIs through (no JWT yet)
   if (
     pathname.startsWith("/api/users/login") ||
-    pathname.startsWith("/api/users/signUp")
+    pathname.startsWith("/api/users/signUp") ||
+    pathname.startsWith("/api/users/auth/google")
   ) {
     return NextResponse.next();
   }

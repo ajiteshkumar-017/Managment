@@ -3,12 +3,14 @@ import mongoose, {Schema, Document, models, model} from "mongoose"
 export interface IUser extends Document {
     username: string,
     email: string,
-    password: string,
-    avatar: string,
-    avatarPublicId: string,
-    profileCompleted: boolean,
+    password?: string,
+    avatar?: string,
+    avatarPublicId?: string,
+    googleId?: string,
+    authProvider?: "google" | "email" | "facebook" | "custom_auth",
+    profileCompleted?: boolean,
+    email_verified?: boolean
     role: 'student' | 'faculty' | 'admin',
-
 }
 
 
@@ -39,7 +41,21 @@ const UserSchema = new Schema<IUser>({
         required: false,
         trim: true
     },
+    googleId: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    authProvider:{
+        type: String,
+        enum: ["google", "email", "facebook", "custom_auth"],
+        default: "custom_auth"
+    },
     profileCompleted: {
+        type: Boolean,
+        required: false
+    },
+    email_verified: {
         type: Boolean,
         required: false
     },

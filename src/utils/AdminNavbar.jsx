@@ -126,7 +126,7 @@ export default function AdminNavbar() {
             </p>
             <button
               type="button"
-              onClick={() => router.push("/resources/academic-calendar")}
+              onClick={() => router.push("/calendar")}
               className="mt-3 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
             >
               View Calendar
@@ -187,6 +187,25 @@ export default function AdminNavbar() {
                   />
                 ))}
               </nav>
+
+              <div className="mt-auto pt-6">
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3.5 text-center">
+                  <h3 className="text-xs font-bold text-slate-800">Academic Calendar</h3>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                    Exams, holidays & events
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/calendar");
+                      setMobileView(false);
+                    }}
+                    className="mt-3 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                  >
+                    View Calendar
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </>
         )}

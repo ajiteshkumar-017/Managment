@@ -24,6 +24,7 @@
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
+    "google-auth-library": "^11.0.0",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "jose": "^6.2.3",

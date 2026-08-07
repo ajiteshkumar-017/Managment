@@ -1,24 +1,31 @@
 import { getUser } from "@/lib/getUser";
 import { User } from "@/models/user";
-import {redirect} from "next/navigation"
+import Connect from "@/dbConnect/connect";
+import { redirect } from "next/navigation";
 
-export default async function StudentAuthLayout (
-    {children}: {
+/**
+ * Gates authenticated student APIs behind a completed profile.
+ * Google OAuth routes under this tree have no session yet — allow them through.
+ */
+export default async function StudentAuthLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-){
+}) {
+  const { email } = await getUser();
 
-    const {email} = await getUser();
+  // No JWT (e.g. Google login/callback) — let the route handler run
+  if (!email) {
+    return <>{children}</>;
+  }
 
-    const user = await User.findOne(
-    { email },
-    { profileCompleted: 1 }
-  );
+  await Connect();
+
+  const user = await User.findOne({ email }, { profileCompleted: 1 });
 
   if (!user?.profileCompleted) {
     redirect("/setUp");
   }
 
   return <>{children}</>;
-
 }

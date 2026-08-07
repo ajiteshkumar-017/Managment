@@ -11,6 +11,32 @@ import { Student } from "@/models/student.model";
 import { ResultBatch } from "@/models/resultBatch.model";
 import { SemesterResult } from "@/models/semesterResult";
 import { SubjectResult } from "@/models/subjectResult";
+import { DEPARTMENT, SEMESTER } from "@/constant/Constant";
+
+/** At least 4 subjects for every department × semester. */
+const SUBJECT_SLOTS = [
+  { suffix: "01", title: "Core Concepts", credits: 4, practical: false },
+  { suffix: "02", title: "Advanced Theory", credits: 3, practical: false },
+  { suffix: "03", title: "Laboratory Practice", credits: 2, practical: true },
+  { suffix: "04", title: "Applied Project", credits: 3, practical: true },
+] as const;
+
+function buildAllSubjects() {
+  return DEPARTMENT.flatMap((department) =>
+    SEMESTER.flatMap((semester) =>
+      SUBJECT_SLOTS.map((slot) => ({
+        subjectCode: `${department}${semester}${slot.suffix}`,
+        subjectName: `${department} Sem ${semester} ${slot.title}`,
+        credits: slot.credits,
+        semester,
+        department,
+        totalClasses: slot.practical ? 30 : 40,
+        IspracticalSubject: slot.practical,
+        status: "active" as const,
+      })),
+    ),
+  );
+}
 
 export async function seedDatabase() {
   await Connect();
@@ -180,73 +206,27 @@ export async function seedDatabase() {
     },
   ]);
 
-  const subjects = await Subject.create([
-    {
-      subjectCode: "CSE301",
-      subjectName: "Operating Systems",
-      credits: 4,
-      semester: 5,
-      department: "CSE",
-      totalClasses: 40,
-      IspracticalSubject: true,
-      status: "active",
-    },
-    {
-      subjectCode: "CSE302",
-      subjectName: "Database Management Systems",
-      credits: 4,
-      semester: 5,
-      department: "CSE",
-      totalClasses: 42,
-      IspracticalSubject: true,
-      status: "active",
-    },
-    {
-      subjectCode: "CSE401",
-      subjectName: "Computer Networks",
-      credits: 3,
-      semester: 7,
-      department: "CSE",
-      totalClasses: 36,
-      IspracticalSubject: false,
-      status: "active",
-    },
-    {
-      subjectCode: "CSE402",
-      subjectName: "Software Engineering",
-      credits: 3,
-      semester: 7,
-      department: "CSE",
-      totalClasses: 38,
-      IspracticalSubject: false,
-      status: "active",
-    },
-    {
-      subjectCode: "ME201",
-      subjectName: "Thermodynamics",
-      credits: 4,
-      semester: 5,
-      department: "ME",
-      totalClasses: 40,
-      IspracticalSubject: true,
-      status: "active",
-    },
-    {
-      subjectCode: "CE301",
-      subjectName: "Structural Analysis",
-      credits: 4,
-      semester: 6,
-      department: "CE",
-      totalClasses: 40,
-      IspracticalSubject: false,
-      status: "active",
-    },
-  ]);
+  // 10 departments × 8 semesters × 4 subjects = 320 subjects
+  const subjects = await Subject.insertMany(buildAllSubjects());
+  const subjectByCode = Object.fromEntries(
+    subjects.map((s) => [s.subjectCode, s]),
+  );
+
+  const requireSubject = (code: string) => {
+    const subject = subjectByCode[code];
+    if (!subject) {
+      throw new Error(`Seed subject missing: ${code}`);
+    }
+    return subject;
+  };
+
+  const cseSem5 = ["CSE501", "CSE502", "CSE503", "CSE504"].map(requireSubject);
+  const cseSem7 = ["CSE701", "CSE702", "CSE703", "CSE704"].map(requireSubject);
 
   const assignments = await SubjectFacultyAssignment.create([
     {
       facultyId: faculties[0]._id,
-      subjectId: subjects[0]._id,
+      subjectId: cseSem5[0]._id,
       semester: 5,
       section: "A",
       department: "CSE",
@@ -254,15 +234,55 @@ export async function seedDatabase() {
     },
     {
       facultyId: faculties[0]._id,
-      subjectId: subjects[1]._id,
+      subjectId: cseSem5[1]._id,
       semester: 5,
       section: "ALL",
       department: "CSE",
       academicYear: "2025-2026",
     },
     {
+      facultyId: faculties[0]._id,
+      subjectId: cseSem5[2]._id,
+      semester: 5,
+      section: "A",
+      department: "CSE",
+      academicYear: "2025-2026",
+    },
+    {
+      facultyId: faculties[0]._id,
+      subjectId: cseSem5[3]._id,
+      semester: 5,
+      section: "A",
+      department: "CSE",
+      academicYear: "2025-2026",
+    },
+    {
       facultyId: faculties[1]._id,
-      subjectId: subjects[2]._id,
+      subjectId: cseSem7[0]._id,
+      semester: 7,
+      section: "B",
+      department: "CSE",
+      academicYear: "2025-2026",
+    },
+    {
+      facultyId: faculties[1]._id,
+      subjectId: cseSem7[1]._id,
+      semester: 7,
+      section: "B",
+      department: "CSE",
+      academicYear: "2025-2026",
+    },
+    {
+      facultyId: faculties[1]._id,
+      subjectId: cseSem7[2]._id,
+      semester: 7,
+      section: "B",
+      department: "CSE",
+      academicYear: "2025-2026",
+    },
+    {
+      facultyId: faculties[1]._id,
+      subjectId: cseSem7[3]._id,
       semester: 7,
       section: "B",
       department: "CSE",
@@ -272,56 +292,70 @@ export async function seedDatabase() {
 
   const classes = await Class.create([
     {
-      subjectId: subjects[0]._id,
+      subjectId: cseSem5[0]._id,
       facultyId: facultyUser1._id,
-      classCode: "CSE301-A",
+      classCode: "CSE501-A",
       room: "A101",
     },
     {
-      subjectId: subjects[1]._id,
+      subjectId: cseSem5[1]._id,
       facultyId: facultyUser1._id,
-      classCode: "CSE302-A",
+      classCode: "CSE502-A",
       room: "A102",
     },
     {
-      subjectId: subjects[2]._id,
+      subjectId: cseSem5[2]._id,
+      facultyId: facultyUser1._id,
+      classCode: "CSE503-A",
+      room: "A103",
+    },
+    {
+      subjectId: cseSem5[3]._id,
+      facultyId: facultyUser1._id,
+      classCode: "CSE504-A",
+      room: "A104",
+    },
+    {
+      subjectId: cseSem7[0]._id,
       facultyId: facultyUser2._id,
-      classCode: "CSE401-B",
+      classCode: "CSE701-B",
       room: "B201",
     },
     {
-      subjectId: subjects[3]._id,
+      subjectId: cseSem7[1]._id,
       facultyId: facultyUser2._id,
-      classCode: "CSE402-B",
+      classCode: "CSE702-B",
       room: "B202",
+    },
+    {
+      subjectId: cseSem7[2]._id,
+      facultyId: facultyUser2._id,
+      classCode: "CSE703-B",
+      room: "B203",
+    },
+    {
+      subjectId: cseSem7[3]._id,
+      facultyId: facultyUser2._id,
+      classCode: "CSE704-B",
+      room: "B204",
     },
   ]);
 
   const enrollments = await Enrollment.insertMany([
-    {
+    // Ajitesh — CSE Sem 5 (all 4 subjects)
+    ...classes.slice(0, 4).map((cls) => ({
       studentId: studentUser1._id,
-      classId: classes[0]._id,
+      classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
       exitedAt: new Date("2026-06-10"),
-    },
-    {
-      studentId: studentUser1._id,
-      classId: classes[1]._id,
-      enrolledAt: new Date("2026-01-10"),
-      exitedAt: new Date("2026-06-10"),
-    },
-    {
+    })),
+    // Riya — CSE Sem 7 (all 4 subjects)
+    ...classes.slice(4, 8).map((cls) => ({
       studentId: studentUser2._id,
-      classId: classes[2]._id,
+      classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
       exitedAt: new Date("2026-06-10"),
-    },
-    {
-      studentId: studentUser2._id,
-      classId: classes[3]._id,
-      enrolledAt: new Date("2026-01-10"),
-      exitedAt: new Date("2026-06-10"),
-    },
+    })),
   ]);
 
   // ExamResult: studentId, subjectId, obtainedMarks?, maximumMarks?, examType, examPublishedStatus, examResult, examResultDate
@@ -465,7 +499,7 @@ export async function seedDatabase() {
       academicYear: "2025-2026",
       ExamType: "End Sem",
       batch: "2021-25",
-      subjectId: subjects[0]._id,
+      subjectId: cseSem5[0]._id,
       status: "published",
     },
     {
@@ -475,7 +509,7 @@ export async function seedDatabase() {
       academicYear: "2025-2026",
       ExamType: "Mid Sem",
       batch: "2020-24",
-      subjectId: subjects[2]._id,
+      subjectId: cseSem7[0]._id,
       status: "published",
     },
   ]);
@@ -521,7 +555,7 @@ export async function seedDatabase() {
   const subjectResults = await SubjectResult.insertMany([
     {
       semesterResultId: semesterResults[0]._id,
-      subjectId: subjects[0]._id,
+      subjectId: cseSem5[0]._id,
       grade: "A",
       maximumMarks: 100,
       obtainedMarks: 88,
@@ -530,16 +564,16 @@ export async function seedDatabase() {
     },
     {
       semesterResultId: semesterResults[0]._id,
-      subjectId: subjects[1]._id,
+      subjectId: cseSem5[1]._id,
       grade: "A-",
       maximumMarks: 100,
       obtainedMarks: 85,
-      creditsEarned: 4,
+      creditsEarned: 3,
       resultStatus: "passed",
     },
     {
       semesterResultId: semesterResults[1]._id,
-      subjectId: subjects[0]._id,
+      subjectId: cseSem5[0]._id,
       grade: "B+",
       maximumMarks: 100,
       obtainedMarks: 78,
@@ -548,25 +582,25 @@ export async function seedDatabase() {
     },
     {
       semesterResultId: semesterResults[1]._id,
-      subjectId: subjects[1]._id,
+      subjectId: cseSem5[1]._id,
       grade: "A",
       maximumMarks: 100,
       obtainedMarks: 82,
-      creditsEarned: 4,
-      resultStatus: "passed",
-    },
-    {
-      semesterResultId: semesterResults[2]._id,
-      subjectId: subjects[2]._id,
-      grade: "B",
-      maximumMarks: 100,
-      obtainedMarks: 74,
       creditsEarned: 3,
       resultStatus: "passed",
     },
     {
       semesterResultId: semesterResults[2]._id,
-      subjectId: subjects[3]._id,
+      subjectId: cseSem7[0]._id,
+      grade: "B",
+      maximumMarks: 100,
+      obtainedMarks: 74,
+      creditsEarned: 4,
+      resultStatus: "passed",
+    },
+    {
+      semesterResultId: semesterResults[2]._id,
+      subjectId: cseSem7[1]._id,
       grade: "C",
       maximumMarks: 50,
       obtainedMarks: 22,
