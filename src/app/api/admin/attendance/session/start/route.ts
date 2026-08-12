@@ -109,7 +109,6 @@ export async function GET(request: NextRequest) {
       token: sessionToken,
       sessionCode,
       classId: String(classData._id),
-      room: classData.room,
     });
     const qrCodeDataUrl = await QRCode.toDataURL(qrPayload);
 
@@ -122,27 +121,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: "Attendance session started",
       data: {
-        session: {
-          id: session._id,
-          sessionCode,
-          sessionToken,
-          startedAt,
-          expiryTime,
-          status: session.status,
-          isActive: session.isActive,
-        },
-        class: {
-          id: classData._id,
-          classCode: classData.classCode,
-          room: classData.room,
-          department: classData.department,
-          semester: classData.semester,
-        },
-        faculty: {
-          id: faculty._id,
-          email,
-          department: faculty.department,
-        },
+        expiryTime: expiryTime.toISOString(),
         qrPayload: JSON.parse(qrPayload),
         qrCodeDataUrl,
       },

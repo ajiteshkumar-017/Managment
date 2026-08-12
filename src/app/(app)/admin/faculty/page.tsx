@@ -84,6 +84,30 @@ function AdminFaculty() {
     status: "Active" as FacultyRow["status"],
   });
 
+  const [expiryTime, setExpiryTime] = useState<string | null>(null);
+
+  const [remaining, setRemaining] = useState(0);
+
+  useEffect(() => {
+    if(!expiryTime) return;
+    
+    const updateTimer = () => {
+      const difference = new Date(expiryTime).getTime() -  Date.now();
+
+      setRemaining(Math.max(0, difference));
+    } 
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  },[expiryTime])
+
+  const totalSeconds = Math.floor(remaining/1000);
+
+const minutes = Math.floor(totalSeconds / 60);
+const seconds = totalSeconds % 60;
+
   useEffect(() => {
     const onResize = () => setLargeScreen(window.innerWidth >= 1024);
     onResize();

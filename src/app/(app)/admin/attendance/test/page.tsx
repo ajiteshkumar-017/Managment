@@ -1,30 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import Bar from "@/utils/Admin/Bar";
 
 type StartResponse = {
   success: boolean;
   message: string;
   data?: {
-    session: {
-      id: string;
-      sessionCode: number;
-      sessionToken: string;
-      expiryTime: string;
-      status: string;
-    };
-    class: {
-      classCode: string;
-      room: string;
+    expiryTime: string;
+    qrPayload: {
+      sessionId: string;
+      token: string;
+      sessionCode?: number;
+      classId?: string;
     };
     qrCodeDataUrl: string;
   };
 };
+
+function formatRemaining(ms: number) {
+  if (ms <= 0) return "00:00";
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 export default function AdminAttendanceTestPage() {
   const [open, setOpen] = useState(true);
@@ -34,6 +38,24 @@ export default function AdminAttendanceTestPage() {
   const [sessionInfo, setSessionInfo] = useState<StartResponse["data"] | null>(
     null,
   );
+  const [remainingMs, setRemainingMs] = useState(0);
+
+  useEffect(() => {
+    if (!sessionInfo?.expiryTime) {
+      setRemainingMs(0);
+      return;
+    }
+
+    const expiry = new Date(sessionInfo.expiryTime).getTime();
+
+    const tick = () => {
+      setRemainingMs(Math.max(0, expiry - Date.now()));
+    };
+
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [sessionInfo?.expiryTime]);
 
   const startSession = async () => {
     setLoading(true);
@@ -63,6 +85,9 @@ export default function AdminAttendanceTestPage() {
       setLoading(false);
     }
   };
+
+  const isExpired = Boolean(sessionInfo) && remainingMs <= 0;
+  const isActive = Boolean(sessionInfo) && remainingMs > 0;
 
   return (
     <div className="flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-hidden bg-linear-to-br from-slate-50 via-white to-slate-50 lg:flex-row">
@@ -117,23 +142,49 @@ export default function AdminAttendanceTestPage() {
               </div>
 
               {sessionInfo && (
-                <div className="space-y-2 text-sm text-slate-700">
-                  <p>
-                    Class: <strong>{sessionInfo.class.classCode}</strong> (
-                    {sessionInfo.class.room})
-                  </p>
-                  <p>
-                    Session code:{" "}
-                    <strong>{sessionInfo.session.sessionCode}</strong>
-                  </p>
-                  <p>
-                    Expires:{" "}
-                    <strong>
-                      {new Date(
-                        sessionInfo.session.expiryTime,
-                      ).toLocaleTimeString()}
-                    </strong>
-                  </p>
+                <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2 text-sm text-slate-700">
+                    <p>
+                      Room: <strong>{className}</strong>
+                    </p>
+                    {sessionInfo.qrPayload.sessionCode != null && (
+                      <p>
+                        Session code:{" "}
+                        <strong>{sessionInfo.qrPayload.sessionCode}</strong>
+                      </p>
+                    )}
+                    <p>
+                      Expires at:{" "}
+                      <strong>
+                        {new Date(sessionInfo.expiryTime).toLocaleTimeString()}
+                      </strong>
+                    </p>
+                  </div>
+
+                  <div className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-center sm:w-fit sm:min-w-42.5">
+                    <div className="mb-1 flex items-center justify-center gap-1.5 text-sm text-slate-500">
+                      <Clock size={14} />
+                      Session expires in
+                    </div>
+                    <h2
+                      className={`mt-2 text-3xl font-bold tracking-tight sm:text-4xl ${
+                        isExpired
+                          ? "text-red-600"
+                          : remainingMs <= 30_000
+                            ? "text-amber-600"
+                            : "text-slate-900"
+                      }`}
+                    >
+                      {formatRemaining(remainingMs)}
+                    </h2>
+                    <p
+                      className={`mt-2 text-xs font-medium ${
+                        isActive ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {isActive ? "Attendance active" : "Session expired"}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -141,12 +192,15 @@ export default function AdminAttendanceTestPage() {
                 <div className="flex flex-col items-start gap-2">
                   <p className="text-sm font-medium text-slate-800">
                     Show this QR to students
+                    {isExpired ? " (expired — start a new session)" : ""}
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={qrCodeDataUrl}
                     alt="Attendance session QR"
-                    className="h-56 w-56 rounded-lg border border-slate-200 bg-white p-2"
+                    className={`h-56 w-56 rounded-lg border border-slate-200 bg-white p-2 ${
+                      isExpired ? "opacity-40" : ""
+                    }`}
                   />
                 </div>
               )}

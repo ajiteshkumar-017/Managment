@@ -218,11 +218,15 @@ function SetUp() {
 
                             <option value="default">Department</option>
                             <option value="CSE">Computer Science and Engineering</option>
+                            <option value="ECE">Electronics and Communication</option>
+                            <option value="EEE">Electrical and Electronics</option>
                             <option value="ME">Mechanical Engineering</option>
-                            <option value="CHE">Chemical Engineering</option>
                             <option value="CE">Civil Engineering</option>
-                            <option value="BE">BioTechnology Engineering</option>
-                            <option value="AI&M">Ai and Mathematics</option>
+                            <option value="CHE">Chemical Engineering</option>
+                            <option value="BBA">BBA</option>
+                            <option value="MBA">MBA</option>
+                            <option value="MCA">MCA</option>
+                            <option value="PHD">PHD</option>
                         </select>
                     </div>
 

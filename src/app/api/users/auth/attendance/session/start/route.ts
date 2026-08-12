@@ -90,24 +90,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if(String(classData.semester) !== String(studentData.semester) || String(classData.batch) !== String(studentData.batch) || String(classData.department) !== String(studentData.department) || String(classData.section) !== String(studentData.section) ){
+    if(String(classData.semester) !== String(studentData.semester) || String(classData.department) !== String(studentData.department) || String(classData.section) !== String(studentData.section) ){
       console.log("Student is not part of this class");
       return NextResponse.json(
-        { success: false, message: "Student is not part of this class" },
+        { success: false, message: "Student is not part of this class", data: {
+        } },
         { status: 400 },
       );
     }
-
-    console.log("Session Data", sessionData);
-    console.log("Student Data", studentData);
-    console.log("Token", token);
-    console.log("Session Token", sessionData.sessionToken);
-    console.log("Session ID", sessionData._id);
-    console.log("Student ID", studentData._id);
-    console.log("Class Details", classData);
-
-
-    
 
     const existing = await AttendanceRecord.findOne({
       studentId: studentData._id,
@@ -135,14 +125,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Attendance marked",
-      data: {
-        sessionId: sessionData._id,
-        attendanceRecord,
-        sessionData,
-        studentData,
-        existing,
-        classData,
-      },
     });
   } catch (error) {
     console.error("Error marking attendance:", error);
