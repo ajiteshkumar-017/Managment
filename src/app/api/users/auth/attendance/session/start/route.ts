@@ -90,7 +90,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if(String(classData.semester) !== String(studentData.semester) || String(classData.batch) !== String(studentData.batch) || String(classData.department) !== String(studentData.department) ){
+    if(String(classData.semester) !== String(studentData.semester) || String(classData.batch) !== String(studentData.batch) || String(classData.department) !== String(studentData.department) || String(classData.section) !== String(studentData.section) ){
+      console.log("Student is not part of this class");
+      return NextResponse.json(
+        { success: false, message: "Student is not part of this class" },
+        { status: 400 },
+      );
+    }
 
     console.log("Session Data", sessionData);
     console.log("Student Data", studentData);
