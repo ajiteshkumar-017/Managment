@@ -11,6 +11,7 @@ export interface IClass extends Document {
     endTime: string
     department: string
     semester: number
+    section: string
     batch: string
 }
 
@@ -37,6 +38,10 @@ const classSchema = new mongoose.Schema({
     semester:{
         type: Number,
         enum: SEMESTER,
+        required: true
+    },
+    section:{
+        type: String,
         required: true
     },
     batch:{

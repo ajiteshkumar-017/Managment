@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { verifyJwt } from "@/lib/verifyJwt";
-import { AttendanceRecord, Student } from "@/models";
+import { AttendanceRecord, Class, Student } from "@/models";
 import { AttendanceSession } from "@/models/attendanceSession";
 import Connect from "@/dbConnect/connect";
 
@@ -81,12 +81,26 @@ export async function POST(request: NextRequest) {
       );
     };
 
+    const classData = await Class.findOne({_id: sessionData.classId});
+
+    if(!classData){
+      return NextResponse.json(
+        { success: false, message: "Class not found" },
+        { status: 404 },
+      );
+    }
+
+    if(String(classData.semester) !== String(studentData.semester) || String(classData.batch) !== String(studentData.batch) || String(classData.department) !== String(studentData.department) ){
+
     console.log("Session Data", sessionData);
     console.log("Student Data", studentData);
     console.log("Token", token);
     console.log("Session Token", sessionData.sessionToken);
     console.log("Session ID", sessionData._id);
     console.log("Student ID", studentData._id);
+    console.log("Class Details", classData);
+
+
     
 
     const existing = await AttendanceRecord.findOne({
@@ -121,6 +135,7 @@ export async function POST(request: NextRequest) {
         sessionData,
         studentData,
         existing,
+        classData,
       },
     });
   } catch (error) {

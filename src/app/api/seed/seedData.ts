@@ -293,7 +293,7 @@ export async function seedDatabase() {
     },
   ]);
 
-  // Class: subjectId, facultyId (User), classCode, department, semester, batch, room, day, startTime, endTime
+  // Class: subjectId, facultyId (User), classCode, department, semester, section, batch, room, day, startTime, endTime
   const classes = await Class.create([
     {
       subjectId: cseSem5[0]._id,
@@ -301,6 +301,7 @@ export async function seedDatabase() {
       classCode: "CSE501-A",
       department: "CSE",
       semester: 5,
+      section: "A",
       batch: "2021-2025",
       room: "A101",
       day: "Monday",
@@ -313,6 +314,7 @@ export async function seedDatabase() {
       classCode: "CSE502-A",
       department: "CSE",
       semester: 5,
+      section: "A",
       batch: "2021-2025",
       room: "A102",
       day: "Tuesday",
@@ -325,6 +327,7 @@ export async function seedDatabase() {
       classCode: "CSE503-A",
       department: "CSE",
       semester: 5,
+      section: "A",
       batch: "2021-2025",
       room: "A103",
       day: "Wednesday",
@@ -337,6 +340,7 @@ export async function seedDatabase() {
       classCode: "CSE504-A",
       department: "CSE",
       semester: 5,
+      section: "A",
       batch: "2021-2025",
       room: "A104",
       day: "Thursday",
@@ -349,6 +353,7 @@ export async function seedDatabase() {
       classCode: "CSE701-B",
       department: "CSE",
       semester: 7,
+      section: "B",
       batch: "2020-2024",
       room: "B201",
       day: "Monday",
@@ -361,6 +366,7 @@ export async function seedDatabase() {
       classCode: "CSE702-B",
       department: "CSE",
       semester: 7,
+      section: "B",
       batch: "2020-2024",
       room: "B202",
       day: "Tuesday",
@@ -373,6 +379,7 @@ export async function seedDatabase() {
       classCode: "CSE703-B",
       department: "CSE",
       semester: 7,
+      section: "B",
       batch: "2020-2024",
       room: "B203",
       day: "Wednesday",
@@ -385,6 +392,7 @@ export async function seedDatabase() {
       classCode: "CSE704-B",
       department: "CSE",
       semester: 7,
+      section: "B",
       batch: "2020-2024",
       room: "B204",
       day: "Friday",
