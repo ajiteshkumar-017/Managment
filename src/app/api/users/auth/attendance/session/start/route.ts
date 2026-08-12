@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         { success: false, message: "Session not found" },
         { status: 404 },
       );
-    }
+    };
 
     if (sessionData.status !== "active" || !sessionData.isActive) {
       return NextResponse.json(
@@ -79,7 +79,15 @@ export async function POST(request: NextRequest) {
         { success: false, message: "Invalid token" },
         { status: 400 },
       );
-    }
+    };
+
+    console.log("Session Data", sessionData);
+    console.log("Student Data", studentData);
+    console.log("Token", token);
+    console.log("Session Token", sessionData.sessionToken);
+    console.log("Session ID", sessionData._id);
+    console.log("Student ID", studentData._id);
+    
 
     const existing = await AttendanceRecord.findOne({
       studentId: studentData._id,
@@ -110,6 +118,9 @@ export async function POST(request: NextRequest) {
       data: {
         sessionId: sessionData._id,
         attendanceRecord,
+        sessionData,
+        studentData,
+        existing,
       },
     });
   } catch (error) {
