@@ -1,13 +1,10 @@
 "use client"
-import AdminNavbar from '@/utils/AdminNavbar'
 import { Bell, Clock, Divide, Search, SquarePen, UserCheck2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Percent, CircleCheckBig, CircleX, CalendarDays } from 'lucide-react';
 import { CalendarCheck, UserCheck, ClipboardCheck } from 'lucide-react';
 import { AlertTriangle, AlertCircle, ShieldAlert, Ban } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";    
-
-
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   LayoutDashboard,
   BookOpen,
@@ -20,6 +17,7 @@ import {
   Users,
   Menu,
 } from "lucide-react";
+import QRScanner from "@/components/users/attendance/QRScanner";
 
 
 function attendance() {
@@ -116,23 +114,16 @@ const fetchUsername = async () => {
         })
 
   return (
-    <div className=' text-black bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6 flex flex-col lg:flex-row lg:gap-8 w-full'>
-      <div className=''>
-        <AdminNavbar/>
-      </div>
-
-      {/* Right Side */}
-
-      <div className="flex-1 min-w-0 overflow-hidden rounded-2xl bg-white p-5 text-slate-900 shadow-sm transition-all duration-300 sm:rounded-3xl sm:p-6 md:p-7 lg:p-8">
+    <>
         {/* Header */}
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
             {/* Greeting */}
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+              <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
                 Hello {username} 👋
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">
+              <p className="mt-1 text-sm text-slate-600">
                 Let's learn something new today
               </p>
             </div>
@@ -376,47 +367,12 @@ const fetchUsername = async () => {
                     </h3>
 
                     <p className="text-sm text-slate-500 mt-2 max-w-xs leading-relaxed">
-                    Open your camera and scan the QR code shown by the faculty
+                    Point your camera at the QR code shown by the faculty to mark present
                     </p>
 
-                    {/* QR BOX */}
-                    <div
-                    className="
-                        w-32
-                        h-32
-                        sm:w-40
-                        sm:h-40
-                        bg-slate-100
-                        rounded-2xl
-                        mt-6
-                        flex
-                        items-center
-                        justify-center
-                        text-slate-400
-                        text-sm
-                    "
-                    >
-                    QR Scanner
+                    <div className="mt-6 w-full max-w-sm text-left">
+                      <QRScanner />
                     </div>
-
-                    <button
-                    className="
-                        mt-6
-                        w-full
-                        sm:w-auto
-                        bg-purple-600
-                        hover:bg-purple-700
-                        active:scale-95
-                        transition-all
-                        text-white
-                        px-5
-                        py-3
-                        rounded-2xl
-                        font-semibold
-                    "
-                    >
-                    Scan QR Code
-                    </button>
                 </div>
 
                 {/* CODE SECTION */}
@@ -1420,10 +1376,7 @@ const fetchUsername = async () => {
 
             </div>
 
-           
-
-      </div>
-    </div>
+    </>
   )
 }
 

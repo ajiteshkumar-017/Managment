@@ -1,6 +1,5 @@
 "use client"
 
-import AdminNavbar from '@/utils/AdminNavbar';
 import axios from 'axios';
 import react, {useState, useEffect} from 'react';
 import { Bell, BookAudio, LogOut, Megaphone, Search, SquarePen } from 'lucide-react'
@@ -52,25 +51,14 @@ function Messages() {
               fetchUsername();
           })
   return (
-    <div className='bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6'>
-      {/* Header for Messages Page */}
-    <div className='flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6'>
-      <AdminNavbar/ >
-
-      <div className={`
-            bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 lg:p-8 shadow-sm
-            transition-all duration-300
-            w-full
-            text-slate-900
-          `}>
-
+    <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
                         {/* Greeting */}
                         <div className="min-w-0">
-                          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+                          <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
                             Hello {username} 👋
                           </h2>
-                          <p className="text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">
+                          <p className="mt-1 text-sm text-slate-600">
                             Let's learn something new today
                           </p>
                         </div>
@@ -191,12 +179,7 @@ function Messages() {
             </div>
             </div>          
 
-      </div>
-
-
-      </div>
-
-    </div>
+    </>
   )
 }
 

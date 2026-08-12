@@ -96,12 +96,12 @@ export default function AdminNavbar() {
       {/* ================= DESKTOP SIDEBAR (matches admin Bar: w-56) ================= */}
       <aside
         className="
-          sticky top-0 hidden h-screen w-56 shrink-0
-          flex-col rounded-2xl border border-slate-100
+          sticky top-0 hidden min-h-screen w-56 shrink-0
+          flex-col self-stretch border-r border-slate-100
           bg-white px-4 py-5 shadow-sm lg:flex
         "
       >
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-8 flex items-center gap-2">
           <img
             src="/campus1.jpg"
             className="h-8 w-8 rounded-lg object-cover"

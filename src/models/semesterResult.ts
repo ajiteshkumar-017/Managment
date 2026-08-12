@@ -2,9 +2,9 @@ import mongoose,{Schema, models, model, Document} from 'mongoose';
 import { SEMESTER, type SemesterType } from "@/constant/Constant";
 
 export interface ISemesterResult extends Document {
-    studentId: mongoose.Schema.Types.ObjectId;
+    studentId: mongoose.Types.ObjectId;
     semester: SemesterType;
-    resultBatch: mongoose.Schema.Types.ObjectId;
+    resultBatch: mongoose.Types.ObjectId;
     CGPA: number;
     SGPA: number;
     rank: number;
@@ -59,4 +59,4 @@ const semesterResultSchema = new Schema({
 }, {timestamps: true})
 
 
-export const SemesterResult = models.SemesterResult as mongoose.Model<ISemesterResult> || model<ISemesterResult>('SemesterResult', semesterResultSchema);
+export const SemesterResult = (models.SemesterResult as mongoose.Model<ISemesterResult>) || model<ISemesterResult>('SemesterResult', semesterResultSchema);

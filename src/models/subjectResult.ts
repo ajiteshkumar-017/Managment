@@ -2,8 +2,8 @@ import mongoose,{Schema, models, model, Document} from 'mongoose';
 // import { RESULT_STATUS } from '@/constant/Constant.type';
 
 export interface ISubjectResult extends Document {
-    semesterResultId: mongoose.Schema.Types.ObjectId;
-    subjectId: mongoose.Schema.Types.ObjectId;
+    semesterResultId: mongoose.Types.ObjectId;
+    subjectId: mongoose.Types.ObjectId;
     grade: string;
     maximumMarks: number;
     obtainedMarks: number;

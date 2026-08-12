@@ -2,7 +2,6 @@
 
 
 
-import AdminNavbar from '@/utils/AdminNavbar'
 import { Bell, Clock1, Search, UploadCloud } from 'lucide-react'
 import React,{useEffect, useState} from 'react'
 import toast from 'react-hot-toast'
@@ -240,32 +239,7 @@ let uploadCounter = 0;
   //   }
   // }
   return (
-    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
-      {/* MAIN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
-
-        {/* Fixed the navbar width in small screen --> reomoved items-start from above div. That was the culprit */}
-
-          <AdminNavbar/ >
-
-        {/* ================= MAIN CONTENT ================= */}
-        <div
-  className="
-    bg-white
-    rounded-2xl
-    sm:rounded-3xl
-    p-4
-    sm:p-6
-    md:p-7
-    lg:p-8
-    shadow-sm
-    transition-all
-    duration-300
-    w-full
-    text-slate-900
-  "
->
-
+    <>
   <div
     className="
       bg-white
@@ -678,9 +652,6 @@ let uploadCounter = 0;
 
   </div>
 
-</div>
-          </div>
-
           {showCropModal && (
             
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -721,7 +692,7 @@ let uploadCounter = 0;
     
   </div>
 )}
-    </div>
+    </>
   )
 }
 

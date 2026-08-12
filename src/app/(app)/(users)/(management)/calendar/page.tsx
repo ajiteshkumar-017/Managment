@@ -8,7 +8,6 @@ import {
   Download,
   Search,
 } from "lucide-react";
-import AdminNavbar from "@/utils/AdminNavbar";
 import {
   academicTerms,
   buildMonthGrid,
@@ -90,18 +89,14 @@ function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-50 p-3 sm:p-4 md:p-5 lg:p-6">
-      <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 lg:flex-row">
-        <AdminNavbar />
-
-        <div className="w-full rounded-2xl bg-white p-5 text-slate-900 shadow-sm transition-all duration-300 sm:rounded-3xl sm:p-6 md:p-7 lg:p-8">
+    <>
           {/* Header */}
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pb-8">
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl md:text-4xl">
+              <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
                 Hello {username || "Student"} 👋
               </h2>
-              <p className="mt-1 text-xs text-slate-600 sm:mt-2 sm:text-sm">
+              <p className="mt-1 text-sm text-slate-600">
                 Academic calendar · exams, holidays & key dates
               </p>
             </div>
@@ -346,9 +341,7 @@ function CalendarPage() {
             Dates are indicative and may be updated by the Academic Office. Check
             Messages for official notices.
           </p>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
 

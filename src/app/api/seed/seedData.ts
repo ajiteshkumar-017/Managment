@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import Connect from "@/dbConnect/connect";
 import { User } from "@/models/user";
 import { Subject } from "@/models/subject.model";
@@ -11,6 +12,7 @@ import { Student } from "@/models/student.model";
 import { ResultBatch } from "@/models/resultBatch.model";
 import { SemesterResult } from "@/models/semesterResult";
 import { SubjectResult } from "@/models/subjectResult";
+import { AttendanceSession } from "@/models/attendanceSession";
 import { DEPARTMENT, SEMESTER } from "@/constant/Constant";
 
 /** At least 4 subjects for every department × semester. */
@@ -44,6 +46,7 @@ export async function seedDatabase() {
   await SubjectResult.deleteMany({});
   await SemesterResult.deleteMany({});
   await ResultBatch.deleteMany({});
+  await AttendanceSession.deleteMany({});
   await Enrollment.deleteMany({});
   await Class.deleteMany({});
   await SubjectFacultyAssignment.deleteMany({});
@@ -290,54 +293,141 @@ export async function seedDatabase() {
     },
   ]);
 
+  // Class: subjectId, facultyId (User), classCode, department, semester, batch, room, day, startTime, endTime
   const classes = await Class.create([
     {
       subjectId: cseSem5[0]._id,
       facultyId: facultyUser1._id,
       classCode: "CSE501-A",
+      department: "CSE",
+      semester: 5,
+      batch: "2021-2025",
       room: "A101",
+      day: "Monday",
+      startTime: "09:00",
+      endTime: "10:00",
     },
     {
       subjectId: cseSem5[1]._id,
       facultyId: facultyUser1._id,
       classCode: "CSE502-A",
+      department: "CSE",
+      semester: 5,
+      batch: "2021-2025",
       room: "A102",
+      day: "Tuesday",
+      startTime: "10:00",
+      endTime: "11:00",
     },
     {
       subjectId: cseSem5[2]._id,
       facultyId: facultyUser1._id,
       classCode: "CSE503-A",
+      department: "CSE",
+      semester: 5,
+      batch: "2021-2025",
       room: "A103",
+      day: "Wednesday",
+      startTime: "11:00",
+      endTime: "12:00",
     },
     {
       subjectId: cseSem5[3]._id,
       facultyId: facultyUser1._id,
       classCode: "CSE504-A",
+      department: "CSE",
+      semester: 5,
+      batch: "2021-2025",
       room: "A104",
+      day: "Thursday",
+      startTime: "14:00",
+      endTime: "16:00",
     },
     {
       subjectId: cseSem7[0]._id,
       facultyId: facultyUser2._id,
       classCode: "CSE701-B",
+      department: "CSE",
+      semester: 7,
+      batch: "2020-2024",
       room: "B201",
+      day: "Monday",
+      startTime: "09:00",
+      endTime: "10:00",
     },
     {
       subjectId: cseSem7[1]._id,
       facultyId: facultyUser2._id,
       classCode: "CSE702-B",
+      department: "CSE",
+      semester: 7,
+      batch: "2020-2024",
       room: "B202",
+      day: "Tuesday",
+      startTime: "10:00",
+      endTime: "11:00",
     },
     {
       subjectId: cseSem7[2]._id,
       facultyId: facultyUser2._id,
       classCode: "CSE703-B",
+      department: "CSE",
+      semester: 7,
+      batch: "2020-2024",
       room: "B203",
+      day: "Wednesday",
+      startTime: "11:00",
+      endTime: "12:00",
     },
     {
       subjectId: cseSem7[3]._id,
       facultyId: facultyUser2._id,
       classCode: "CSE704-B",
+      department: "CSE",
+      semester: 7,
+      batch: "2020-2024",
       room: "B204",
+      day: "Friday",
+      startTime: "14:00",
+      endTime: "16:00",
+    },
+  ]);
+
+  // AttendanceSession: classId, facultyId (Faculty), sessionCode, sessionToken, startedAt, expiryTime, isActive, status
+  const now = new Date();
+  const threeMinutes = 3 * 60 * 1000;
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+  const attendanceSessions = await AttendanceSession.insertMany([
+    {
+      classId: classes[0]._id,
+      facultyId: faculties[0]._id,
+      sessionCode: 482913,
+      sessionToken: crypto.randomBytes(32).toString("hex"),
+      startedAt: now,
+      expiryTime: new Date(now.getTime() + threeMinutes),
+      isActive: true,
+      status: "active",
+    },
+    {
+      classId: classes[1]._id,
+      facultyId: faculties[0]._id,
+      sessionCode: 156274,
+      sessionToken: crypto.randomBytes(32).toString("hex"),
+      startedAt: oneHourAgo,
+      expiryTime: new Date(oneHourAgo.getTime() + threeMinutes),
+      isActive: false,
+      status: "expired",
+    },
+    {
+      classId: classes[4]._id,
+      facultyId: faculties[1]._id,
+      sessionCode: 739501,
+      sessionToken: crypto.randomBytes(32).toString("hex"),
+      startedAt: oneHourAgo,
+      expiryTime: new Date(oneHourAgo.getTime() + threeMinutes),
+      isActive: false,
+      status: "closed",
     },
   ]);
 
@@ -616,6 +706,7 @@ export async function seedDatabase() {
     subjects,
     assignments,
     classes,
+    attendanceSessions,
     enrollments,
     resultBatches,
     semesterResults,

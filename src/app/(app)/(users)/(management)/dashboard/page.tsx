@@ -37,8 +37,6 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import AdminNavbar from "@/utils/AdminNavbar"
-
 import StudentPlanner from "@/utils/StudentPlanner";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -184,32 +182,15 @@ const router = useRouter();
   
 
   return (
-    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
-      {/* MAIN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
-
-        {/* Fixed the navbar width in small screen --> reomoved items-start from above div. That was the culprit */}
-
-          <AdminNavbar/ >
-
-        {/* ================= MAIN CONTENT ================= */}
-        <div
-          className={`
-            bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 lg:p-8 shadow-sm
-            transition-all duration-300
-            w-full
-            text-slate-900
-            ${openProfile ? "lg:flex-1" : ""}
-          `}
-        >
+    <>
           {/* HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
             {/* Greeting */}
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+              <h2 className="text-2xl font-bold font-comfortaa text-slate-900 sm:text-3xl">
                 Hello {username} 👋
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">
+              <p className="mt-1 text-sm text-slate-600">
                 Let's learn something new today
               </p>
             </div>
@@ -248,29 +229,29 @@ const router = useRouter();
           </div>
 
           {/* OVERVIEW SECTION */}
-          <div className="mt-8 sm:mt-10 md:mt-12">
-            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 mb-6 sm:mb-8">
+          <div className="mt-8">
+            <h3 className="mb-5 text-lg font-bold text-slate-900">
               Overview
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {courseCard.map((c, i) => (
                 <div
                   key={i}
-                  className={`${c.divColor} p-5 sm:p-6 rounded-xl sm:rounded-2xl min-h-56 sm:min-h-60 flex flex-col justify-between hover:shadow-md transition-all duration-200`}
+                  className={`${c.divColor} flex min-h-48 flex-col justify-between rounded-2xl p-4 shadow-sm transition-all duration-200 hover:shadow-md sm:min-h-52 sm:p-5`}
                 >
                   {/* Icon and Title */}
-                  <div className="flex gap-3 sm:gap-4 items-start">
-                    <span className={`${c.barColor} text-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shrink-0 flex items-center justify-center`}>
+                  <div className="flex items-start gap-3">
+                    <span className={`${c.barColor} flex shrink-0 items-center justify-center rounded-xl p-2.5 text-white`}>
                       {c.icon}
                     </span>
-                    <h4 className="text-sm sm:text-base font-semibold text-slate-900 line-clamp-2 mt-0.5">
+                    <h4 className="mt-0.5 line-clamp-2 text-sm font-semibold text-slate-900">
                       {c.heading}
                     </h4>
                   </div>
 
                   {/* Percentage */}
-                  <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 my-4 sm:my-6">
+                  <h2 className="my-4 text-2xl font-bold text-slate-900 sm:text-3xl">
                     {c.percentage}%
                   </h2>
 
@@ -287,21 +268,21 @@ const router = useRouter();
           </div>
 
           {/* ANALYTICS SECTION */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 md:gap-8 mt-10 sm:mt-12 md:mt-14">
+          <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* BAR CHART */}
-            <div className="bg-white p-5 sm:p-6 md:p-7 lg:p-8 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-6 sm:mb-8">
-                <h3 className="font-bold text-base sm:text-lg md:text-xl text-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-900 sm:text-lg">
                   Active Hours
                 </h3>
-                <select className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                <select className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option>Weekly</option>
                   <option>Monthly</option>
                   <option>Yearly</option>
                 </select>
               </div>
 
-              <div className="h-72 sm:h-80 md:h-96 min-w-0">
+              <div className="h-72 min-w-0 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={activeHours} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#9CA3AF" />
@@ -326,12 +307,12 @@ const router = useRouter();
             </div>
 
             {/* LINE CHART */}
-            <div className="bg-white p-5 sm:p-6 md:p-7 lg:p-8 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-base sm:text-lg md:text-xl text-slate-900 mb-6 sm:mb-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <h3 className="mb-5 text-base font-bold text-slate-900 sm:text-lg">
                 Performance
               </h3>
 
-              <div className="h-72 sm:h-80 md:h-96 min-w-0">
+              <div className="h-72 min-w-0 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={performanceData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9CA3AF" />
@@ -737,9 +718,6 @@ const router = useRouter();
 
           </div>
 
-
-        </div>
-
         {/* ================= PROFILE SIDEBAR (DESKTOP) ================= */}
         <AnimatePresence>
           {openProfile && (
@@ -786,7 +764,7 @@ const router = useRouter();
                   <h3 className="mt-4 sm:mt-6 font-bold text-base sm:text-lg text-slate-900">
                     {username}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-2">
+                  <p className="mt-2 text-sm text-slate-600">
                     Student
                   </p>
                 </div>
@@ -800,7 +778,6 @@ const router = useRouter();
             </>
           )}
         </AnimatePresence>
-      </div>
 
       {/* ================= MOBILE PROFILE DRAWER ================= */}
       <AnimatePresence>
@@ -856,7 +833,7 @@ const router = useRouter();
           </>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 

@@ -1,192 +1,111 @@
 "use client"
 
-import AdminNavbar from '@/utils/AdminNavbar'
+import axios from 'axios';
 import { Bell, Search } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+import toast from 'react-hot-toast';
+
+type SubjectTable = {
+  subjectCode: string;
+  subjectName: string;
+  markObtained: number;
+  totalMark: number;
+  grade: string;
+  credit: number;
+  cgpa: string;
+};
+
+type SemesterStat = {
+  CGPA: number;
+  semester: number;
+  ClassRank: number;
+  status: string;
+  SGPA?: number;
+};
 
 function result() {
-  const [username, setUsername] = useState("")
+  const [username, setUsername] = useState("");
+  const [subjectTable, setSubjectTable] = useState<SubjectTable[]>([]);
+  const [stats, setStats] = useState<SemesterStat[]>([]);
 
-  const semester = [
-    {
-      semName: "Semester 1",
-      cgpa: 9.12,
-      percentage: 91.2,
-      rank: "18",
-      bestIn: "Physics",
-      needToImprove: "Mathematics",
-    },
-    {
-      semName: "Semester 2",
-      cgpa: 8.95,
-      percentage: 89.5,
-      rank: "22",
-      bestIn: "Chemistry",
-      needToImprove: "English",
-    },
-    {
-      semName: "Semester 3",
-      cgpa: 9.28,
-      percentage: 92.8,
-      rank: "12",
-      bestIn: "Computer Science",
-      needToImprove: "Physics",
-    },
-    {
-      semName: "Semester 4",
-      cgpa: 8.84,
-      percentage: 88.4,
-      rank: "25",
-      bestIn: "Mathematics",
-      needToImprove: "Chemistry",
-    },
-    {
-      semName: "Semester 5",
-      cgpa: 9.45,
-      percentage: 94.5,
-      rank: "8",
-      bestIn: "Data Structures",
-      needToImprove: "English",
-    },
-    {
-      semName: "Semester 6",
-      cgpa: 9.38,
-      percentage: 93.8,
-      rank: "10",
-      bestIn: "Database Management",
-      needToImprove: "Computer Networks",
-    },
-    {
-      semName: "Semester 7",
-      cgpa: 9.56,
-      percentage: 95.6,
-      rank: "5",
-      bestIn: "Artificial Intelligence",
-      needToImprove: "Operating Systems",
-    },
-    {
-      semName: "Semester 8",
-      cgpa: 9.71,
-      percentage: 97.1,
-      rank: "3",
-      bestIn: "Machine Learning",
-      needToImprove: "Software Engineering",
-    },
-  ];
 
-  const subjects = [
-    {
-      subjectCode: "CS101",
-      subjectName: "Programming Fundamentals",
-      marksObtained: 92,
-      totalMarks: 100,
-      grade: "A+",
-      credits: 4,
-      cgpa: 9.2,
-    },
-    {
-      subjectCode: "MA102",
-      subjectName: "Engineering Mathematics",
-      marksObtained: 85,
-      totalMarks: 100,
-      grade: "A",
-      credits: 4,
-      cgpa: 8.5,
-    },
-    {
-      subjectCode: "PH103",
-      subjectName: "Applied Physics",
-      marksObtained: 88,
-      totalMarks: 100,
-      grade: "A",
-      credits: 3,
-      cgpa: 8.8,
-    },
-    {
-      subjectCode: "CH104",
-      subjectName: "Engineering Chemistry",
-      marksObtained: 79,
-      totalMarks: 100,
-      grade: "B+",
-      credits: 3,
-      cgpa: 7.9,
-    },
-    {
-      subjectCode: "EC105",
-      subjectName: "Basic Electronics",
-      marksObtained: 95,
-      totalMarks: 100,
-      grade: "O",
-      credits: 4,
-      cgpa: 9.5,
-    },
-    {
-      subjectCode: "ME106",
-      subjectName: "Engineering Graphics",
-      marksObtained: 82,
-      totalMarks: 100,
-      grade: "A",
-      credits: 2,
-      cgpa: 8.2,
-    },
-  ];
-
-    const totalEarnedPoints = subjects.reduce((total, subject) => {
-  let gradePoint = 0;
-  if (subject.marksObtained >= 90) gradePoint = 10;
-  else if (subject.marksObtained >= 80) gradePoint = 9;
-  else if (subject.marksObtained >= 70) gradePoint = 8; 
-  else if (subject.marksObtained >= 60) gradePoint = 7;
-  else if (subject.marksObtained >= 50) gradePoint = 6;
-  else if (subject.marksObtained >= 40) gradePoint = 5;
-  else if (subject.marksObtained >= 30) gradePoint = 4;
-  else if (subject.marksObtained >= 20) gradePoint = 3;
-  else gradePoint = 0;
-  
-  return total + (gradePoint * subject.credits);
-}, 0);
-
-const totalCredits = subjects.reduce((total, subject) => total + subject.credits, 0);
-const sgpa = totalEarnedPoints / totalCredits;
-
-const fetchUsername = async () => {
-          try{
-              const res = await fetch("/api/users/getUsername");
-              const data = await res.json();
-              setUsername(data.username);
-              console.log("Username:", data.username);
-          }catch(err){
-            console.log(err);
-          }
+  const getData = async () => {
+    try {
+        const res = await axios.get("/api/users/auth/result");
+        console.log("Response of Result API", res.data);
+        if(res.data.success){
+          setStats((res.data.data.semesterData ?? []) as SemesterStat[]);
+          setSubjectTable((res.data.data.SubjectWiseInfo ?? []) as SubjectTable[]);
+          toast.success(res.data.message || 'Fetched the data');
+        }else{
+          console.log("Error in getting Data from backend.");
+          toast.error(res.data.message || 'Error in getting Data from backend.');
         }
 
-        useEffect(() => {
-            fetchUsername();
-        })
+        
+    } catch (err: any) {
+      console.warn("Error in getting Data from backend.", err?.response?.data);
+      setStats([]);
+      setSubjectTable([]);
+      toast.error(
+        err?.response?.data?.message || "Error in getting Data from backend."
+      );
+    }
+  };
+
+
+
+
+
+  
+ 
+    const totalEarnedPoints = subjectTable.map((subject) => {
+      let gradePoint = 0;
+      if (subject.markObtained >= 90) gradePoint = 10;
+      else if (subject.markObtained >= 80) gradePoint = 9;
+      else if (subject.markObtained >= 70) gradePoint = 8; 
+      else if (subject.markObtained >= 60) gradePoint = 7;
+      else if (subject.markObtained >= 50) gradePoint = 6;
+      else if (subject.markObtained >= 40) gradePoint = 5;
+      else if (subject.markObtained >= 30) gradePoint = 4;
+      else if (subject.markObtained >= 20) gradePoint = 3;
+      else gradePoint = 0;
+      return gradePoint * subject.credit;
+    }).reduce((total, current) => total + current, 0);
+
+  const totalCredits = subjectTable.reduce(
+    (total, subject) => total + subject.credit,
+    0
+  );
+  const sgpa = totalCredits > 0 ? totalEarnedPoints / totalCredits : 0;
+  const latestStat = stats[0];
+
+  const fetchUsername = async () => {
+    try {
+      const res = await fetch("/api/users/getUsername");
+      const data = await res.json();
+      setUsername(data.username);
+      console.log("Username:", data.username);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsername();
+    getData();
+  }, []);
 
   return (
-    <div className="bg-linear-to-br from-slate-50 via-white to-slate-50 min-h-screen p-3 sm:p-4 md:p-5 lg:p-6">
-      {/* MAIN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6">
-        <AdminNavbar />
-
-        {/* ================= MAIN CONTENT ================= */}
-        <div
-          className={`
-            bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 lg:p-8 shadow-sm
-            transition-all duration-300
-            w-full
-            text-slate-900
-          `}
-        >
+    <>
           {/* HEADER */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
             {/* Greeting */}
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
+              <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
                 Hello {username} 👋
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1 sm:mt-2">
+              <p className="mt-1 text-sm text-slate-600">
                 Let's learn something new today
               </p>
             </div>
@@ -253,23 +172,29 @@ const fetchUsername = async () => {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8">
                 <div className="bg-white border border-indigo-100 rounded-lg sm:rounded-2xl p-4 sm:p-6 hover:shadow-md transition-all">
                   <p className="text-xs sm:text-sm font-medium text-slate-600 uppercase tracking-wide">CGPA</p>
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">10.0</h3>
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">
+                    {latestStat?.CGPA?.toFixed(2) ?? "—"}
+                  </h3>
                 </div>
 
                 <div className="bg-white border border-indigo-100 rounded-lg sm:rounded-2xl p-4 sm:p-6 hover:shadow-md transition-all">
                   <p className="text-xs sm:text-sm font-medium text-slate-600 uppercase tracking-wide">Semester</p>
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">8</h3>
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">
+                    {latestStat?.semester ?? "—"}
+                  </h3>
                 </div>
 
                 <div className="bg-white border border-indigo-100 rounded-lg sm:rounded-2xl p-4 sm:p-6 hover:shadow-md transition-all">
                   <p className="text-xs sm:text-sm font-medium text-slate-600 uppercase tracking-wide">Class Rank</p>
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">#12</h3>
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 sm:mt-3 text-indigo-600">
+                    #{latestStat?.ClassRank ?? "—"}
+                  </h3>
                 </div>
 
                 <div className="bg-white border border-indigo-100 rounded-lg sm:rounded-2xl p-4 sm:p-6 hover:shadow-md transition-all">
                   <p className="text-xs sm:text-sm font-medium text-slate-600 uppercase tracking-wide">Status</p>
                   <h3 className="text-lg sm:text-xl md:text-2xl font-bold mt-2 sm:mt-3 text-green-600">
-                    Passed
+                    {latestStat?.status || "—"}
                   </h3>
                 </div>
               </div>
@@ -315,7 +240,7 @@ const fetchUsername = async () => {
               </div>
 
               <div className="space-y-2 mt-4">
-                {subjects.map((subject, index) => (
+                {subjectTable.map((subject, index) => (
                   <div
                     key={index}
                     className="grid grid-cols-7 gap-4 bg-white border border-slate-200 rounded-lg sm:rounded-xl px-4 py-4 hover:shadow-md transition-all"
@@ -329,11 +254,11 @@ const fetchUsername = async () => {
                     </p>
 
                     <p className="text-sm md:text-base text-center text-slate-900 font-medium">
-                      {subject.marksObtained}
+                      {subject.markObtained}
                     </p>
 
                     <p className="text-sm md:text-base text-center text-slate-700">
-                      {subject.totalMarks}
+                      {subject.totalMark}
                     </p>
 
                     <p className="text-sm md:text-base text-center font-semibold text-indigo-600">
@@ -341,14 +266,14 @@ const fetchUsername = async () => {
                     </p>
 
                     <p className="text-sm md:text-base text-center text-slate-900 font-medium">
-                      {subject.credits}
+                      {subject.credit}
                     </p>
 
                     <p
                       className={`text-sm md:text-base text-center font-bold ${
-                        subject.cgpa >= 9
+                        Number(subject.cgpa) >= 9
                           ? "text-green-600"
-                          : subject.cgpa >= 7
+                          : Number(subject.cgpa) >= 7
                           ? "text-amber-600"
                           : "text-red-600"
                       }`}
@@ -362,7 +287,7 @@ const fetchUsername = async () => {
 
             {/* Mobile + Tablet Cards */}
             <div className="lg:hidden space-y-4 mt-4">
-              {subjects.map((subject, index) => (
+              {subjectTable.map((subject, index) => (
                 <div
                   key={index}
                   className="
@@ -392,9 +317,9 @@ const fetchUsername = async () => {
                       className={`
                         px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap
                         ${
-                          subject.cgpa >= 9
+                          Number(subject.cgpa) >= 9
                             ? "bg-green-100 text-green-700"
-                            : subject.cgpa >= 7
+                            : Number(subject.cgpa) >= 7
                             ? "bg-amber-100 text-amber-700"
                             : "bg-red-100 text-red-700"
                         }
@@ -411,7 +336,7 @@ const fetchUsername = async () => {
                         Marks Obtained
                       </p>
                       <p className="font-bold text-slate-900 mt-1 sm:mt-2 text-base sm:text-lg">
-                        {subject.marksObtained}
+                        {subject.markObtained}
                       </p>
                     </div>
 
@@ -420,7 +345,7 @@ const fetchUsername = async () => {
                         Total Marks
                       </p>
                       <p className="font-bold text-slate-900 mt-1 sm:mt-2 text-base sm:text-lg">
-                        {subject.totalMarks}
+                        {subject.totalMark}
                       </p>
                     </div>
 
@@ -429,7 +354,7 @@ const fetchUsername = async () => {
                         Credits
                       </p>
                       <p className="font-bold text-slate-900 mt-1 sm:mt-2 text-base sm:text-lg">
-                        {subject.credits}
+                        {subject.credit}
                       </p>
                     </div>
 
@@ -440,9 +365,9 @@ const fetchUsername = async () => {
 
                       <p
                         className={`font-bold mt-1 sm:mt-2 text-base sm:text-lg ${
-                          subject.cgpa >= 9
+                          Number(subject.cgpa) >= 9
                             ? "text-green-600"
-                            : subject.cgpa >= 7
+                            : Number(subject.cgpa) >= 7
                             ? "text-amber-600"
                             : "text-red-600"
                         }`}
@@ -456,7 +381,7 @@ const fetchUsername = async () => {
             </div>
             <div className='h-12 text-white flex items-center justify-center mt-6 rounded-lg '>
               <h3 className='text-lg sm:text-xl md:text-2xl font-bold bg-linear-to-r from-indigo-500 to-purple-500 text-transparent bg-clip-text'>
-                Total GPA: {sgpa}
+                Total GPA: {sgpa.toFixed(2)}
               </h3>
             </div>
           </div>
@@ -469,7 +394,7 @@ const fetchUsername = async () => {
 
             {/* Desktop */}
             <div className="hidden lg:grid grid-cols-3 gap-6">
-              {semester.map((sem, index) => (
+              {stats.map((sem, index) => (
                 <div
                   key={index}
                   className="
@@ -486,41 +411,34 @@ const fetchUsername = async () => {
                   "
                 >
                   <h4 className="text-base sm:text-lg font-bold text-indigo-600 mb-4 sm:mb-6">
-                    {sem.semName}
+                    Semester {sem.semester}
                   </h4>
 
                   <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-slate-700">CGPA</span>
-                      <span className="text-slate-900 font-bold">{sem.cgpa}</span>
+                      <span className="text-slate-900 font-bold">{sem.CGPA}</span>
                     </div>
 
                     <div className="h-px bg-slate-100"></div>
 
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-slate-700">Percentage</span>
-                      <span className="text-slate-900 font-bold">{sem.percentage}%</span>
+                      <span className="font-semibold text-slate-700">SGPA</span>
+                      <span className="text-slate-900 font-bold">{sem.SGPA ?? "—"}</span>
                     </div>
 
                     <div className="h-px bg-slate-100"></div>
 
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-slate-700">Class Rank</span>
-                      <span className="text-indigo-600 font-bold">#{sem.rank}</span>
+                      <span className="text-indigo-600 font-bold">#{sem.ClassRank}</span>
                     </div>
 
                     <div className="h-px bg-slate-100"></div>
 
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-slate-700">Best In</span>
-                      <span className="text-green-600 font-semibold text-right">{sem.bestIn}</span>
-                    </div>
-
-                    <div className="h-px bg-slate-100"></div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-slate-700">To Improve</span>
-                      <span className="text-amber-600 font-semibold text-right">{sem.needToImprove}</span>
+                      <span className="font-semibold text-slate-700">Status</span>
+                      <span className="text-green-600 font-semibold text-right">{sem.status}</span>
                     </div>
                   </div>
                 </div>
@@ -529,7 +447,7 @@ const fetchUsername = async () => {
 
             {/* Mobile + Tablet */}
             <div className="lg:hidden space-y-4 sm:space-y-5 mt-4">
-              {semester.map((sem, index) => (
+              {stats.map((sem, index) => (
                 <div
                   key={index}
                   className="
@@ -545,7 +463,7 @@ const fetchUsername = async () => {
                 >
                   <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <h4 className="text-base sm:text-lg font-bold text-indigo-600">
-                      {sem.semName}
+                      Semester {sem.semester}
                     </h4>
 
                     <span
@@ -560,17 +478,17 @@ const fetchUsername = async () => {
                         whitespace-nowrap
                       "
                     >
-                      CGPA {sem.cgpa}
+                      CGPA {sem.CGPA}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 gap-y-4 sm:gap-y-5">
                     <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                        Percentage
+                        SGPA
                       </p>
                       <p className="font-bold text-slate-900 mt-1 sm:mt-2 text-base sm:text-lg">
-                        {sem.percentage}%
+                        {sem.SGPA ?? "—"}
                       </p>
                     </div>
 
@@ -579,25 +497,16 @@ const fetchUsername = async () => {
                         Rank
                       </p>
                       <p className="font-bold text-indigo-600 mt-1 sm:mt-2 text-base sm:text-lg">
-                        #{sem.rank}
+                        #{sem.ClassRank}
                       </p>
                     </div>
 
                     <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                        Best Subject
+                        Status
                       </p>
-                      <p className="font-bold text-green-600 mt-1 sm:mt-2 text-base sm:text-lg line-clamp-2">
-                        {sem.bestIn}
-                      </p>
-                    </div>
-
-                    <div className="bg-linear-to-br from-slate-50 to-white rounded-lg p-3 sm:p-4 border border-slate-100">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                        To Improve
-                      </p>
-                      <p className="font-bold text-amber-600 mt-1 sm:mt-2 text-base sm:text-lg line-clamp-2">
-                        {sem.needToImprove}
+                      <p className="font-bold text-green-600 mt-1 sm:mt-2 text-base sm:text-lg">
+                        {sem.status}
                       </p>
                     </div>
                   </div>
@@ -605,9 +514,7 @@ const fetchUsername = async () => {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
 
