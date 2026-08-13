@@ -176,9 +176,11 @@ export async function GET(request: NextRequest) {
     const destination =
       user.role === "admin"
         ? "/admin/dashboard"
-        : user.profileCompleted
-          ? "/dashboard"
-          : "/setUp";
+        : user.role === "faculty"
+          ? "/faculty/dashboard"
+          : user.profileCompleted
+            ? "/dashboard"
+            : "/setUp";
 
     return redirectWithSession(request, destination, sessionToken);
   } catch (err: unknown) {

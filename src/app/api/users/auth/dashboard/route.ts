@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 
 import {Subject} from "@/models/subject.model"
 import mongoose from "mongoose";
-import { Enrollment } from "@/models/enrollement.model";
 import { getUser } from "@/lib/getUser";
 import { createRequestLogger } from "@/lib/requestLogger";
 

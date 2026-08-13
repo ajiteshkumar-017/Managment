@@ -3,7 +3,6 @@ import Connect from "@/dbConnect/connect";
 import { User } from "@/models/user";
 import jwt from "jsonwebtoken";
 import {Subject} from "@/models/subject.model"
-import { Enrollment } from "@/models/enrollement.model";
 import { Notice } from "@/models/notice.model";
 import { getUser } from "@/lib/getUser";
 import { createRequestLogger } from "@/lib/requestLogger";

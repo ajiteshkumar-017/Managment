@@ -4,7 +4,7 @@ import Connect from "@/dbConnect/connect";
 import { User } from "@/models/user";
 import { Subject } from "@/models/subject.model";
 import { Class } from "@/models/class.model";
-import { Enrollment } from "@/models/enrollement.model";
+import { ClassEnrollement } from "@/models/classEnrollement";
 import { Faculty } from "@/models/faculty.model";
 import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.model";
 import { Student } from "@/models/student.model";
@@ -47,7 +47,7 @@ export async function seedDatabase() {
   await SemesterResult.deleteMany({});
   await ResultBatch.deleteMany({});
   await AttendanceSession.deleteMany({});
-  await Enrollment.deleteMany({});
+  await ClassEnrollement.deleteMany({});
   await Class.deleteMany({});
   await SubjectFacultyAssignment.deleteMany({});
   await Faculty.deleteMany({});
@@ -439,20 +439,22 @@ export async function seedDatabase() {
     },
   ]);
 
-  const enrollments = await Enrollment.insertMany([
+  const classEnrollements = await ClassEnrollement.insertMany([
     // Ajitesh — CSE Sem 5 (all 4 subjects)
     ...classes.slice(0, 4).map((cls) => ({
-      studentId: studentUser1._id,
+      studentId: studentAjitesh._id,
       classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
-      exitedAt: new Date("2026-06-10"),
+      exitedAt: null,
+      status: "enrolled",
     })),
     // Riya — CSE Sem 7 (all 4 subjects)
     ...classes.slice(4, 8).map((cls) => ({
-      studentId: studentUser2._id,
+      studentId: studentRiya._id,
       classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
-      exitedAt: new Date("2026-06-10"),
+      exitedAt: null,
+      status: "enrolled",
     })),
   ]);
 
@@ -715,7 +717,7 @@ export async function seedDatabase() {
     assignments,
     classes,
     attendanceSessions,
-    enrollments,
+    classEnrollements,
     resultBatches,
     semesterResults,
     subjectResults,

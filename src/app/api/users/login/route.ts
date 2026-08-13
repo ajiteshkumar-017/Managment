@@ -116,7 +116,8 @@ export async function POST(request: NextRequest){
             {
                 success: true,
                 message: "User logged In Successfully",
-                ProfileStatus: user.profileCompleted
+                ProfileStatus: user.profileCompleted,
+                role: user.role,
             },
             {
                 status: 200

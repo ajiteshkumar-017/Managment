@@ -2,7 +2,7 @@ import Connect from "@/dbConnect/connect";
 import { AttendanceRecord } from "@/models/attendance.model";
 import { AttendanceSession } from "@/models/attendanceSession";
 import { Class } from "@/models/class.model";
-import { Enrollment } from "@/models/enrollement.model";
+import { ClassEnrollement } from "@/models/classEnrollement";
 import { Subject } from "@/models/subject.model";
 import { Student } from "@/models/student.model";
 import { User } from "@/models/user";
@@ -28,7 +28,7 @@ export async function GET() {
       .lean();
 
     const records = await AttendanceRecord.find().lean();
-    const enrollments = await Enrollment.find().lean();
+    const enrollments = await ClassEnrollement.find({ status: "enrolled" }).lean();
     const students = await Student.find({ status: { $regex: /^active$/i } }).lean();
 
     const presentBySession = new Map<string, number>();
@@ -190,9 +190,13 @@ async function estimateBelowThreshold(
     marksByStudent.set(id, (marksByStudent.get(id) || 0) + 1);
   }
 
+  const userIdByStudentId = new Map(
+    students.map((s) => [String(s._id), String(s.userId)]),
+  );
+
   const enrollByStudent = new Map<string, number>();
   for (const e of enrollments) {
-    const id = String(e.studentId);
+    const id = userIdByStudentId.get(String(e.studentId)) || String(e.studentId);
     enrollByStudent.set(id, (enrollByStudent.get(id) || 0) + 1);
   }
 

@@ -1,5 +1,5 @@
 import Connect from "@/dbConnect/connect";
-import { Enrollment } from "@/models";
+import { ClassEnrollement } from "@/models";
 import { Student } from "@/models/student.model";
 import { User } from "@/models/user";
 import { NextResponse, NextRequest } from "next/server";
@@ -25,7 +25,7 @@ export async function GET(_request: NextRequest) {
       Student.countDocuments(),
       Student.countDocuments({ status: { $regex: /^active$/i } }),
       Student.countDocuments({ status: { $regex: /^graduated$/i } }),
-      Enrollment.countDocuments(),
+      ClassEnrollement.countDocuments({ status: "enrolled" }),
     ]);
 
     const data = students.map((s: any) => ({

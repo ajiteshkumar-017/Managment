@@ -5,7 +5,7 @@ import {
   AttendanceSession,
   AttendanceRecord,
   Class,
-  Enrollment,
+  ClassEnrollement,
   Subject,
 } from "@/models/index";
 import { NextResponse, NextRequest } from "next/server";
@@ -57,8 +57,9 @@ async function getAttendaneofToday() {
     sessionId: { $in: sessionIds },
   });
 
-  const totalEnrolled = await Enrollment.countDocuments({
+  const totalEnrolled = await ClassEnrollement.countDocuments({
     classId: { $in: classIds },
+    status: "enrolled",
   });
 
   const absent = Math.max(totalEnrolled - present, 0);
@@ -93,8 +94,9 @@ async function attendanceOverview() {
         sessionId: { $in: sessionIds },
       });
 
-      const enrolled = await Enrollment.countDocuments({
+      const enrolled = await ClassEnrollement.countDocuments({
         classId: { $in: classIds },
+        status: "enrolled",
       });
 
       attendance = enrolled > 0 ? Math.round((present / enrolled) * 100) : 0;

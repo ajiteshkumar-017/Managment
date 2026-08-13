@@ -3,16 +3,17 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-/** Accessible without login. */
-const userPublicRoutes = [
+/** Accessible without login (prefix match). */
+const userPublicPrefixRoutes = [
   "/landingPage",
   "/courses",
   "/about",
   "/contactUs",
-  "/faculty",
   "/resources",
-  
 ];
+
+/** Exact public paths (must not prefix-match panel routes like /faculty/dashboard). */
+const userPublicExactRoutes = ["/faculty"];
 
 /**
  * Marketing/auth entry only — logged-in users get sent to their dashboard.
@@ -35,14 +36,18 @@ const userProtectedRoutes = [
 const routeMatcher = (routes: string[], pathname: string) =>
   routes.some((route) => pathname.startsWith(route));
 
+const isFacultyPanelRoute = (pathname: string) =>
+  pathname.startsWith("/faculty/");
+
 const isPublicRoute = (pathname: string) =>
-  routeMatcher(userPublicRoutes, pathname) ||
+  userPublicExactRoutes.includes(pathname) ||
+  routeMatcher(userPublicPrefixRoutes, pathname) ||
   pathname.startsWith("/api/users/login") ||
   pathname.startsWith("/api/users/signUp") ||
   pathname.startsWith("/api/users/check-email") ||
   pathname.startsWith("/api/test-email") ||
   pathname.startsWith("/api/contact") ||
-  pathname.startsWith("/api/faculty") ||
+  pathname === "/api/faculty" ||
   pathname.startsWith("/api/users/auth/google");
 
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
@@ -65,6 +70,12 @@ function withNoStore(response: NextResponse) {
   );
   response.headers.set("Pragma", "no-cache");
   return response;
+}
+
+function homeForRole(role: string) {
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "faculty") return "/faculty/dashboard";
+  return "/dashboard";
 }
 
 /** Block unauthenticated access: APIs get 401, pages get redirect. */
@@ -136,15 +147,22 @@ export async function proxy(request: NextRequest) {
 
     // Token valid but no role → block protected areas
     if (!role) {
-      if (isAdminRoute(pathname) || routeMatcher(userProtectedRoutes, pathname)) {
+      if (
+        isAdminRoute(pathname) ||
+        isFacultyPanelRoute(pathname) ||
+        routeMatcher(userProtectedRoutes, pathname)
+      ) {
         return denyUnauthenticated(request, true);
       }
       return nextResponse();
     }
 
-    // Admin cannot open student protected routes; auth entry → admin home
+    // Admin cannot open student / faculty panel routes; auth entry → admin home
     if (role === "admin") {
-      if (routeMatcher(userProtectedRoutes, pathname)) {
+      if (
+        routeMatcher(userProtectedRoutes, pathname) ||
+        isFacultyPanelRoute(pathname)
+      ) {
         return withNoStore(
           NextResponse.redirect(new URL("/admin/dashboard", request.url)),
         );
@@ -157,10 +175,31 @@ export async function proxy(request: NextRequest) {
       return nextResponse();
     }
 
-    // Non-admin cannot open any /admin route
-    if (isAdminRoute(pathname)) {
+    // Faculty panel access + redirects
+    if (role === "faculty") {
+      if (isAdminRoute(pathname)) {
+        return withNoStore(
+          NextResponse.redirect(new URL("/faculty/dashboard", request.url)),
+        );
+      }
+      if (routeMatcher(userProtectedRoutes, pathname)) {
+        return withNoStore(
+          NextResponse.redirect(new URL("/faculty/dashboard", request.url)),
+        );
+      }
+      if (routeMatcher(userAuthEntryRoutes, pathname)) {
+        return withNoStore(
+          NextResponse.redirect(new URL("/faculty/dashboard", request.url)),
+        );
+      }
+      // Non-faculty users should not hit /faculty/* — already handled for other roles below
+      return nextResponse();
+    }
+
+    // Students (and other non-admin/faculty) cannot open admin or faculty panel
+    if (isAdminRoute(pathname) || isFacultyPanelRoute(pathname)) {
       return withNoStore(
-        NextResponse.redirect(new URL("/dashboard", request.url)),
+        NextResponse.redirect(new URL(homeForRole(role), request.url)),
       );
     }
 

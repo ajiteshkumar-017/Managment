@@ -1,5 +1,5 @@
 import Connect from "@/dbConnect/connect";
-import { Enrollment } from "@/models/enrollement.model";
+import { ClassEnrollement } from "@/models/classEnrollement";
 import { Class } from "@/models/class.model";
 import { Subject } from "@/models/subject.model";
 import { User } from "@/models/user";
@@ -12,8 +12,12 @@ export async function GET() {
   try {
     await Connect();
 
-    const enrollments = await Enrollment.find()
-      .populate({ path: "studentId", model: User, select: "username email" })
+    const enrollments = await ClassEnrollement.find()
+      .populate({
+        path: "studentId",
+        model: Student,
+        populate: { path: "userId", model: User, select: "username email" },
+      })
       .populate({
         path: "classId",
         model: Class,
@@ -26,23 +30,18 @@ export async function GET() {
       .sort({ enrolledAt: -1 })
       .lean();
 
-    const students = await Student.find().lean();
-    const rollByUserId = new Map(
-      students.map((s: any) => [String(s.userId), s.rollNumber || "—"]),
-    );
-
-    const now = new Date();
     const data = enrollments.map((e: any) => {
       const cls = e.classId;
       const subject = cls?.subjectId;
-      const exited = e.exitedAt ? new Date(e.exitedAt) : null;
-      const active = !exited || exited > now;
+      const student = e.studentId;
+      const user = student?.userId;
+      const active = e.status === "enrolled";
 
       return {
         _id: e._id,
-        rollNo: rollByUserId.get(String(e.studentId?._id || e.studentId)) || "—",
-        studentName: e.studentId?.username || "—",
-        email: e.studentId?.email || "",
+        rollNo: student?.rollNumber || "—",
+        studentName: user?.username || "—",
+        email: user?.email || "",
         classCode: cls?.classCode || "—",
         room: cls?.room || "—",
         subjectCode: subject?.subjectCode || "—",

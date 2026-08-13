@@ -5,7 +5,7 @@ import { Notice } from "./notice.model";
 import { AttendanceSession } from "./attendanceSession";
 import { AttendanceRecord } from "./attendance.model";
 import { Class } from "./class.model";
-import { Enrollment } from "./enrollement.model";
+import { ClassEnrollement } from "./classEnrollement";
 import { Subject } from "./subject.model";
 import { SubjectFacultyAssignment } from "./subjectFacultyAssignment.model";
 
@@ -29,7 +29,7 @@ export {
     AttendanceSession,
     AttendanceRecord,
     Class,
-    Enrollment,
+    ClassEnrollement,
     Subject,
     SubjectFacultyAssignment,
 }

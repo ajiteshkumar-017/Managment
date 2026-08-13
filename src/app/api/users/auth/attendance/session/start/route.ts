@@ -4,6 +4,8 @@ import { verifyJwt } from "@/lib/verifyJwt";
 import { AttendanceRecord, Class, Student } from "@/models";
 import { AttendanceSession } from "@/models/attendanceSession";
 import Connect from "@/dbConnect/connect";
+import { decodeResourceId } from "@/lib/idToken";
+import mongoose from "mongoose";
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +50,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sessionData = await AttendanceSession.findById(sessionId);
+    const resolvedSessionId =
+      (await decodeResourceId(sessionId, "session")) ||
+      (mongoose.Types.ObjectId.isValid(sessionId) ? sessionId : null);
+
+    if (!resolvedSessionId) {
+      return NextResponse.json(
+        { success: false, message: "Invalid sessionId" },
+        { status: 400 },
+      );
+    }
+
+    const sessionData = await AttendanceSession.findById(resolvedSessionId);
     if (!sessionData) {
       return NextResponse.json(
         { success: false, message: "Session not found" },

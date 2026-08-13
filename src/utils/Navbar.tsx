@@ -86,7 +86,10 @@ function Navbar() {
       resetForm();
       closeAuth();
       if (res.data.ProfileStatus === true) {
-        router.push("/dashboard");
+        const role = res.data.role as string | undefined;
+        if (role === "admin") router.push("/admin/dashboard");
+        else if (role === "faculty") router.push("/faculty/dashboard");
+        else router.push("/dashboard");
       } else {
         router.push("/setUp");
       }

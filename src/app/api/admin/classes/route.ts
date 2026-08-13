@@ -2,7 +2,7 @@ import Connect from "@/dbConnect/connect";
 import { Class } from "@/models/class.model";
 import { Subject } from "@/models/subject.model";
 import { User } from "@/models/user";
-import { Enrollment } from "@/models/enrollement.model";
+import { ClassEnrollement } from "@/models/classEnrollement";
 import { NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
 
@@ -17,8 +17,8 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .lean();
 
-    const enrollmentCounts = await Enrollment.aggregate([
-      { $match: { exitedAt: { $exists: true } } },
+    const enrollmentCounts = await ClassEnrollement.aggregate([
+      { $match: { status: "enrolled" } },
       {
         $group: {
           _id: "$classId",
