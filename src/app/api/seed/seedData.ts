@@ -40,6 +40,53 @@ function buildAllSubjects() {
   );
 }
 
+/** 3 faculty per department, assigned across every semester. */
+const FACULTY_ROSTER: {
+  department: (typeof DEPARTMENT)[number];
+  username: string;
+  email: string;
+  designation: string;
+  salary: number;
+}[] = [
+  { department: "CSE", username: "Dr. Maya Patel", email: "maya.patel@test.edu", designation: "Assistant Professor", salary: 54000 },
+  { department: "CSE", username: "Prof. Arjun Singh", email: "arjun.singh@test.edu", designation: "Associate Professor", salary: 62000 },
+  { department: "CSE", username: "Dr. Leela Menon", email: "leela.menon@test.edu", designation: "Professor", salary: 78000 },
+  { department: "ECE", username: "Dr. Rohit Verma", email: "rohit.verma@test.edu", designation: "Assistant Professor", salary: 52000 },
+  { department: "ECE", username: "Prof. Sana Qureshi", email: "sana.qureshi@test.edu", designation: "Associate Professor", salary: 61000 },
+  { department: "ECE", username: "Dr. Nikhil Joshi", email: "nikhil.joshi@test.edu", designation: "Professor", salary: 76000 },
+  { department: "EEE", username: "Dr. Priya Nair", email: "priya.nair@test.edu", designation: "Assistant Professor", salary: 53000 },
+  { department: "EEE", username: "Prof. Aditya Rao", email: "aditya.rao@test.edu", designation: "Associate Professor", salary: 60000 },
+  { department: "EEE", username: "Dr. Meera Shah", email: "meera.shah@test.edu", designation: "Professor", salary: 77000 },
+  { department: "ME", username: "Dr. Karan Malhotra", email: "karan.malhotra@test.edu", designation: "Assistant Professor", salary: 51000 },
+  { department: "ME", username: "Prof. Ananya Das", email: "ananya.das@test.edu", designation: "Associate Professor", salary: 59000 },
+  { department: "ME", username: "Dr. Vivek Pillai", email: "vivek.pillai@test.edu", designation: "Professor", salary: 75000 },
+  { department: "CE", username: "Dr. Ishita Ghosh", email: "ishita.ghosh@test.edu", designation: "Assistant Professor", salary: 50000 },
+  { department: "CE", username: "Prof. Sameer Khan", email: "sameer.khan@test.edu", designation: "Associate Professor", salary: 58000 },
+  { department: "CE", username: "Dr. Pooja Reddy", email: "pooja.reddy@test.edu", designation: "Professor", salary: 74000 },
+  { department: "CHE", username: "Dr. Tanvi Kapoor", email: "tanvi.kapoor@test.edu", designation: "Assistant Professor", salary: 50500 },
+  { department: "CHE", username: "Prof. Harsh Vyas", email: "harsh.vyas@test.edu", designation: "Associate Professor", salary: 58500 },
+  { department: "CHE", username: "Dr. Nidhi Bansal", email: "nidhi.bansal@test.edu", designation: "Professor", salary: 74500 },
+  { department: "BBA", username: "Dr. Ritu Sharma", email: "ritu.sharma@test.edu", designation: "Assistant Professor", salary: 48000 },
+  { department: "BBA", username: "Prof. Mohit Jain", email: "mohit.jain@test.edu", designation: "Associate Professor", salary: 56000 },
+  { department: "BBA", username: "Dr. Kavya Iyer", email: "kavya.iyer@test.edu", designation: "Professor", salary: 70000 },
+  { department: "MBA", username: "Dr. Devansh Agarwal", email: "devansh.agarwal@test.edu", designation: "Assistant Professor", salary: 55000 },
+  { department: "MBA", username: "Prof. Shreya Bose", email: "shreya.bose@test.edu", designation: "Associate Professor", salary: 64000 },
+  { department: "MBA", username: "Dr. Amit Kulkarni", email: "amit.kulkarni@test.edu", designation: "Professor", salary: 82000 },
+  { department: "MCA", username: "Dr. Farhan Ali", email: "farhan.ali@test.edu", designation: "Assistant Professor", salary: 53000 },
+  { department: "MCA", username: "Prof. Lakshmi Narayan", email: "lakshmi.narayan@test.edu", designation: "Associate Professor", salary: 61000 },
+  { department: "MCA", username: "Dr. Gaurav Saxena", email: "gaurav.saxena@test.edu", designation: "Professor", salary: 76000 },
+  { department: "PHD", username: "Dr. Anita Deshmukh", email: "anita.deshmukh@test.edu", designation: "Assistant Professor", salary: 60000 },
+  { department: "PHD", username: "Prof. Rajesh Iyer", email: "rajesh.iyer@test.edu", designation: "Associate Professor", salary: 72000 },
+  { department: "PHD", username: "Dr. Sunita Rao", email: "sunita.rao@test.edu", designation: "Professor", salary: 88000 },
+];
+
+const CLASS_SLOTS = [
+  { day: "Monday", startTime: "09:00", endTime: "10:00" },
+  { day: "Tuesday", startTime: "10:00", endTime: "11:00" },
+  { day: "Wednesday", startTime: "11:00", endTime: "12:00" },
+  { day: "Thursday", startTime: "14:00", endTime: "16:00" },
+] as const;
+
 export async function seedDatabase() {
   await Connect();
 
@@ -185,29 +232,50 @@ export async function seedDatabase() {
   const studentVikram = students[3];
   const studentNeha = students[4];
 
-  const faculties = await Faculty.create([
-    {
-      userId: facultyUser1._id,
-      department: "CSE",
-      designation: "Assistant Professor",
-      salary: 54000,
-      status: "active",
-      joinedAt: new Date("2022-08-01"),
-      lastPromoted: "2024-08-01",
-      prominentWork: "Distributed systems research and OS curriculum design",
-    },
-    {
-      userId: facultyUser2._id,
-      department: "CSE",
-      designation: "Associate Professor",
-      salary: 62000,
-      status: "active",
-      joinedAt: new Date("2021-07-01"),
-      lastPromoted: "2023-07-01",
-      patents: ["IN-2023-COMP-NET-001"],
-      prominentWork: "Computer networks and campus network security",
-    },
+  const extraFacultyUsers = await User.insertMany(
+    FACULTY_ROSTER.filter(
+      (f) => f.email !== "maya.patel@test.edu" && f.email !== "arjun.singh@test.edu",
+    ).map((f) => ({
+      username: f.username,
+      email: f.email,
+      password: passwordFaculty,
+      role: "faculty" as const,
+      profileCompleted: true,
+    })),
+  );
+
+  const facultyUserByEmail = new Map<string, (typeof users)[number]>([
+    ["maya.patel@test.edu", facultyUser1],
+    ["arjun.singh@test.edu", facultyUser2],
+    ...extraFacultyUsers.map((u) => [String(u.email), u] as const),
   ]);
+
+  const faculties = await Faculty.create(
+    FACULTY_ROSTER.map((f, index) => {
+      const user = facultyUserByEmail.get(f.email);
+      if (!user) throw new Error(`Seed faculty user missing: ${f.email}`);
+      return {
+        userId: user._id,
+        department: f.department,
+        designation: f.designation,
+        salary: f.salary,
+        status: "active",
+        joinedAt: new Date(2020 + (index % 5), 6, 1),
+        lastPromoted: `${2023 + (index % 3)}-07-01`,
+      };
+    }),
+  );
+
+  const facultyByDept = new Map<
+    string,
+    { user: (typeof users)[number]; faculty: (typeof faculties)[number] }[]
+  >();
+  FACULTY_ROSTER.forEach((f, index) => {
+    const user = facultyUserByEmail.get(f.email)!;
+    const list = facultyByDept.get(f.department) || [];
+    list.push({ user, faculty: faculties[index] });
+    facultyByDept.set(f.department, list);
+  });
 
   // 10 departments × 8 semesters × 4 subjects = 320 subjects
   const subjects = await Subject.insertMany(buildAllSubjects());
@@ -226,180 +294,62 @@ export async function seedDatabase() {
   const cseSem5 = ["CSE501", "CSE502", "CSE503", "CSE504"].map(requireSubject);
   const cseSem7 = ["CSE701", "CSE702", "CSE703", "CSE704"].map(requireSubject);
 
-  const assignments = await SubjectFacultyAssignment.create([
-    {
-      facultyId: faculties[0]._id,
-      subjectId: cseSem5[0]._id,
-      semester: 5,
-      section: "A",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[0]._id,
-      subjectId: cseSem5[1]._id,
-      semester: 5,
-      section: "ALL",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[0]._id,
-      subjectId: cseSem5[2]._id,
-      semester: 5,
-      section: "A",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[0]._id,
-      subjectId: cseSem5[3]._id,
-      semester: 5,
-      section: "A",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[1]._id,
-      subjectId: cseSem7[0]._id,
-      semester: 7,
-      section: "B",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[1]._id,
-      subjectId: cseSem7[1]._id,
-      semester: 7,
-      section: "B",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[1]._id,
-      subjectId: cseSem7[2]._id,
-      semester: 7,
-      section: "B",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-    {
-      facultyId: faculties[1]._id,
-      subjectId: cseSem7[3]._id,
-      semester: 7,
-      section: "B",
-      department: "CSE",
-      academicYear: "2025-2026",
-    },
-  ]);
+  const assignmentDocs = [];
+  const classDocs = [];
 
-  // Class: subjectId, facultyId (User), classCode, department, semester, section, batch, room, day, startTime, endTime
-  const classes = await Class.create([
-    {
-      subjectId: cseSem5[0]._id,
-      facultyId: facultyUser1._id,
-      classCode: "CSE501-A",
-      department: "CSE",
-      semester: 5,
-      section: "A",
-      batch: "2021-2025",
-      room: "A101",
-      day: "Monday",
-      startTime: "09:00",
-      endTime: "10:00",
-    },
-    {
-      subjectId: cseSem5[1]._id,
-      facultyId: facultyUser1._id,
-      classCode: "CSE502-A",
-      department: "CSE",
-      semester: 5,
-      section: "A",
-      batch: "2021-2025",
-      room: "A102",
-      day: "Tuesday",
-      startTime: "10:00",
-      endTime: "11:00",
-    },
-    {
-      subjectId: cseSem5[2]._id,
-      facultyId: facultyUser1._id,
-      classCode: "CSE503-A",
-      department: "CSE",
-      semester: 5,
-      section: "A",
-      batch: "2021-2025",
-      room: "A103",
-      day: "Wednesday",
-      startTime: "11:00",
-      endTime: "12:00",
-    },
-    {
-      subjectId: cseSem5[3]._id,
-      facultyId: facultyUser1._id,
-      classCode: "CSE504-A",
-      department: "CSE",
-      semester: 5,
-      section: "A",
-      batch: "2021-2025",
-      room: "A104",
-      day: "Thursday",
-      startTime: "14:00",
-      endTime: "16:00",
-    },
-    {
-      subjectId: cseSem7[0]._id,
-      facultyId: facultyUser2._id,
-      classCode: "CSE701-B",
-      department: "CSE",
-      semester: 7,
-      section: "B",
-      batch: "2020-2024",
-      room: "B201",
-      day: "Monday",
-      startTime: "09:00",
-      endTime: "10:00",
-    },
-    {
-      subjectId: cseSem7[1]._id,
-      facultyId: facultyUser2._id,
-      classCode: "CSE702-B",
-      department: "CSE",
-      semester: 7,
-      section: "B",
-      batch: "2020-2024",
-      room: "B202",
-      day: "Tuesday",
-      startTime: "10:00",
-      endTime: "11:00",
-    },
-    {
-      subjectId: cseSem7[2]._id,
-      facultyId: facultyUser2._id,
-      classCode: "CSE703-B",
-      department: "CSE",
-      semester: 7,
-      section: "B",
-      batch: "2020-2024",
-      room: "B203",
-      day: "Wednesday",
-      startTime: "11:00",
-      endTime: "12:00",
-    },
-    {
-      subjectId: cseSem7[3]._id,
-      facultyId: facultyUser2._id,
-      classCode: "CSE704-B",
-      department: "CSE",
-      semester: 7,
-      section: "B",
-      batch: "2020-2024",
-      room: "B204",
-      day: "Friday",
-      startTime: "14:00",
-      endTime: "16:00",
-    },
-  ]);
+  for (const department of DEPARTMENT) {
+    const deptFaculty = facultyByDept.get(department);
+    if (!deptFaculty?.length) {
+      throw new Error(`Seed faculty missing for ${department}`);
+    }
+
+    for (const semester of SEMESTER) {
+      const section = department === "CSE" && semester === 7 ? "B" : "A";
+      const batch = semester >= 7 ? "2020-2024" : "2021-2025";
+
+      SUBJECT_SLOTS.forEach((slot, index) => {
+        const subject = requireSubject(`${department}${semester}${slot.suffix}`);
+        const teacher = deptFaculty[index % deptFaculty.length];
+        const time = CLASS_SLOTS[index];
+
+        assignmentDocs.push({
+          facultyId: teacher.faculty._id,
+          subjectId: subject._id,
+          semester,
+          section,
+          department,
+          academicYear: "2025-2026" as const,
+        });
+
+        classDocs.push({
+          subjectId: subject._id,
+          facultyId: teacher.user._id,
+          classCode: `${subject.subjectCode}-${section}`,
+          department,
+          semester,
+          section,
+          batch,
+          room: `${department}-${semester}${index + 1}`,
+          day: time.day,
+          startTime: time.startTime,
+          endTime: time.endTime,
+        });
+      });
+    }
+  }
+
+  const assignments = await SubjectFacultyAssignment.create(assignmentDocs);
+  const classes = await Class.create(classDocs);
+
+  const cse5Classes = classes.filter(
+    (cls) => cls.department === "CSE" && cls.semester === 5 && cls.section === "A",
+  );
+  const cse7Classes = classes.filter(
+    (cls) => cls.department === "CSE" && cls.semester === 7 && cls.section === "B",
+  );
+  if (cse5Classes.length < 4 || cse7Classes.length < 4) {
+    throw new Error("Seed CSE classes missing for semester 5 or 7");
+  }
 
   // AttendanceSession: classId, facultyId (Faculty), sessionCode, sessionToken, startedAt, expiryTime, isActive, status
   const now = new Date();
@@ -408,7 +358,7 @@ export async function seedDatabase() {
 
   const attendanceSessions = await AttendanceSession.insertMany([
     {
-      classId: classes[0]._id,
+      classId: cse5Classes[0]._id,
       facultyId: faculties[0]._id,
       sessionCode: 482913,
       sessionToken: crypto.randomBytes(32).toString("hex"),
@@ -418,8 +368,8 @@ export async function seedDatabase() {
       status: "active",
     },
     {
-      classId: classes[1]._id,
-      facultyId: faculties[0]._id,
+      classId: cse5Classes[1]._id,
+      facultyId: faculties[1]._id,
       sessionCode: 156274,
       sessionToken: crypto.randomBytes(32).toString("hex"),
       startedAt: oneHourAgo,
@@ -428,7 +378,7 @@ export async function seedDatabase() {
       status: "expired",
     },
     {
-      classId: classes[4]._id,
+      classId: cse7Classes[1]._id,
       facultyId: faculties[1]._id,
       sessionCode: 739501,
       sessionToken: crypto.randomBytes(32).toString("hex"),
@@ -440,16 +390,14 @@ export async function seedDatabase() {
   ]);
 
   const classEnrollements = await ClassEnrollement.insertMany([
-    // Ajitesh — CSE Sem 5 (all 4 subjects)
-    ...classes.slice(0, 4).map((cls) => ({
+    ...cse5Classes.map((cls) => ({
       studentId: studentAjitesh._id,
       classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
       exitedAt: null,
       status: "enrolled",
     })),
-    // Riya — CSE Sem 7 (all 4 subjects)
-    ...classes.slice(4, 8).map((cls) => ({
+    ...cse7Classes.map((cls) => ({
       studentId: studentRiya._id,
       classId: cls._id,
       enrolledAt: new Date("2026-01-10"),
@@ -710,7 +658,7 @@ export async function seedDatabase() {
   ]);
 
   return {
-    users,
+    users: [...users, ...extraFacultyUsers],
     students,
     faculties,
     subjects,

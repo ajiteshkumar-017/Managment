@@ -1,396 +1,218 @@
-"use client"
-import { Bell, Download, Search } from 'lucide-react'
-import React,{useEffect, useState} from 'react'
-import {jsPDF} from "jspdf"
+"use client";
 
-function Timetable() {
-  const [username, setUsername] = useState('')
-  const days = [
+import { Bell, Download, Search } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+
+const DAYS = [
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
-];
+  "Saturday",
+] as const;
 
-const timeSlots = [
-  "09:00 AM - 10:00 AM",
-  "10:00 AM - 11:00 AM",
-  "11:15 AM - 12:15 PM",
-  "02:00 PM - 03:00 PM",
-];
-
-const timetableData = [
-  // Monday
-  {
-    day: "Monday",
-    subject: "Database Management Systems",
-    faculty: "Dr. Smith",
-    room: "A-101",
-    time: "09:00 AM - 10:00 AM",
-  },
-  {
-    day: "Monday",
-    subject: "Computer Networks",
-    faculty: "Prof. Davis",
-    room: "B-204",
-    time: "10:00 AM - 11:00 AM",
-  },
-  {
-    day: "Monday",
-    subject: "Operating Systems",
-    faculty: "Dr. Johnson",
-    room: "C-302",
-    time: "11:15 AM - 12:15 PM",
-  },
-  {
-    day: "Monday",
-    subject: "Software Engineering",
-    faculty: "Prof. Wilson",
-    room: "A-203",
-    time: "02:00 PM - 03:00 PM",
-  },
-
-  // Tuesday
-  {
-    day: "Tuesday",
-    subject: "Data Structures",
-    faculty: "Prof. Brown",
-    room: "A-102",
-    time: "09:00 AM - 10:00 AM",
-  },
-  {
-    day: "Tuesday",
-    subject: "Web Technologies",
-    faculty: "Dr. Taylor",
-    room: "B-205",
-    time: "10:00 AM - 11:00 AM",
-  },
-  {
-    day: "Tuesday",
-    subject: "Artificial Intelligence",
-    faculty: "Dr. Anderson",
-    room: "C-303",
-    time: "11:15 AM - 12:15 PM",
-  },
-  {
-    day: "Tuesday",
-    subject: "Cloud Computing",
-    faculty: "Prof. Harris",
-    room: "A-104",
-    time: "02:00 PM - 03:00 PM",
-  },
-
-  // Wednesday
-  {
-    day: "Wednesday",
-    subject: "Machine Learning",
-    faculty: "Dr. Thomas",
-    room: "B-206",
-    time: "09:00 AM - 10:00 AM",
-  },
-  {
-    day: "Wednesday",
-    subject: "Cyber Security",
-    faculty: "Prof. White",
-    room: "A-105",
-    time: "10:00 AM - 11:00 AM",
-  },
-  {
-    day: "Wednesday",
-    subject: "Computer Networks Lab",
-    faculty: "Dr. Martinez",
-    room: "Lab-1",
-    time: "11:15 AM - 01:15 PM",
-  },
-  {
-    day: "Wednesday",
-    subject: "Professional Communication",
-    faculty: "Prof. Clark",
-    room: "B-108",
-    time: "02:00 PM - 03:00 PM",
-  },
-
-  // Thursday
-  {
-    day: "Thursday",
-    subject: "Database Management Systems Lab",
-    faculty: "Dr. Smith",
-    room: "Lab-2",
-    time: "09:00 AM - 11:00 AM",
-  },
-  {
-    day: "Thursday",
-    subject: "Software Engineering",
-    faculty: "Prof. Wilson",
-    room: "A-203",
-    time: "11:15 AM - 12:15 PM",
-  },
-  {
-    day: "Thursday",
-    subject: "Project Management",
-    faculty: "Dr. Green",
-    room: "C-201",
-    time: "02:00 PM - 03:00 PM",
-  },
-  {
-    day: "Thursday",
-    subject: "Entrepreneurship",
-    faculty: "Prof. Adams",
-    room: "B-110",
-    time: "03:00 PM - 04:00 PM",
-  },
-
-  // Friday
-  {
-    day: "Friday",
-    subject: "Data Analytics",
-    faculty: "Dr. Lewis",
-    room: "A-107",
-    time: "09:00 AM - 10:00 AM",
-  },
-  {
-    day: "Friday",
-    subject: "Machine Learning",
-    faculty: "Dr. Thomas",
-    room: "B-206",
-    time: "10:00 AM - 11:00 AM",
-  },
-  {
-    day: "Friday",
-    subject: "Major Project",
-    faculty: "Prof. Walker",
-    room: "Project Hall",
-    time: "11:15 AM - 01:15 PM",
-  },
-  {
-    day: "Friday",
-    subject: "Seminar",
-    faculty: "Dr. King",
-    room: "Seminar Hall",
-    time: "02:00 PM - 03:00 PM",
-  },
-
-  // Saturday
-  {
-    day: "Saturday",
-    subject: "Industry Training",
-    faculty: "Guest Faculty",
-    room: "Auditorium",
-    time: "09:00 AM - 11:00 AM",
-  },
-  {
-    day: "Saturday",
-    subject: "Coding Practice",
-    faculty: "Prof. Scott",
-    room: "Lab-3",
-    time: "11:15 AM - 01:15 PM",
-  },
-];
-
-const downloadTimetable = () => {
-  const doc = new jsPDF({
-    orientation: "landscape",
-  });
-
-  const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-
-  const timeSlots = [
-    "09:00 AM - 10:00 AM",
-    "10:00 AM - 11:00 AM",
-    "11:15 AM - 12:15 PM",
-    "02:00 PM - 03:00 PM",
-    "03:00 PM - 04:00 PM",
-  ];
-
-  const timetableMap = {};
-
-  timetableData.forEach((item) => {
-    if (!timetableMap[item.day]) {
-      timetableMap[item.day] = {};
-    }
-
-    timetableMap[item.day][item.time] = item;
-  });
-
-  const head = [
-    ["Day", ...timeSlots],
-  ];
-
-  const body = days.map((day) => [
-    day,
-    ...timeSlots.map((slot) => {
-      const cls = timetableMap[day]?.[slot];
-
-      return cls
-        ? `${cls.subject}\n${cls.faculty}\n${cls.room}`
-        : "-";
-    }),
-  ]);
-
-  doc.setFontSize(18);
-  doc.text("Class Timetable", 14, 20);
-
-  // autoTable(doc, {
-  //   head,
-  //   body,
-  //   startY: 30,
-  //   theme: "grid",
-  //   styles: {
-  //     fontSize: 8,
-  //     cellPadding: 3,
-  //     valign: "middle",
-  //   },
-  //   headStyles: {
-  //     fillColor: [41, 128, 185],
-  //   },
-  // });
-
-  doc.save("timetable.pdf");
+type TimetableEntry = {
+  day: string;
+  startTime: string;
+  endTime: string;
+  time: string;
+  subject: string;
+  faculty: string;
+  room: string;
 };
 
+function Timetable() {
+  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
 
+  const timeSlots = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const item of entries) {
+      const key = `${item.startTime}|${item.endTime}`;
+      if (!seen.has(key)) seen.set(key, item.time);
+    }
+    return [...seen.entries()].map(([key, label]) => ({ key, label }));
+  }, [entries]);
 
-const timetableMap = [];
+  const timetableMap = useMemo(() => {
+    const map: Record<string, Record<string, TimetableEntry>> = {};
+    for (const item of entries) {
+      const slotKey = `${item.startTime}|${item.endTime}`;
+      if (!map[item.day]) map[item.day] = {};
+      map[item.day][slotKey] = item;
+    }
+    return map;
+  }, [entries]);
 
-timetableData.forEach((item) => {
-  if (!timetableMap[item.day]) {
-    timetableMap[item.day] = {};
-  }
-
-  timetableMap[item.day][item.time] = item;
-});
-
-const fetchUsername = async () => {
-          try{
-              const res = await fetch("/api/users/getUsername");
-              const data = await res.json();
-              setUsername(data.username);
-              console.log("Username:", data.username);
-          }catch(err){
-            console.log(err);
-          }
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [nameRes, tableRes] = await Promise.all([
+          fetch("/api/users/getUsername").then((res) => res.json()),
+          axios.get("/api/users/auth/timetable"),
+        ]);
+        setUsername(nameRes.username || "");
+        if (!tableRes.data?.success) {
+          toast.error(tableRes.data?.message || "Failed to load timetable");
+          return;
         }
-  
-        useEffect(() => {
-          fetchUsername();
-        }, []);
+        setEntries(tableRes.data.data.entries || []);
+      } catch (err: unknown) {
+        toast.error(
+          axios.isAxiosError(err)
+            ? err.response?.data?.message || "Failed to load timetable"
+            : "Failed to load timetable",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const downloadTimetable = async () => {
+    setDownloading(true);
+    try {
+      const res = await axios.get("/api/users/auth/timetable/downloadTimetable", {
+        responseType: "blob",
+      });
+
+      const disposition = String(res.headers["content-disposition"] || "");
+      const matched = disposition.match(/filename="([^"]+)"/);
+      const filename = matched?.[1] || "timetable.pdf";
+
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || "Failed to download timetable"
+          : "Failed to download timetable",
+      );
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <>
-              {/* HEADER */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-slate-200">
-                {/* Greeting */}
-                <div className="min-w-0">
-                  <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
-                    Hello {username} 👋
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Let's learn something new today
-                  </p>
-                </div>
-    
-                {/* Actions */}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
-                  {/* Search */}
-                  <div className="relative w-full sm:w-auto flex-1 sm:flex-none">
-                    <Search 
-                      className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400" 
-                      size={18}
-                    />
-                    <input
-                      className="w-full sm:w-52 md:w-60 lg:w-64 pl-10 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-slate-200 rounded-lg sm:rounded-xl text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                      placeholder="Search..."
-                    />
-                  </div>
-    
-                  {/* Notification Button */}
-                  <button className="p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center">
-                    <Bell size={18} />
-                  </button>
-    
-                  
-                  
-                </div>
-              </div>
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pb-8">
+        <div className="min-w-0">
+          <h2 className="font-comfortaa text-2xl font-bold text-slate-900 sm:text-3xl">
+            Hello {username} 👋
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Your weekly class timetable
+          </p>
+        </div>
 
-              <div className='mt-6 sm:mt-8 md:mt-10 lg:mt-12 p-4'>
-                <div className='flex justify-between items-center mb-4'>
-                  <h3 className="text-lg sm:text-xl  font-semibold text-slate-900">
-                    Class Timetable
-                  </h3>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
+          <div className="relative w-full flex-1 sm:w-auto sm:flex-none">
+            <Search
+              className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400 sm:left-4"
+              size={18}
+            />
+            <input
+              className="w-full rounded-lg border border-slate-200 py-2.5 pr-3 pl-10 text-sm text-slate-900 placeholder-slate-500 transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none sm:w-52 sm:rounded-xl sm:py-3 sm:pr-4 sm:pl-11 md:w-60 lg:w-64"
+              placeholder="Search..."
+            />
+          </div>
 
-                  <button className=' m-4 py-3 px-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-between gap-2 hover:scale-95 duration-300 cursor-pointer'>
-                    <Download />
-                    <p className="text-sm font-bold tracking-wider">Download Timetable</p>
-                  </button>
-                </div>
-                <div className="overflow-x-auto rounded-2xl shadow-lg">
-                  <table className="min-w-full bg-white">
-                    <thead>
-                      <tr className="bg-slate-100">
-                        <th className="border p-4">Day</th>
+          <button
+            type="button"
+            className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 p-2.5 text-white transition-all hover:bg-indigo-700 sm:rounded-xl sm:p-3"
+          >
+            <Bell size={18} />
+          </button>
+        </div>
+      </div>
 
-                        {timeSlots.map((slot) => (
-                          <th key={slot} className="border p-4">
-                            {slot}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+      <div className="mt-6 p-4 sm:mt-8 md:mt-10 lg:mt-12">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900 sm:text-xl">
+            Class Timetable
+          </h3>
 
-                    <tbody>
-                      {days.map((day) => (
-                        <tr key={day}>
-                          <td className="border p-4 font-semibold bg-slate-50">
-                            {day}
-                          </td>
+          <button
+            type="button"
+            onClick={downloadTimetable}
+            disabled={downloading || loading}
+            className="m-4 flex shrink-0 cursor-pointer items-center justify-between gap-2 rounded-lg bg-violet-600 px-2 py-3 text-white transition-all duration-300 hover:scale-95 hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-xl"
+          >
+            <Download />
+            <p className="text-sm font-bold tracking-wider">
+              {downloading ? "Downloading…" : "Download Timetable"}
+            </p>
+          </button>
+        </div>
 
-                          {timeSlots.map((slot) => {
-                            const classData =
-                              timetableMap[day]?.[slot];
-
-                            return (
-                              <td
-                                key={slot}
-                                className="border p-3 text-center"
-                              >
-                                {classData ? (
-                                  <div>
-                                    <p className="font-semibold">
-                                      {classData.subject}
-                                    </p>
-
-                                    <div className='flex justify-between items-center mt-1'>
-                                      <p className="text-sm text-slate-500">
-                                      {classData.faculty}
-                                    </p>
-
-                                    <p className="text-xs text-slate-400">
-                                      {classData.room}
-                                    </p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  "-"
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+        <div className="overflow-x-auto rounded-2xl shadow-lg">
+          {loading ? (
+            <p className="bg-white px-4 py-10 text-center text-sm text-slate-500">
+              Loading timetable…
+            </p>
+          ) : entries.length === 0 ? (
+            <p className="bg-white px-4 py-10 text-center text-sm text-slate-500">
+              No classes found
+            </p>
+          ) : (
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="border p-4">Day</th>
+                  {timeSlots.map((slot) => (
+                    <th key={slot.key} className="border p-4">
+                      {slot.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {DAYS.map((day) => (
+                  <tr key={day}>
+                    <td className="border bg-slate-50 p-4 font-semibold">{day}</td>
+                    {timeSlots.map((slot) => {
+                      const classData = timetableMap[day]?.[slot.key];
+                      return (
+                        <td key={slot.key} className="border p-3 text-center">
+                          {classData ? (
+                            <div>
+                              <p className="font-semibold">{classData.subject}</p>
+                              <div className="mt-1 flex items-center justify-between">
+                                <p className="text-sm text-slate-500">
+                                  {classData.faculty}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  {classData.room}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </>
-  )
+  );
 }
 
-export default Timetable
+export default Timetable;

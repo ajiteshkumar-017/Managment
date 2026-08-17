@@ -6,6 +6,7 @@ import {
   BarChart3,
   CalendarDays,
   Settings,
+  ClipboardList,
   X,
   Menu,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export default function AdminNavbar() {
   const panelData = [
     { name: "Dashboard", icon: <LayoutDashboard size={18} />, link: "/dashboard" },
     { name: "Courses", icon: <BookOpen size={18} />, link: "/course" },
+    { name: "Assignments", icon: <ClipboardList size={18} />, link: "/assignments" },
     { name: "Messages", icon: <MessageCircle size={18} />, link: "/messages" },
     { name: "Attendance", icon: <CalendarCheck size={18} />, link: "/attendance" },
     { name: "Results", icon: <BarChart3 size={18} />, link: "/result" },

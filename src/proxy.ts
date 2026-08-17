@@ -25,6 +25,7 @@ const userProtectedRoutes = [
   "/dashboard",
   "/attendance",
   "/course",
+  "/assignments",
   "/setting",
   "/result",
   "/messages",

@@ -2,27 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  LayoutDashboard,
   BookOpen,
-  MessageCircle,
-  BarChart3,
-  CalendarDays,
-  Settings,
   X,
   Bell,
   Search,
   SquarePen,
   CheckCircle,
-  Award,
-  Users,
-  Menu,
   LogOut,
-} from "lucide-react";
-import {
+  ArrowRight,
+  ClipboardList,
   SlidersHorizontal,
-  Type,
-  GitBranch,
-  PenTool,
+  Percent,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,10 +33,52 @@ import axios from "axios";
 // import { Router } from "next/router";
 import { useRouter } from "next/navigation";
 
+type DashboardAssignment = {
+  id: string;
+  title: string;
+  dueDate: string;
+  marks: number;
+  dueStatus: "upcoming" | "due_today" | "overdue";
+};
+
+type DashboardCards = {
+  courseProgress: number;
+  subjectCount: number;
+  completedToday: number;
+  classesToday: number;
+  pendingAssignments: number;
+  attendanceThisSem: number;
+};
+
+function dueLabel(status: DashboardAssignment["dueStatus"]) {
+  if (status === "overdue") return "Overdue";
+  if (status === "due_today") return "Due today";
+  return "Upcoming";
+}
+
 function Dashboard() {
   const [openProfile, setOpenProfile] = useState(false);
   const [username, setUsername] = useState("Ajitesh");
-  const [completeClasses, setCompleteClasses] = useState(0);
+  const [assignments, setAssignments] = useState<DashboardAssignment[]>([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(true);
+  const [cards, setCards] = useState<DashboardCards>({
+    courseProgress: 0,
+    subjectCount: 0,
+    completedToday: 0,
+    classesToday: 0,
+    pendingAssignments: 0,
+    attendanceThisSem: 0,
+  });
+  const [activeHours, setActiveHours] = useState([
+    { day: "S", hours: 0 },
+    { day: "M", hours: 0 },
+    { day: "T", hours: 0 },
+    { day: "W", hours: 0 },
+    { day: "T", hours: 0 },
+    { day: "F", hours: 0 },
+    { day: "S", hours: 0 },
+  ]);
+  const [performanceData, setPerformanceData] = useState<{ month: string; score: number }[]>([]);
 
   const fetchUsername = async () => {
           try{
@@ -65,87 +97,49 @@ function Dashboard() {
 
 const router = useRouter();
 
+  const previewAssignments = assignments.slice(0, 3);
+
   const courseCard = [
     {
       icon: <BookOpen size={24} />,
       heading: "Active Courses",
-      percentage: 20,
+      value: `${cards.courseProgress}%`,
+      bar: cards.courseProgress,
+      hint: `${cards.subjectCount} subjects this semester`,
       barColor: "bg-orange-500",
       divColor: "bg-orange-100",
     },
     {
       icon: <CheckCircle size={24} />,
-      heading: "Completed Courses",
-      percentage: 23,
+      heading: "Completed Classes",
+      value: String(cards.completedToday),
+      bar:
+        cards.classesToday > 0
+          ? Math.round((cards.completedToday / cards.classesToday) * 100)
+          : 0,
+      hint: `${cards.classesToday} scheduled today`,
       barColor: "bg-green-500",
       divColor: "bg-green-100",
     },
     {
-      icon: <Award size={24} />,
-      heading: "Certificates",
-      percentage: 20,
+      icon: <ClipboardList size={24} />,
+      heading: "Pending Assignments",
+      value: String(cards.pendingAssignments),
+      bar: Math.min(100, cards.pendingAssignments * 20),
+      hint: "Upcoming due dates",
       barColor: "bg-blue-500",
       divColor: "bg-blue-100",
     },
     {
-      icon: <Users size={24} />,
-      heading: "Community",
-      percentage: 20,
+      icon: <Percent size={24} />,
+      heading: "Attendance this sem",
+      value: `${cards.attendanceThisSem}%`,
+      bar: cards.attendanceThisSem,
+      hint: "Overall attendance",
       barColor: "bg-purple-500",
       divColor: "bg-purple-100",
     },
   ];
-
-  const assignmentData = [
-  {
-    icon: <Type size={20} />,
-    taskName: "Typography test",
-    doneTime: "Today, 10:30 AM",
-    grade: "190/200",
-    status: "Completed",
-  },
-
-  {
-    icon: <GitBranch size={20} />,
-    taskName: "Inclusive design test",
-    doneTime: "Tomorrow, 10:30 AM",
-    grade: "160/200",
-    status: "Completed",
-  },
-
-  {
-    icon: <PenTool size={20} />,
-    taskName: "Drawing test",
-    doneTime: "23 Feb, 12:30 PM",
-    grade: "--/200",
-    status: "Upcoming",
-  },
-];
-
-  const activeHours = [
-    { day: "S", hours: 2 },
-    { day: "M", hours: 5 },
-    { day: "T", hours: 3 },
-    { day: "W", hours: 4 },
-    { day: "T", hours: 7 },
-    { day: "F", hours: 3 },
-    { day: "S", hours: 3 },
-  ];
-
-  const performanceData = [
-    { month: "Jan", score: 30 },
-    { month: "Feb", score: 45 },
-    { month: "Mar", score: 35 },
-    { month: "Apr", score: 50 },
-    { month: "May", score: 65 },
-    { month: "Jun", score: 55 },
-  ];
-
-  const [mobileView, setMobileView] = useState(false)
-
-  const handleLeft = () => {
-    console.log("Clicked")
-  }
 
   const handleLogout = async () => {
     console.log("Trying to logout");
@@ -159,25 +153,45 @@ const router = useRouter();
 
         
     }catch(err:any){
+      console.log("Error message", err)
       toast.error(err?.res?.data?.message ||"Failed to Log Out.")
-      console.error("Error while Loging Out. Please try after sometime.")
+      console.log("Error while Loging Out. Please try after sometime.")
     }
   }
   
   const handleCompletedClasses = async () => {
-    console.log("Trying to fetch completed classes");
-    try{
-        const res = await axios.get('/api/users/auth/dashboard');
-       
+    try {
+      const res = await axios.get("/api/users/auth/dashboard");
+      if (!res.data?.success) return;
+      const next = res.data.data;
+      if (next?.name) setUsername(next.name);
+      if (next?.cards) setCards(next.cards);
+      if (Array.isArray(next?.activeHours)) setActiveHours(next.activeHours);
+      if (Array.isArray(next?.performance)) setPerformanceData(next.performance);
     } catch (err) {
-        console.error("Error fetching completed classes:", err);  
+      console.error("Error fetching dashboard:", err);
     }
-
-  }
+  };
 
   useEffect(() => {
     handleCompletedClasses();
   }, [])
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      try {
+        const res = await axios.get("/api/users/auth/assignments");
+        if (res.data?.success) {
+          setAssignments(res.data.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching assignments:", err);
+      } finally {
+        setAssignmentsLoading(false);
+      }
+    };
+    loadAssignments();
+  }, []);
 
   
 
@@ -252,14 +266,15 @@ const router = useRouter();
 
                   {/* Percentage */}
                   <h2 className="my-4 text-2xl font-bold text-slate-900 sm:text-3xl">
-                    {c.percentage}%
+                    {c.value}
                   </h2>
+                  <p className="-mt-2 mb-3 text-xs text-slate-600">{c.hint}</p>
 
                   {/* Progress Bar */}
-                  <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+                  <div className="h-2 overflow-hidden rounded-full bg-white/60">
                     <div
-                      className={`${c.barColor} h-full transition-all duration-500 rounded-full`}
-                      style={{ width: `${c.percentage}%` }}
+                      className={`${c.barColor} h-full rounded-full transition-all duration-500`}
+                      style={{ width: `${c.bar}%` }}
                     />
                   </div>
                 </div>
@@ -275,11 +290,9 @@ const router = useRouter();
                 <h3 className="text-base font-bold text-slate-900 sm:text-lg">
                   Active Hours
                 </h3>
-                <select className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option>Weekly</option>
-                  <option>Monthly</option>
-                  <option>Yearly</option>
-                </select>
+                <span className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  This week
+                </span>
               </div>
 
               <div className="h-72 min-w-0 sm:h-80">
@@ -308,11 +321,16 @@ const router = useRouter();
 
             {/* LINE CHART */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h3 className="mb-5 text-base font-bold text-slate-900 sm:text-lg">
-                Performance
-              </h3>
+                <h3 className="mb-5 text-base font-bold text-slate-900 sm:text-lg">
+                  Performance (SGPA)
+                </h3>
 
               <div className="h-72 min-w-0 sm:h-80">
+                {performanceData.length === 0 ? (
+                  <p className="flex h-full items-center justify-center text-sm text-slate-500">
+                    No semester results published yet
+                  </p>
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={performanceData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9CA3AF" />
@@ -336,386 +354,184 @@ const router = useRouter();
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="hidden lg:block mt-4 rounded-lg shadow-md  ">
-               
-               <h2 className="text-2xl text-black font-semibold tracking-tight leading-4 p-4">My Assignment</h2>
-                      {/* Heading and Icon Section */}
+          <div className="mt-4 hidden rounded-lg shadow-md lg:block">
+            <div className="flex items-center justify-between p-4">
+              <h2 className="text-2xl font-semibold tracking-tight text-black">
+                My Assignment
+              </h2>
+              <button
+                type="button"
+                onClick={() => router.push("/assignments")}
+                className="rounded-xl p-2 text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-600"
+                aria-label="View all assignments"
+              >
+                <ArrowRight size={22} />
+              </button>
+            </div>
 
-                      {/* <div className="grid lg:grid-cols-4 ">
-                        {
-                          ["BookOpen", "Task", "Grade", "Update"].map((heading, index) => 
-                          
+            <div className="overflow-x-auto">
+              <div className="mt-2 min-w-187.5">
+                <div className="grid grid-cols-[80px_1.7fr_1fr_1fr] items-center border-b border-gray-200 px-2 pb-5 text-center">
+                  <div className="flex justify-center text-gray-400">
+                    <SlidersHorizontal size={18} />
+                  </div>
+                  <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase">
+                    Task
+                  </h3>
+                  <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase">
+                    Marks
+                  </h3>
+                  <h3 className="text-sm font-semibold tracking-wide text-gray-400 uppercase">
+                    Update
+                  </h3>
+                </div>
 
-                            (
-                              <div key={index} className="text-center border-b border-gray-200 p-4">
-                                  {heading}
-                              </div>
-                            )
-                          )
-                        }
-                      </div> */}
-
-
-                      {/* Content Area */}
-
-                     <div className="overflow-x-auto ">
-
-                    {/* HEADER */}
-                    {/* <div
-                      className="
-                        min-w-[700px]
-                        grid
-                        grid-cols-4
-                        border-b
-                        border-gray-200
-                        pb-4
-                        px-4 text-center mt-4
-                      "
-                    >
-                      <h3 className="font-semibold text-gray-500">
-                        BookOpen
-                      </h3>
-
-                      <h3 className="font-semibold text-gray-500">
-                        Task
-                      </h3>
-
-                      <h3 className="font-semibold text-gray-500">
-                        Grade
-                      </h3>
-
-                      <h3 className="font-semibold text-gray-500">
-                        Update
-                      </h3>
-                    </div> */}
-
-                    {/* CONTENT */}
-                    <div className="overflow-x-auto mt-6">
-
-                    {/* TABLE WRAPPER */}
-                    <div className="min-w-187.5">
-
-                      {/* HEADER */}
+                <div className="divide-y divide-gray-100">
+                  {assignmentsLoading ? (
+                    <p className="px-4 py-10 text-center text-sm text-slate-500">
+                      Loading assignments…
+                    </p>
+                  ) : previewAssignments.length === 0 ? (
+                    <p className="px-4 py-10 text-center text-sm text-slate-500">
+                      No assignments published yet
+                    </p>
+                  ) : (
+                    previewAssignments.map((data) => (
                       <div
-                        className="
-                          grid
-                          grid-cols-[80px_1.7fr_1fr_1fr]
-                          items-center
-                          pb-5
-                          border-b
-                          border-gray-200
-                          px-2
-                          text-center
-                        "
+                        key={data.id}
+                        className="grid grid-cols-[80px_1.7fr_1fr_1fr] items-center px-2 py-7 text-center transition-all hover:bg-gray-50"
                       >
-                        <div className="flex justify-center text-gray-400">
-                          <SlidersHorizontal size={18} />
+                        <div className="flex justify-center">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700">
+                            <ClipboardList size={20} />
+                          </span>
                         </div>
-
-                        <h3
-                          className="
-                            text-sm
-                            font-semibold
-                            tracking-wide
-                            text-gray-400
-                            uppercase
-                          "
-                        >
-                          Task
-                        </h3>
-
-                        <h3
-                          className="
-                            text-sm
-                            font-semibold
-                            tracking-wide
-                            text-gray-400
-                            uppercase
-                          "
-                        >
-                          Grade
-                        </h3>
-
-                        <h3
-                          className="
-                            text-sm
-                            font-semibold
-                            tracking-wide
-                            text-gray-400
-                            uppercase
-                          "
-                        >
-                          Update
-                        </h3>
-                      </div>
-
-                      {/* ROWS */}
-                      <div className="divide-y divide-gray-100">
-
-                        {assignmentData.map((data, index) => (
-
-                          <div
-                            key={index}
-                            className="
-                              grid
-                              grid-cols-[80px_1.7fr_1fr_1fr]
-                              items-center
-                              px-2
-                              py-7
-                              hover:bg-gray-50
-                              transition-all
-                              text-center 
-                            "
+                        <div>
+                          <h2 className="text-[18px] leading-none font-semibold text-gray-900">
+                            {data.title}
+                          </h2>
+                          <p className="mt-3 text-sm font-medium text-gray-400">
+                            Due{" "}
+                            {new Date(data.dueDate).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <h2 className="text-[18px] font-bold text-gray-900">
+                            --/{data.marks}
+                          </h2>
+                          <p className="mt-2 text-sm font-medium text-gray-400">
+                            Max marks
+                          </p>
+                        </div>
+                        <div>
+                          <span
+                            className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+                              data.dueStatus === "overdue"
+                                ? "bg-orange-100 text-orange-500"
+                                : data.dueStatus === "due_today"
+                                  ? "bg-indigo-100 text-indigo-600"
+                                  : "bg-purple-100 text-purple-500"
+                            }`}
                           >
+                            {dueLabel(data.dueStatus)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
-                            {/* ICON */}
-                            <div className="flex justify-center">
-                              <span
-                                className="
-                                  w-11
-                                  h-11
-                                  rounded-2xl
-                                  border
-                                  border-gray-200
-                                  flex
-                                  items-center
-                                  justify-center
-                                  text-gray-700
-                                  bg-white
-                                "
-                              >
-                                {data.icon}
-                              </span>
-                            </div>
+          <div className="mt-6 space-y-4 lg:hidden">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">My Assignment</h2>
+              <button
+                type="button"
+                onClick={() => router.push("/assignments")}
+                className="rounded-xl p-2 text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-600"
+                aria-label="View all assignments"
+              >
+                <ArrowRight size={20} />
+              </button>
+            </div>
 
-                            {/* TASK */}
-                            <div>
-                              <h2
-                                className="
-                                  text-[18px]
-                                  font-semibold
-                                  text-gray-900
-                                  leading-none
-                                "
-                              >
-                                {data.taskName}
-                              </h2>
-
-                              <p
-                                className="
-                                  mt-3
-                                  text-sm
-                                  text-gray-400
-                                  font-medium
-                                "
-                              >
-                                {data.doneTime}
-                              </p>
-                            </div>
-
-                            {/* GRADE */}
-                            <div>
-                              <h2
-                                className="
-                                  text-[18px]
-                                  font-bold
-                                  text-gray-900
-                                "
-                              >
-                                {data.grade}
-                              </h2>
-
-                              <p
-                                className="
-                                  mt-2
-                                  text-sm
-                                  text-gray-400
-                                  font-medium
-                                "
-                              >
-                                Final grade
-                              </p>
-                            </div>
-
-                            {/* STATUS */}
-                            <div>
-                              <span
-                                className={`
-                                  px-4
-                                  py-2
-                                  rounded-xl
-                                  text-sm
-                                  font-semibold
-                                  ${
-                                    data.status === "Completed"
-                                      ? "bg-purple-100 text-purple-500"
-                                      : "bg-orange-100 text-orange-400"
-                                  }
-                                `}
-                              >
-                                {data.status}
-                              </span>
-                            </div>
-
-                          </div>
-                        ))}
+            {assignmentsLoading ? (
+              <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                Loading assignments…
+              </p>
+            ) : previewAssignments.length === 0 ? (
+              <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                No assignments published yet
+              </p>
+            ) : (
+              previewAssignments.map((data) => (
+                <div
+                  key={data.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 text-slate-700">
+                        <ClipboardList size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900">{data.title}</h3>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Due{" "}
+                          {new Date(data.dueDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </p>
                       </div>
                     </div>
+                    <span
+                      className={`rounded-xl px-3 py-1 text-xs font-semibold ${
+                        data.dueStatus === "overdue"
+                          ? "bg-orange-100 text-orange-500"
+                          : data.dueStatus === "due_today"
+                            ? "bg-indigo-100 text-indigo-600"
+                            : "bg-purple-100 text-purple-600"
+                      }`}
+                    >
+                      {dueLabel(data.dueStatus)}
+                    </span>
                   </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                    <div>
+                      <p className="text-xs text-slate-500">Marks</p>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        --/{data.marks}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Status</p>
+                      <p
+                        className={`font-semibold ${
+                          data.dueStatus === "overdue"
+                            ? "text-orange-500"
+                            : data.dueStatus === "due_today"
+                              ? "text-indigo-600"
+                              : "text-purple-600"
+                        }`}
+                      >
+                        {dueLabel(data.dueStatus)}
+                      </p>
+                    </div>
                   </div>
-
-                  
-                {/* hello */}
-               <div>
-
-               </div>
-               
-          </div>
-
-          <div className="lg:hidden mt-6 space-y-4">
-
-  {assignmentData.map((data, index) => (
-
-    <div
-      key={index}
-      className="
-        bg-white
-        border
-        border-slate-200
-        rounded-2xl
-        p-4
-        shadow-sm
-      "
-    >
-
-      {/* Top */}
-      <div className="flex items-start justify-between gap-4">
-
-        <div className="flex items-center gap-3">
-
-          <div
-            className="
-              w-12
-              h-12
-              rounded-xl
-              border
-              border-slate-200
-              flex
-              items-center
-              justify-center
-              text-slate-700
-            "
-          >
-            {data.icon}
-          </div>
-
-          <div>
-
-            <h3
-              className="
-                font-bold
-                text-slate-900
-              "
-            >
-              {data.taskName}
-            </h3>
-
-            <p
-              className="
-                text-sm
-                text-slate-500
-                mt-1
-              "
-            >
-              {data.doneTime}
-            </p>
-
-          </div>
-
-        </div>
-
-        <span
-          className={`
-            px-3
-            py-1
-            rounded-xl
-            text-xs
-            font-semibold
-
-            ${
-              data.status === "Completed"
-                ? "bg-purple-100 text-purple-600"
-                : "bg-orange-100 text-orange-500"
-            }
-          `}
-        >
-          {data.status}
-        </span>
-
-      </div>
-
-      {/* Bottom */}
-      <div
-        className="
-          mt-4
-          pt-4
-          border-t
-          border-slate-100
-          flex
-          items-center
-          justify-between
-        "
-      >
-
-        <div>
-
-          <p className="text-xs text-slate-500">
-            Grade
-          </p>
-
-          <h3
-            className="
-              text-lg
-              font-bold
-              text-slate-900
-            "
-          >
-            {data.grade}
-          </h3>
-
-        </div>
-
-        <div className="text-right">
-
-          <p className="text-xs text-slate-500">
-            Status
-          </p>
-
-          <p
-            className={`
-              font-semibold
-              ${
-                data.status === "Completed"
-                  ? "text-purple-600"
-                  : "text-orange-500"
-              }
-            `}
-          >
-            {data.status}
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  ))}
-
+                </div>
+              ))
+            )}
           </div>
 
         {/* ================= PROFILE SIDEBAR (DESKTOP) ================= */}

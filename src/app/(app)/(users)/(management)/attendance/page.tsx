@@ -1,109 +1,116 @@
 "use client"
-import { Bell, Clock, Divide, Search, SquarePen, UserCheck2 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
-import { Percent, CircleCheckBig, CircleX, CalendarDays } from 'lucide-react';
-import { CalendarCheck, UserCheck, ClipboardCheck } from 'lucide-react';
-import { AlertTriangle, AlertCircle, ShieldAlert, Ban } from 'lucide-react';
+import { Bell, Clock, Search, SquarePen } from 'lucide-react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
-  LayoutDashboard,
   BookOpen,
-  MessageCircle,
-  BarChart3,
-  Settings,
-  X,
   CheckCircle,
-  Award,
   Users,
-  Menu,
 } from "lucide-react";
 import QRScanner from "@/components/users/attendance/QRScanner";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
+type TodayClass = {
+  heading: string;
+  faculty: string;
+  time: string;
+  status: "completed" | "ongoing" | "upcoming";
+};
+
+type AttendanceRecordRow = {
+  date: string;
+  subject: string;
+  faculty: string;
+  status: string;
+  method: string;
+  time: string;
+};
+
+type LiveSession = {
+  subjectName: string;
+  facultyName: string;
+  timeRange: string;
+  expiryTime: string;
+};
+
+type PieSlice = {
+  name: string;
+  value: number;
+  percentage: string;
+  color: string;
+};
+
+function formatCountdown(ms: number) {
+  if (ms <= 0) return "00:00";
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 function attendance() {
+    const router = useRouter();
     const [username, setUsername] = useState("Ajitesh")
+    const [loading, setLoading] = useState(true);
+    const [sessionCode, setSessionCode] = useState("");
+    const [submittingCode, setSubmittingCode] = useState(false);
+    const [now, setNow] = useState(Date.now());
+    const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
+    const [todaysClasses, setTodaysClasses] = useState<TodayClass[]>([]);
+    const [pieData, setPieData] = useState<PieSlice[]>([
+      { name: "Present", value: 0, percentage: "0%", color: "#6366F1" },
+      { name: "Absent", value: 0, percentage: "0%", color: "#F59E0B" },
+    ]);
+    const [summary, setSummary] = useState({
+      totalSessions: 0,
+      attended: 0,
+      absent: 0,
+      percentage: 0,
+    });
+    const [tableData, setTableData] = useState<AttendanceRecordRow[]>([]);
+    const [lowAttendance, setLowAttendance] = useState<{
+      label: string;
+      percentage: number;
+    } | null>(null);
 
-    const attendanceData = [
-  {
-    subject: "Database Management Systems",
-    faculty: "Dr. Sharma",
-    attendance: "84%",
-    status: "Excellent",
-  },
+    const remainingMs = useMemo(() => {
+      if (!liveSession?.expiryTime) return 0;
+      return new Date(liveSession.expiryTime).getTime() - now;
+    }, [liveSession, now]);
 
-  {
-    subject: "Operating Systems",
-    faculty: "Prof. Verma",
-    attendance: "76%",
-    status: "Good",
-  },
-
-  {
-    subject: "Computer Networks",
-    faculty: "Dr. Rao",
-    attendance: "68%",
-    status: "Average",
-  },
-
-  {
-    subject: "Software Engineering",
-    faculty: "Prof. Mehta",
-    attendance: "91%",
-    status: "Excellent",
-  },
-];
-
-const data = [
-  {
-    name: "Present",
-    value: 42,
-    percentage: "84%",
-    color: "#6366F1",
-  },
-
-  {
-    name: "Absent",
-    value: 8,
-    percentage: "16%",
-    color: "#F59E0B",
-  },
-];
-
-    // const attendanceCard = [
-    //     {icon: <Percent/> , heading: "Overall Attandance", percentage: "82", totalClass: "50", progress: 70},
-    //     {icon: <CircleCheckBig/>, heading: "Present Classes", percentage: "46", totalClass: "50", progress: 90},
-    //     {icon:<CircleX/>, heading: "Absent Classes", percentage: "6", totalClass: "50", progress: 10},
-    //     {icon: <CalendarDays/>, heading: "Classes Today", percentage: "5", totalClass: "50", progress: 20, completed:"2", Live: "2"},
-    // ]
-
-    const todaysClasses = [
-        {icon : <UserCheck2/>, heading: "Operatings Systems", faculty: "Dr Sharma", time: "9:00 AM", status: "completed"},
-        {icon : <UserCheck2/>, heading: "Operatings Systems", faculty: "Dr Sharma", time: "10:00 AM", status: "upcoming"},
-        {icon : <UserCheck2/>, heading: "Operatings Systems", faculty: "Dr Sharma", time: "11:00 AM", status: "upcoming"},
-        {icon : <UserCheck2/>, heading: "Operatings Systems", faculty: "Dr Sharma", time: "04:00 AM", status: "upcoming"},
-        {icon : <UserCheck2/>, heading: "Operatings Systems", faculty: "Dr Sharma", time: "5:00 PM", status: "upcoming"},
-    ]
-
-//     const data = [
-//   { name: "Present", value: 42, percentage: "84%", color: "#22c55e" }, // Green-500
-//   { name: "Absent", value: 6, percentage: "12%", color: "#ef4444" },  // Red-500
-//   { name: "Late", value: 2, percentage: "4%", color: "#eab308" },    // Yellow-500
-// ];
-
-const tableData = [
-    {date: "14 MAY 2026", subject : "Data Structure and Algorithm", faculty : "Dr.Sharma", status: "present", method: "QR Code", time: "9:02 AM"},
-    {date: "13 MAY 2026", subject : "Physics", faculty : "Dr.Mukherjee", status: "present", method: "QR Code", time: "9:02 AM"},
-    {date: "10 Apr 2026", subject : "Mathematics", faculty : "Dr.Patra", status: "Absent", method: "--", time: "10:00 AM"},
-    {date: "10 Feb 2026", subject : "English", faculty : "Dr.Dash", status: "present", method: "Code", time: "1:30 AM"},
-    {date: "10 Jan 2026", subject : "Communation English", faculty : "Dr.Kunal", status: "Absent", method: "--", time: "9:02 AM"},
-]
+    const loadAttendance = async () => {
+      try {
+        const res = await axios.get("/api/users/auth/attendance");
+        if (!res.data?.success) {
+          toast.error(res.data?.message || "Failed to load attendance");
+          return;
+        }
+        const next = res.data.data;
+        setTodaysClasses(next.todayClasses || []);
+        setPieData(next.pie || pieData);
+        setSummary(next.summary || summary);
+        setTableData(next.records || []);
+        setLiveSession(next.liveSession || null);
+        setLowAttendance(next.lowAttendance || null);
+      } catch (err: unknown) {
+        toast.error(
+          axios.isAxiosError(err)
+            ? err.response?.data?.message || "Failed to load attendance"
+            : "Failed to load attendance",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
 const fetchUsername = async () => {
           try{
               const res = await fetch("/api/users/getUsername");
               const data = await res.json();
               setUsername(data.username);
-              console.log("Username:", data.username);
           }catch(err){
             console.log(err);
           }
@@ -111,7 +118,41 @@ const fetchUsername = async () => {
 
         useEffect(() => {
             fetchUsername();
-        })
+            loadAttendance();
+        }, [])
+
+        useEffect(() => {
+          if (!liveSession) return;
+          const timer = setInterval(() => setNow(Date.now()), 1000);
+          return () => clearInterval(timer);
+        }, [liveSession]);
+
+        const submitCode = async () => {
+          if (sessionCode.trim().length !== 6) {
+            toast.error("Enter the 6-digit attendance code");
+            return;
+          }
+          setSubmittingCode(true);
+          try {
+            const res = await axios.post("/api/users/auth/attendance", {
+              sessionCode: sessionCode.trim(),
+            });
+            if (!res.data?.success) {
+              throw new Error(res.data?.message || "Failed to mark attendance");
+            }
+            toast.success(res.data.message || "Attendance marked");
+            setSessionCode("");
+            await loadAttendance();
+          } catch (err: unknown) {
+            toast.error(
+              axios.isAxiosError(err)
+                ? err.response?.data?.message || err.message
+                : "Failed to mark attendance",
+            );
+          } finally {
+            setSubmittingCode(false);
+          }
+        }
 
   return (
     <>
@@ -211,18 +252,21 @@ const fetchUsername = async () => {
                 </div>
 
                 <span
-                    className="
+                    className={`
                     w-fit
                     px-3
                     py-1
                     rounded-full
-                    bg-red-100
-                    text-red-600
                     text-sm
                     font-semibold
-                    "
+                    ${
+                      liveSession
+                        ? "bg-red-100 text-red-600"
+                        : "bg-slate-100 text-slate-500"
+                    }
+                    `}
                 >
-                    🔴 Live
+                    {liveSession ? "🔴 Live" : "Idle"}
                 </span>
                 </div>
 
@@ -285,19 +329,19 @@ const fetchUsername = async () => {
                             leading-tight
                         "
                         >
-                        Database Management Systems
+                        {liveSession?.subjectName || "No live session"}
                         </h3>
 
                         <div className="mt-3 space-y-2">
 
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                             <Users className="w-4 h-4 shrink-0" />
-                            <span>Dr. Sharma</span>
+                            <span>{liveSession?.facultyName || "Waiting for faculty to start"}</span>
                         </div>
 
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                             <CheckCircle className="w-4 h-4 shrink-0" />
-                            <span>10:00 AM - 11:00 AM</span>
+                            <span>{liveSession?.timeRange || "—"}</span>
                         </div>
 
                         </div>
@@ -334,11 +378,11 @@ const fetchUsername = async () => {
                         mt-2
                         "
                     >
-                        02:23
+                        {liveSession ? formatCountdown(remainingMs) : "--:--"}
                     </h2>
 
-                    <p className="text-xs text-green-600 font-medium mt-2">
-                        Attendance active
+                    <p className={`text-xs font-medium mt-2 ${liveSession && remainingMs > 0 ? "text-green-600" : "text-slate-500"}`}>
+                        {liveSession && remainingMs > 0 ? "Attendance active" : "No active session"}
                     </p>
                     </div>
 
@@ -371,7 +415,7 @@ const fetchUsername = async () => {
                     </p>
 
                     <div className="mt-6 w-full max-w-sm text-left">
-                      <QRScanner />
+                      <QRScanner onMarked={loadAttendance} />
                     </div>
                 </div>
 
@@ -402,6 +446,8 @@ const fetchUsername = async () => {
                     <input
                     type="text"
                     maxLength={6}
+                    value={sessionCode}
+                    onChange={(e) => setSessionCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="Enter Code"
                     className="
                         mt-6
@@ -423,6 +469,9 @@ const fetchUsername = async () => {
                     />
 
                     <button
+                    type="button"
+                    onClick={submitCode}
+                    disabled={submittingCode}
                     className="
                         mt-6
                         w-full
@@ -436,9 +485,10 @@ const fetchUsername = async () => {
                         py-3
                         rounded-2xl
                         font-semibold
+                        disabled:opacity-60
                     "
                     >
-                    Submit Code
+                    {submittingCode ? "Submitting…" : "Submit Code"}
                     </button>
 
                 </div>
@@ -499,6 +549,8 @@ const fetchUsername = async () => {
                 </div>
 
                 <button
+                    type="button"
+                    onClick={() => router.push("/timetable")}
                     className="
                     text-sm
                     font-semibold
@@ -516,7 +568,11 @@ const fetchUsername = async () => {
                 {/* CLASS LIST */}
                 <div className="space-y-4">
 
-                {todaysClasses.map((classItem, index) => (
+                {todaysClasses.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-slate-500">
+                      {loading ? "Loading today’s classes…" : "No classes scheduled today"}
+                    </p>
+                ) : todaysClasses.map((classItem, index) => (
 
                     <div
                     key={index}
@@ -553,6 +609,8 @@ const fetchUsername = async () => {
                             ${
                             classItem.status === "completed"
                                 ? "bg-green-500"
+                                : classItem.status === "ongoing"
+                                ? "bg-indigo-500"
                                 : "bg-amber-500"
                             }
                         `}
@@ -622,8 +680,10 @@ const fetchUsername = async () => {
 
                             ${
                             classItem.status === "completed"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-amber-100 text-amber-700"
+                            ? "bg-green-100 text-green-700"
+                            : classItem.status === "ongoing"
+                            ? "bg-indigo-100 text-indigo-700"
+                            : "bg-amber-100 text-amber-700"
                             }
                         `}
                         >
@@ -647,6 +707,8 @@ const fetchUsername = async () => {
                 "
                 >
                 <button
+                    type="button"
+                    onClick={() => router.push("/timetable")}
                     className="
                     text-green-600
                     font-semibold
@@ -664,6 +726,7 @@ const fetchUsername = async () => {
 
     {/* Warning Card */}
 
+            {lowAttendance && (
                 <div
                 className="
                     mt-8
@@ -734,8 +797,8 @@ const fetchUsername = async () => {
                             max-w-2xl
                         "
                         >
-                        Your attendance in <span className="font-semibold text-slate-900">CSE</span> is currently
-                        <span className="text-red-600 font-bold"> 64% </span>
+                        Your attendance in <span className="font-semibold text-slate-900">{lowAttendance.label}</span> is currently
+                        <span className="text-red-600 font-bold"> {lowAttendance.percentage}% </span>
                         which is below the required
                         <span className="font-bold text-slate-900"> 75%</span>.
                         </p>
@@ -771,6 +834,7 @@ const fetchUsername = async () => {
                 </div>
 
                 </div>
+            )}
 
           
 
@@ -822,7 +886,7 @@ const fetchUsername = async () => {
                         <PieChart>
 
                         <Pie
-                            data={data}
+                            data={pieData}
                             cx="50%"
                             cy="50%"
                             innerRadius={50}
@@ -833,7 +897,7 @@ const fetchUsername = async () => {
                             endAngle={-270}
                         >
 
-                            {data.map((entry, index) => (
+                            {pieData.map((entry, index) => (
                             <Cell
                                 key={index}
                                 fill={entry.color}
@@ -851,7 +915,7 @@ const fetchUsername = async () => {
                     {/* LEGEND */}
                     <div className="w-full sm:w-1/2 space-y-4">
 
-                    {data.map((item, index) => (
+                    {pieData.map((item, index) => (
 
                         <div
                         key={index}
@@ -934,7 +998,7 @@ const fetchUsername = async () => {
                         mt-1
                         "
                     >
-                        50
+                        {summary.totalSessions}
                     </h3>
 
                     </div>
@@ -953,7 +1017,7 @@ const fetchUsername = async () => {
                         mt-1
                         "
                     >
-                        42
+                        {summary.attended}
                     </h3>
 
                     </div>
@@ -972,7 +1036,7 @@ const fetchUsername = async () => {
                         mt-1
                         "
                     >
-                        84%
+                        {summary.percentage}%
                     </h3>
 
                     </div>
@@ -1216,8 +1280,11 @@ const fetchUsername = async () => {
             {/* TABLE BODY */}
             <div className="min-w-225">
 
-                {
-                tableData.map((item, index) => (
+                {tableData.length === 0 ? (
+                    <p className="px-6 py-10 text-center text-sm text-slate-500">
+                      {loading ? "Loading records…" : "No attendance sessions yet"}
+                    </p>
+                ) : tableData.map((item, index) => (
 
                     <div
                     key={index}
@@ -1265,13 +1332,13 @@ const fetchUsername = async () => {
                             font-semibold
 
                             ${
-                            item.status === "Available"
+                            item.status === "present"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
                             }
                         `}
                         >
-                        {item.status}
+                        {item.status === "present" ? "Present" : "Absent"}
                         </span>
 
                     </div>
@@ -1299,7 +1366,7 @@ const fetchUsername = async () => {
 
                 <div className="lg:hidden mt-6 space-y-4">
 
-                { tableData.length>0 && tableData.map((data, index) => (
+                { tableData.length>0 ? tableData.map((data, index) => (
 
                     <div
                     key={index}
@@ -1354,7 +1421,7 @@ const fetchUsername = async () => {
                     {/* Method & Date */}
                     <div className="mt-2 text-sm text-slate-600">
 
-                        {data.method === "--"
+                        {data.method === "—"
                         ? "No Method"
                         : data.method}
 
@@ -1365,7 +1432,11 @@ const fetchUsername = async () => {
 
                     </div>
 
-                ))}
+                )) : (
+                    <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                      {loading ? "Loading records…" : "No attendance sessions yet"}
+                    </p>
+                )}
 
                 </div>
 

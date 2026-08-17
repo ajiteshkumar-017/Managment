@@ -22,6 +22,14 @@ export async function POST(req:NextRequest){
 
     } catch (error: any) {
         console.error("Error in Logout", error)
+        console.log("Error message", error.message)
+        console.log("Error stack", error.stack)
+        console.log("Error name", error.name)
+        console.log("Error code", error.code)
+        console.log("Error status", error.status)
+        console.log("Error details", error.details)
+        console.log("Error cause", error.cause)
+        console.log("Error message", error.message)
         requestLogger.error({ err: error }, "Logout failed");
         return NextResponse.json({message: "Something Went Wrong"}, {status:500})
     }

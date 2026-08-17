@@ -9,7 +9,7 @@ type MarkResult = {
   message: string;
 };
 
-export default function QRScanner() {
+export default function QRScanner({ onMarked }: { onMarked?: () => void }) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scanningRef = useRef(false);
   const [status, setStatus] = useState<string>("Idle");
@@ -76,6 +76,7 @@ export default function QRScanner() {
             const data = await markPresent(sessionId, token);
             setResult({ ok: true, message: data.message || "Attendance marked" });
             setStatus("Done");
+            onMarked?.();
           } catch (err: unknown) {
             await stopScanner();
             const message = axios.isAxiosError(err)
