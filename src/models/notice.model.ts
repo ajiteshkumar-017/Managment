@@ -77,13 +77,13 @@ export const Notice =
  * has the old type enum (`general`, not `General`). App code already
  * allowlists topics; drop the stale mongoose enum so saves match the form.
  */
-const typePath = Notice.schema.path("type") as mongoose.SchemaType & {
-  enumValues?: unknown[];
-  validators?: Array<{ type?: string; kind?: string }>;
-};
+const typePath = Notice.schema.path("type");
 if (typePath) {
-  typePath.validators = (typePath.validators ?? []).filter(
-    (validator) => validator.type !== "enum" && validator.kind !== "enum",
-  );
-  typePath.enumValues = [];
+  typePath.validators = typePath.validators.filter((validator) => {
+    const meta = validator as { type?: string; kind?: string };
+    return meta.type !== "enum" && meta.kind !== "enum";
+  });
+  if ("enumValues" in typePath) {
+    (typePath as { enumValues: unknown[] }).enumValues = [];
+  }
 }
