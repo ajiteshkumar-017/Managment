@@ -1,9 +1,12 @@
 "use client";
 
 import axios from "axios";
-import { Bell, Loader2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 type CourseRow = {
   subjectCode: string;
@@ -51,54 +54,6 @@ function Course() {
     fetchTableData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="animate-pulse text-black">
-        <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pb-8">
-          <div className="min-w-0 space-y-2 text-left">
-            <div className="h-8 w-48 rounded-lg bg-slate-200" />
-            <div className="h-4 w-64 rounded-md bg-slate-200" />
-          </div>
-          <div className="flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
-            <div className="h-11 w-full rounded-xl bg-slate-200 sm:w-52 md:w-60 lg:w-64" />
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-200">
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white lg:block">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <div className="h-5 w-24 rounded-md bg-slate-200" />
-            </div>
-            <div className="overflow-x-auto">
-              <div className="grid grid-cols-5 gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="mx-auto h-3 w-16 rounded-md bg-slate-200" />
-                ))}
-              </div>
-              <div className="min-w-250">
-                {Array.from({ length: 5 }).map((_, row) => (
-                  <div
-                    key={row}
-                    className="grid grid-cols-5 items-center gap-4 border-b border-slate-100 px-4 py-4"
-                  >
-                    <div className="mx-auto h-4 w-16 rounded-md bg-slate-200" />
-                    <div className="mx-auto h-4 w-32 rounded-md bg-slate-200" />
-                    <div className="mx-auto h-4 w-24 rounded-md bg-slate-200" />
-                    <div className="mx-auto h-4 w-8 rounded-md bg-slate-200" />
-                    <div className="mx-auto h-4 w-12 rounded-md bg-slate-200" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:pb-8">
@@ -123,16 +78,15 @@ function Course() {
             />
           </div>
 
-          <button
-            type="button"
-            className="flex items-center justify-center rounded-xl bg-indigo-600 p-3 text-white transition-all hover:bg-indigo-700"
-          >
-            <Bell size={18} />
-          </button>
+          <NotificationBell />
         </div>
       </div>
 
       <div className="mt-8">
+        {loading ? (
+          <StudentPanelSkeleton variant="table" showHeader={false} />
+        ) : (
+        <>
         <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white lg:block">
           <div className="border-b border-slate-200 px-5 py-4">
             <h2 className="text-lg font-bold text-slate-900">Overview</h2>
@@ -154,9 +108,11 @@ function Course() {
 
             <div className="min-w-250">
               {courses.length === 0 ? (
-                <div className="px-4 py-10 text-center text-sm text-slate-500">
-                  No subjects found for your department and semester.
-                </div>
+                <IllustrationState
+                  situation="empty"
+                  title="No subjects found"
+                  description="Nothing is assigned for your department and semester yet."
+                />
               ) : (
                 courses.map((course) => (
                   <div
@@ -180,9 +136,11 @@ function Course() {
         <div className="mt-6 space-y-4 lg:hidden">
           <h2 className="mb-4 text-lg font-bold text-slate-900">Overview</h2>
           {courses.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center text-sm text-slate-500">
-              No subjects found for your department and semester.
-            </div>
+            <IllustrationState
+              situation="empty"
+              title="No subjects found"
+              description="Nothing is assigned for your department and semester yet."
+            />
           ) : (
             courses.map((item) => (
               <div
@@ -212,6 +170,8 @@ function Course() {
             ))
           )}
         </div>
+        </>
+        )}
       </div>
     </>
   );

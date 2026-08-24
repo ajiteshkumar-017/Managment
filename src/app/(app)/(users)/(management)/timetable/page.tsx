@@ -1,9 +1,12 @@
 "use client";
 
-import { Bell, Download, Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 const DAYS = [
   "Monday",
@@ -129,12 +132,7 @@ function Timetable() {
             />
           </div>
 
-          <button
-            type="button"
-            className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 p-2.5 text-white transition-all hover:bg-indigo-700 sm:rounded-xl sm:p-3"
-          >
-            <Bell size={18} />
-          </button>
+          <NotificationBell />
         </div>
       </div>
 
@@ -159,13 +157,13 @@ function Timetable() {
 
         <div className="overflow-x-auto rounded-2xl shadow-lg">
           {loading ? (
-            <p className="bg-white px-4 py-10 text-center text-sm text-slate-500">
-              Loading timetable…
-            </p>
+            <StudentPanelSkeleton variant="timetable" showHeader={false} />
           ) : entries.length === 0 ? (
-            <p className="bg-white px-4 py-10 text-center text-sm text-slate-500">
-              No classes found
-            </p>
+            <IllustrationState
+              situation="empty"
+              title="No classes found"
+              description="Your timetable hasn’t been published yet."
+            />
           ) : (
             <table className="min-w-full bg-white">
               <thead>

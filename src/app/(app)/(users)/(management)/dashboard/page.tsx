@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   X,
-  Bell,
   Search,
   SquarePen,
   CheckCircle,
@@ -32,6 +31,12 @@ import toast from "react-hot-toast";
 import axios from "axios";
 // import { Router } from "next/router";
 import { useRouter } from "next/navigation";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import {
+  StudentPanelSkeleton,
+  TableRowsSkeleton,
+} from "@/components/loading/GlassSkeleton";
 
 type DashboardAssignment = {
   id: string;
@@ -59,8 +64,10 @@ function dueLabel(status: DashboardAssignment["dueStatus"]) {
 function Dashboard() {
   const [openProfile, setOpenProfile] = useState(false);
   const [username, setUsername] = useState("Ajitesh");
+  const [avatar, setAvatar] = useState("/campus1.jpg");
   const [assignments, setAssignments] = useState<DashboardAssignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [cards, setCards] = useState<DashboardCards>({
     courseProgress: 0,
     subjectCount: 0,
@@ -85,7 +92,7 @@ function Dashboard() {
               const res = await fetch("/api/users/getUsername");
               const data = await res.json();
               setUsername(data.username);
-              console.log("Username:", data.username);
+              if (data.avatar) setAvatar(data.avatar);
           }catch(err){
             console.log(err);
           }
@@ -170,6 +177,8 @@ const router = useRouter();
       if (Array.isArray(next?.performance)) setPerformanceData(next.performance);
     } catch (err) {
       console.error("Error fetching dashboard:", err);
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -224,9 +233,7 @@ const router = useRouter();
               </div>
 
               {/* Notification Button */}
-              <button className="p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center">
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
 
               {/* Profile Button */}
               <button
@@ -242,6 +249,10 @@ const router = useRouter();
             </div>
           </div>
 
+          {pageLoading ? (
+            <StudentPanelSkeleton variant="dashboard" showHeader={false} />
+          ) : (
+          <>
           {/* OVERVIEW SECTION */}
           <div className="mt-8">
             <h3 className="mb-5 text-lg font-bold text-slate-900">
@@ -327,9 +338,12 @@ const router = useRouter();
 
               <div className="h-72 min-w-0 sm:h-80">
                 {performanceData.length === 0 ? (
-                  <p className="flex h-full items-center justify-center text-sm text-slate-500">
-                    No semester results published yet
-                  </p>
+                  <IllustrationState
+                    situation="empty"
+                    size="sm"
+                    title="No results yet"
+                    description="Semester results haven’t been published."
+                  />
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={performanceData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
@@ -393,13 +407,16 @@ const router = useRouter();
 
                 <div className="divide-y divide-gray-100">
                   {assignmentsLoading ? (
-                    <p className="px-4 py-10 text-center text-sm text-slate-500">
-                      Loading assignments…
-                    </p>
+                    <div className="px-2 py-4">
+                      <TableRowsSkeleton rows={3} cols={4} />
+                    </div>
                   ) : previewAssignments.length === 0 ? (
-                    <p className="px-4 py-10 text-center text-sm text-slate-500">
-                      No assignments published yet
-                    </p>
+                    <IllustrationState
+                      situation="empty"
+                      size="sm"
+                      title="No assignments yet"
+                      description="Nothing has been published for your class."
+                    />
                   ) : (
                     previewAssignments.map((data) => (
                       <div
@@ -466,13 +483,14 @@ const router = useRouter();
             </div>
 
             {assignmentsLoading ? (
-              <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                Loading assignments…
-              </p>
+              <TableRowsSkeleton rows={3} cols={3} />
             ) : previewAssignments.length === 0 ? (
-              <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                No assignments published yet
-              </p>
+              <IllustrationState
+                situation="empty"
+                size="sm"
+                title="No assignments yet"
+                description="Nothing has been published for your class."
+              />
             ) : (
               previewAssignments.map((data) => (
                 <div
@@ -534,6 +552,9 @@ const router = useRouter();
             )}
           </div>
 
+          </>
+          )}
+
         {/* ================= PROFILE SIDEBAR (DESKTOP) ================= */}
         <AnimatePresence>
           {openProfile && (
@@ -573,7 +594,7 @@ const router = useRouter();
                 {/* Profile Info */}
                 <div className="text-center mt-6 sm:mt-8 pb-6 sm:pb-8 border-b border-slate-200">
                   <img
-                    src="/campus1.jpg"
+                    src={avatar}
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto object-cover border-4 border-indigo-500"
                     alt="Profile"
                   />
@@ -631,7 +652,7 @@ const router = useRouter();
               {/* Profile Info */}
               <div className="text-center mt-6 pb-6 border-b border-slate-200">
                 <img
-                  src="/campus1.jpg"
+                  src={avatar}
                   className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-indigo-500"
                   alt="Profile"
                 />

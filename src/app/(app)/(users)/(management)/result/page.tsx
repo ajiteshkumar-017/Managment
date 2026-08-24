@@ -1,9 +1,11 @@
 "use client"
 
 import axios from 'axios';
-import { Bell, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 type SubjectTable = {
   subjectCode: string;
@@ -27,6 +29,7 @@ function result() {
   const [username, setUsername] = useState("");
   const [subjectTable, setSubjectTable] = useState<SubjectTable[]>([]);
   const [stats, setStats] = useState<SemesterStat[]>([]);
+  const [loading, setLoading] = useState(true);
 
 
   const getData = async () => {
@@ -50,6 +53,8 @@ function result() {
       toast.error(
         err?.response?.data?.message || "Error in getting Data from backend."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,12 +130,14 @@ function result() {
               </div>
 
               {/* Notification Button */}
-              <button className="p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center">
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
             </div>
           </div>
 
+          {loading ? (
+            <StudentPanelSkeleton variant="result" showHeader={false} />
+          ) : (
+          <>
           {/* RESULTS HERO SECTION */}
           <div className="mt-8 sm:mt-10 md:mt-12">
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 mb-6 sm:mb-8">
@@ -514,6 +521,8 @@ function result() {
               ))}
             </div>
           </div>
+          </>
+          )}
     </>
   )
 }

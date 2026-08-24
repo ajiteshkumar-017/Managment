@@ -15,6 +15,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { PanelIdentity } from "@/components/navigation/PanelIdentity";
 
 const navigation = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, link: "/faculty/dashboard" },
@@ -73,18 +74,13 @@ function Bar({
   return (
     <>
       {open ? (
-        <aside className="sticky top-0 hidden min-h-screen w-56 shrink-0 flex-col self-stretch border-r border-slate-100 bg-white px-4 py-5 shadow-sm lg:flex">
-          <div className="mb-8 flex items-center justify-between">
-            <div className="ml-2 flex items-center gap-2 text-indigo-600">
+        <aside className="hidden h-dvh w-56 shrink-0 flex-col overflow-hidden border-r border-slate-100 bg-white px-4 py-5 shadow-sm lg:flex">
+          <div className="mb-5 flex shrink-0 items-center justify-between">
+            <div className="ml-1 flex items-center gap-2 text-indigo-600">
               <TrendingUp size={24} />
-              <div>
-                <h2 className="font-comfortaa text-base font-bold text-slate-800">
-                  Bubble
-                </h2>
-                <p className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">
-                  Faculty
-                </p>
-              </div>
+              <h2 className="font-comfortaa text-base font-bold text-slate-800">
+                Bubble
+              </h2>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -94,15 +90,19 @@ function Bar({
             </button>
           </div>
 
-          <nav className="flex flex-col gap-1">
+          <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
             {navigation.map((info) => (
               <NavItem key={info.link} info={info} />
             ))}
           </nav>
+
+          <div className="mt-3 shrink-0 pt-3">
+            <PanelIdentity role="faculty" />
+          </div>
         </aside>
       ) : (
-        <aside className="sticky top-0 hidden min-h-screen w-14 shrink-0 flex-col self-stretch border-r border-slate-100 bg-white px-2 py-5 shadow-sm lg:flex">
-          <div className="mb-6 flex flex-col items-center">
+        <aside className="hidden h-dvh w-14 shrink-0 flex-col overflow-hidden border-r border-slate-100 bg-white px-2 py-5 shadow-sm lg:flex">
+          <div className="mb-6 flex shrink-0 flex-col items-center">
             <button
               onClick={() => setOpen(true)}
               title="Expand sidebar"
@@ -112,25 +112,24 @@ function Bar({
             </button>
           </div>
 
-          <nav className="flex flex-col items-center gap-1">
+          <nav className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto overscroll-contain">
             {navigation.map((info) => (
               <NavItem key={info.link} info={info} collapsed />
             ))}
           </nav>
+
+          <div className="mt-3 flex shrink-0 justify-center pt-3">
+            <PanelIdentity role="faculty" compact />
+          </div>
         </aside>
       )}
 
       <header className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-4 shadow-sm lg:hidden">
         <div className="flex items-center gap-2 text-indigo-600">
           <TrendingUp size={22} />
-          <div>
-            <h2 className="font-comfortaa text-base font-bold text-slate-800">
-              Bubble
-            </h2>
-            <p className="text-[10px] font-medium tracking-wide text-slate-400 uppercase">
-              Faculty
-            </p>
-          </div>
+          <h2 className="font-comfortaa text-base font-bold text-slate-800">
+            Bubble
+          </h2>
         </div>
         <button
           onClick={() => setOpen(!open)}
@@ -146,8 +145,8 @@ function Bar({
             className="fixed inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col bg-white px-4 py-5 shadow-xl">
-            <div className="mb-8 flex items-center justify-between">
+          <div className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col overflow-hidden bg-white px-4 py-5 shadow-xl">
+            <div className="mb-5 flex shrink-0 items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600">
                 <TrendingUp size={22} />
                 <h2 className="font-comfortaa text-base font-bold text-slate-800">
@@ -161,11 +160,14 @@ function Bar({
                 <X size={16} className="text-slate-500" />
               </button>
             </div>
-            <nav className="flex flex-col gap-1">
+            <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
               {navigation.map((info) => (
                 <NavItem key={info.link} info={info} />
               ))}
             </nav>
+            <div className="mt-3 shrink-0 pt-3">
+              <PanelIdentity role="faculty" />
+            </div>
           </div>
         </div>
       )}

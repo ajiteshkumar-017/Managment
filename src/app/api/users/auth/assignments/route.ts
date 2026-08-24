@@ -7,6 +7,7 @@ import { Student } from "@/models/student.model";
 import { Faculty } from "@/models/faculty.model";
 import { Subject } from "@/models/subject.model";
 import { Assignment } from "@/models/assignment";
+import { assignmentFilterForStudent } from "@/lib/assignmentAudience";
 
 function dueStatus(dueDate: Date) {
   const now = new Date();
@@ -59,14 +60,7 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    const filter: Record<string, unknown> = {
-      department: student.department,
-      semester: student.semester,
-      status: "uploaded",
-    };
-    if (student.batch) {
-      filter.batch = student.batch;
-    }
+    const filter = assignmentFilterForStudent(student);
 
     const assignments = await Assignment.find(filter)
       .populate({
@@ -109,6 +103,7 @@ export async function GET(_request: NextRequest) {
         department: a.department,
         semester: a.semester,
         batch: a.batch,
+        section: a.section || "",
         attachement: attachment,
         subjectName: subject?.subjectName || "Subject",
         subjectCode: subject?.subjectCode || "—",

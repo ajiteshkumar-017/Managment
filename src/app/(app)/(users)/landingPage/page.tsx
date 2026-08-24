@@ -9,6 +9,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Navbar from '@/utils/Navbar';
 import Footer from "@/utils/Footer"
+import { PUBLIC_LOGO, PUBLIC_LOGO_SMALL } from "@/lib/publicLogo";
 
 const languages = [
     { id: 1, text: 'Indian Institute of Technology, Dholakpur', font: 'font-poppins' },
@@ -246,7 +247,7 @@ function LandingPage() {
             <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4 sm:px-6 md:px-16 py-8'>
                 {/* Left Side */}
                 <div className="flex flex-row items-center  gap-3 sm:gap-5 flex-1">
-                    <img src="/iitblogo.png" width={70} height={70} alt="logo" className='w-16 h-16 sm:w-20 sm:h-20 md:w-22.5 md:h-22.5 shrink-0' />
+                    <img src={PUBLIC_LOGO_SMALL.full} width={80} height={80} alt={PUBLIC_LOGO.alt} className='h-16 w-16 shrink-0 object-contain sm:h-20 sm:w-20 md:h-22.5 md:w-22.5' />
 
                     <div className="h-20 sm:h-24 overflow-hidden flex items-center flex-1 min-w-0">
                         <AnimatePresence mode="wait">

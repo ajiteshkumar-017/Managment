@@ -11,6 +11,7 @@ export interface IAssignment extends Document {
   department: string;
   semester: number;
   batch: string;
+  section?: string;
   marks: number;
   status: "uploaded" | "draft" | "unpublished";
   createdAt: Date;
@@ -58,6 +59,10 @@ const assignmentSchema = new Schema(
     batch: {
       type: String,
       required: true,
+    },
+    section: {
+      type: String,
+      required: false,
     },
     marks: {
       type: Number,

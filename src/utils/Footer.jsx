@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/fa";
 import { resourceLinks } from "@/utils/ResourcePageShell";
 import Link from 'next/link';
+import { PUBLIC_LOGO } from "@/lib/publicLogo";
 
 const socialMediaHandle = [
     {
@@ -29,7 +30,7 @@ function Footer() {
                           {/* Column 1 — Branding */}
                           <div className="space-y-6">
                               <div className="flex items-center gap-4">
-                                  <img src="/iitblogo.png" alt="logo" width={50} height={50} className='w-12 h-12 md:w-15 md:h-15' />
+                                  <img src={PUBLIC_LOGO.mark} alt={PUBLIC_LOGO.alt} width={56} height={56} className='h-12 w-12 object-contain md:h-14 md:w-14' />
                                   <span className="text-lg sm:text-xl font-semibold tracking-tight text-[#1F2937] leading-snug">
                                       Indian Institute of Technology
                                   </span>

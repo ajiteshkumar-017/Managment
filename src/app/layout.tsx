@@ -32,8 +32,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com " />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@100..900&family=Bitcount+Single+Ink:wght@100..900&family=Comfortaa:wght@300..700&family=Delius&family=Funnel+Display:wght@300..800&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Libertinus+Mono&family=Noto+Sans+Devanagari:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
-
-
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){if(window.__orbitAuthEntryGuard)return;window.__orbitAuthEntryGuard=true;window.addEventListener('pageshow',function(e){if(!e.persisted)return;var p=location.pathname;if(p==='/'||p.indexOf('/landingPage')===0||p.indexOf('/forgotPassword')===0||p.indexOf('/reset-password')===0)location.reload();});})();`,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

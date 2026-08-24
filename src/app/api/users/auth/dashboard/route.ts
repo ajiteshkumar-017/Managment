@@ -7,6 +7,7 @@ import { SemesterResult } from "@/models/semesterResult";
 import { getUser } from "@/lib/getUser";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { getStudentAttendanceData } from "@/lib/student/attendance";
+import { assignmentFilterForStudent } from "@/lib/assignmentAudience";
 
 export async function GET(_request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -51,13 +52,10 @@ export async function GET(_request: NextRequest) {
       student,
     });
 
-    const assignmentFilter: Record<string, unknown> = {
-      department: student.department,
-      semester: student.semester,
-      status: "uploaded",
+    const assignmentFilter = {
+      ...assignmentFilterForStudent(student),
       dueDate: { $gte: new Date() },
     };
-    if (student.batch) assignmentFilter.batch = student.batch;
 
     const [pendingAssignments, semesterResults] = await Promise.all([
       Assignment.countDocuments(assignmentFilter),

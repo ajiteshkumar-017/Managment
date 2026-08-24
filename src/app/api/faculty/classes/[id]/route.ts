@@ -203,13 +203,24 @@ export async function GET(
           ? (cls.subjectId as { _id: unknown })._id
           : cls.subjectId;
 
+      const assignmentQuery: Record<string, unknown> = {
+        facultyId: faculty._id,
+        subjectId,
+        department: cls.department,
+        semester: cls.semester,
+      };
+      if (cls.batch) assignmentQuery.batch = cls.batch;
+      if (cls.section) {
+        assignmentQuery.$or = [
+          { section: cls.section },
+          { section: { $exists: false } },
+          { section: null },
+          { section: "" },
+        ];
+      }
+
       assignments = (
-        await Assignment.find({
-          facultyId: faculty._id,
-          subjectId,
-          department: cls.department,
-          semester: cls.semester,
-        })
+        await Assignment.find(assignmentQuery)
           .sort({ dueDate: -1 })
           .limit(20)
           .lean()

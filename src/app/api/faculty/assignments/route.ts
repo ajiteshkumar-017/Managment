@@ -9,6 +9,7 @@ import { Subject } from "@/models/subject.model";
 import { Class } from "@/models/class.model";
 import cloudinary from "@/lib/cloudinary";
 import mongoose from "mongoose";
+import { notifyAssignmentPublished } from "@/services/notification/notifyEvent";
 
 async function uploadAssignmentFile(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -45,6 +46,7 @@ function mapAssignment(a: {
   department: string;
   semester: number;
   batch: string;
+  section?: string;
   attachement?: string;
   subjectId: unknown;
 }) {
@@ -62,6 +64,7 @@ function mapAssignment(a: {
     department: a.department,
     semester: a.semester,
     batch: a.batch,
+    section: a.section || "",
     attachement: a.attachement || "",
     subjectName: subject?.subjectName || "Subject",
     subjectCode: subject?.subjectCode || "—",
@@ -197,6 +200,7 @@ export async function POST(request: NextRequest) {
       department: cls.department,
       semester: cls.semester,
       batch: cls.batch,
+      section: cls.section,
       marks,
       status: publish ? "uploaded" : "draft",
     });
@@ -205,6 +209,18 @@ export async function POST(request: NextRequest) {
       { assignmentId: assignment._id, status: assignment.status },
       "Faculty assignment created",
     );
+
+    if (publish) {
+      await notifyAssignmentPublished({
+        classId: cls._id,
+        department: cls.department,
+        semester: cls.semester,
+        batch: cls.batch,
+        section: cls.section,
+        title: assignment.title,
+        dueDate: assignment.dueDate,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -267,10 +283,22 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const alreadyPublished = assignment.status === "uploaded";
     assignment.status = "uploaded";
     await assignment.save();
 
     logger.info({ assignmentId }, "Faculty assignment published");
+
+    if (!alreadyPublished) {
+      await notifyAssignmentPublished({
+        department: assignment.department,
+        semester: assignment.semester,
+        batch: assignment.batch,
+        section: assignment.section,
+        title: assignment.title,
+        dueDate: assignment.dueDate,
+      });
+    }
 
     return NextResponse.json({
       success: true,

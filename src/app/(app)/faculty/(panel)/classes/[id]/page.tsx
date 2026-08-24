@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { ArrowLeft, Play, Plus, Upload, Users } from "lucide-react";
 import { formatTimeRange12h } from "@/lib/faculty/time";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
 
 type TabId = "overview" | "students" | "attendance" | "assignments" | "results";
 
@@ -130,7 +131,11 @@ export default function FacultyClassDetailPage() {
 
   if (loading || !overview) {
     return (
-      <p className="py-10 text-center text-sm text-slate-500">Loading class…</p>
+      <IllustrationState
+        situation="loading"
+        title="Loading class"
+        description="Fetching this class and its students."
+      />
     );
   }
 
@@ -240,9 +245,12 @@ export default function FacultyClassDetailPage() {
         {tab === "students" && (
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             {students.length === 0 ? (
-              <p className="px-4 py-10 text-center text-sm text-slate-500">
-                No students found for this class
-              </p>
+              <IllustrationState
+                situation="empty"
+                size="sm"
+                title="No students found"
+                description="This class doesn’t have enrolled students yet."
+              />
             ) : (
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs tracking-wide text-slate-500 uppercase">
@@ -281,9 +289,12 @@ export default function FacultyClassDetailPage() {
         {tab === "attendance" && (
           <div className="space-y-4">
             {attendance.length === 0 ? (
-              <p className="rounded-2xl border border-slate-200 px-4 py-10 text-center text-sm text-slate-500">
-                No attendance sessions yet
-              </p>
+              <IllustrationState
+                situation="empty"
+                size="sm"
+                title="No sessions yet"
+                description="Attendance sessions for this class will show up here."
+              />
             ) : (
               attendance.map((session) => (
                 <div
@@ -351,9 +362,12 @@ export default function FacultyClassDetailPage() {
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-200">
               {assignments.length === 0 ? (
-                <p className="px-4 py-10 text-center text-sm text-slate-500">
-                  No assignments for this class yet
-                </p>
+                <IllustrationState
+                  situation="empty"
+                  size="sm"
+                  title="No assignments yet"
+                  description="This class doesn’t have any published assignments."
+                />
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {assignments.map((a) => (

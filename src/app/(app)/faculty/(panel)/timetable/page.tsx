@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { MapPin } from "lucide-react";
 import { formatTimeRange12h } from "@/lib/faculty/time";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
 
 type ClassRow = {
   id: string;
@@ -136,11 +137,17 @@ export default function FacultyTimetablePage() {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-sm text-slate-500">Loading timetable…</p>
+        <IllustrationState
+          situation="loading"
+          title="Loading timetable"
+          description="Fetching your weekly class schedule."
+        />
       ) : classes.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-          No classes in your timetable yet
-        </p>
+        <IllustrationState
+          situation="empty"
+          title="No classes yet"
+          description="Nothing is on your timetable yet."
+        />
       ) : (
         <>
         <div className="mt-6 lg:hidden">

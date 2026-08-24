@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
         user.authProvider = "google";
         dirty = true;
       }
-      if (picture && user.avatar !== picture) {
+      if (picture && !user.avatarPublicId && user.avatar !== picture) {
         user.avatar = picture;
         dirty = true;
       }

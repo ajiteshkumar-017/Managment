@@ -2,8 +2,11 @@
 
 import axios from 'axios';
 import react, {useState, useEffect} from 'react';
-import { Bell, BookAudio, LogOut, Megaphone, Search, SquarePen } from 'lucide-react'
+import { BookAudio, Megaphone, Search } from 'lucide-react'
 import toast from 'react-hot-toast';
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ListRowsSkeleton } from "@/components/loading/GlassSkeleton";
 
 
 function Messages() {
@@ -78,9 +81,7 @@ function Messages() {
                           </div>
             
                           {/* Notification Button */}
-                          <button className="p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center">
-                            <Bell size={18} />
-                          </button>
+                          <NotificationBell />
             
                           {/* Profile Button */}
                           {/* <button
@@ -106,11 +107,17 @@ function Messages() {
               <h3 className="text-lg font-semibold text-green-800 mb-5 lg:mb-6">Important Notices</h3>
                             <ul>
 
-                                {notices.length === 0 ? (
-                                    <div className="flex items-center h-full">
-                                      <Megaphone size={24} className=" mr-2 m-2" />
-                                      <p className="text-red-700 font-bold  text-2xl tracking-wide ">No notices available at the moment.</p>
-                                    </div>
+                                {loading ? (
+                                    <li className="list-none">
+                                      <ListRowsSkeleton rows={3} />
+                                    </li>
+                                ) : notices.length === 0 ? (
+                                    <IllustrationState
+                                      situation="empty"
+                                      size="sm"
+                                      title="No notices yet"
+                                      description="There are no notices available at the moment."
+                                    />
                                 ) : (
                                     notices.map((notice, index) => (
                                         <li key={index} className={index > 0 ? "mt-4" : ""}>

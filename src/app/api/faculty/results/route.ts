@@ -12,6 +12,7 @@ import {
   type ExamResultType,
 } from "@/constant/Constant";
 import mongoose from "mongoose";
+import { notifyResultPublished } from "@/services/notification/notifyEvent";
 
 export async function GET(request: NextRequest) {
   const logger = createRequestLogger();
@@ -171,10 +172,21 @@ export async function POST(request: NextRequest) {
         title ||
         existing.title ||
         `${examType} Result · ${cls.department} Sem ${cls.semester}`;
+      const becomingPublished = publish && existing.status !== "published";
       existing.status = publish ? "published" : existing.status || "unpublished";
       await existing.save();
 
       logger.info({ resultBatchId: existing._id, publish }, "Faculty result batch updated");
+
+      if (becomingPublished) {
+        await notifyResultPublished({
+          classId: cls._id,
+          department: cls.department,
+          semester: cls.semester,
+          batch: cls.batch,
+          exam: examType,
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -196,6 +208,16 @@ export async function POST(request: NextRequest) {
     const batch = Array.isArray(created) ? created[0] : created;
 
     logger.info({ resultBatchId: batch._id, publish }, "Faculty result batch created");
+
+    if (publish) {
+      await notifyResultPublished({
+        classId: cls._id,
+        department: cls.department,
+        semester: cls.semester,
+        batch: cls.batch,
+        exam: examType,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -264,10 +286,21 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      const becomingPublished = batch.status !== "published";
       batch.status = "published";
       await batch.save();
 
       logger.info({ resultBatchId }, "Faculty result published");
+
+      if (becomingPublished) {
+        await notifyResultPublished({
+          classId: ownsClass._id,
+          department: batch.department,
+          semester: batch.semester,
+          batch: batch.batch,
+          exam: batch.ExamType,
+        });
+      }
 
       return NextResponse.json({
         success: true,
@@ -302,8 +335,19 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      const becomingPublished = batch.status !== "published";
       batch.status = "published";
       await batch.save();
+
+      if (becomingPublished) {
+        await notifyResultPublished({
+          classId: cls._id,
+          department: cls.department,
+          semester: cls.semester,
+          batch: cls.batch,
+          exam: batch.ExamType,
+        });
+      }
 
       return NextResponse.json({
         success: true,

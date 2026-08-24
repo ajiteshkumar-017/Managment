@@ -8,6 +8,7 @@ import { Class } from "./class.model";
 import { ClassEnrollement } from "./classEnrollement";
 import { Subject } from "./subject.model";
 import { SubjectFacultyAssignment } from "./subjectFacultyAssignment.model";
+import { Notification } from "./notification.model";
 
 
 // import { Course } from "@/models/course.model";
@@ -32,4 +33,5 @@ export {
     ClassEnrollement,
     Subject,
     SubjectFacultyAssignment,
+    Notification,
 }

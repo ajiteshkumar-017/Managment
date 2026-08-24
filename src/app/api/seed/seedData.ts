@@ -14,6 +14,7 @@ import { SemesterResult } from "@/models/semesterResult";
 import { SubjectResult } from "@/models/subjectResult";
 import { AttendanceSession } from "@/models/attendanceSession";
 import { DEPARTMENT, SEMESTER } from "@/constant/Constant";
+import { seedNotifications, clearNotifications } from "./seedNotifications";
 
 /** At least 4 subjects for every department × semester. */
 const SUBJECT_SLOTS = [
@@ -101,6 +102,7 @@ export async function seedDatabase() {
   await Student.deleteMany({});
   await Subject.deleteMany({});
   await User.deleteMany({});
+  await clearNotifications();
 
   const passwordStudent = await bcrypt.hash("Ajitesh@123", 10);
   const passwordFaculty = await bcrypt.hash("Faculty@123", 10);
@@ -657,6 +659,15 @@ export async function seedDatabase() {
     },
   ]);
 
+  const notifications = await seedNotifications({
+    studentUserId: studentUser1._id,
+    facultyUserId: facultyUser1._id,
+    adminUserId: adminUser._id,
+    studentProfileId: studentAjitesh._id,
+    facultyProfileId: faculties[0]._id,
+    classId: cse5Classes[0]._id,
+  });
+
   return {
     users: [...users, ...extraFacultyUsers],
     students,
@@ -669,6 +680,7 @@ export async function seedDatabase() {
     resultBatches,
     semesterResults,
     subjectResults,
+    notifications,
     linkedEmail: "ajiteshk017@gmail.com",
   };
 }

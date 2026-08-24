@@ -5,6 +5,7 @@ import axios from "axios";
 import { Mail, Search, Sparkles, Award } from "lucide-react";
 import Navbar from "@/utils/Navbar";
 import Footer from "@/utils/Footer";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
 
 type FacultyCard = {
   name: string;
@@ -129,9 +130,11 @@ function FacultyPage() {
             {error}
           </p>
         ) : filtered.length === 0 ? (
-          <p className="mt-10 rounded-2xl border border-gray-100 bg-slate-50 px-4 py-6 text-sm text-slate-600">
-            No faculty members found.
-          </p>
+          <IllustrationState
+            situation="empty"
+            title="No faculty found"
+            description="No faculty members match this search."
+          />
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((person) => {

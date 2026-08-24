@@ -6,6 +6,7 @@ import { AttendanceSession } from "@/models/attendanceSession";
 import Connect from "@/dbConnect/connect";
 import { decodeResourceId } from "@/lib/idToken";
 import mongoose from "mongoose";
+import { notifyAttendanceMarked } from "@/services/notification/notifyEvent";
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,6 +135,14 @@ export async function POST(request: NextRequest) {
       { studentId: studentData._id, sessionId: sessionData._id },
       "Attendance marked via QR",
     );
+
+    if (studentData.userId) {
+      await notifyAttendanceMarked({
+        userId: studentData.userId,
+        classCode: classData.classCode,
+        room: classData.room,
+      });
+    }
 
     return NextResponse.json({
       success: true,

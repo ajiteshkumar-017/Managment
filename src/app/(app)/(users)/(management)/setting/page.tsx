@@ -12,6 +12,7 @@ import Cropper from "react-easy-crop";
 import { X, Save } from 'lucide-react';
 import {getCroppedImage} from "@/lib/cropImage"
 import { Loader2 } from 'lucide-react'
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton"
 
 
 type CroppedArea = {
@@ -27,7 +28,7 @@ function setting() {
    const [preview,    setPreview]  = useState<string | null>(null)
   const [cloudUrl,   setCloudUrl] = useState<string | null>(null)
   const [uploading,  setUploading] = useState(false)
-  const [fetching, setFetching] = useState(false) 
+  const [fetching, setFetching] = useState(true) 
   const [currentImage, setCurrentImage] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [image, setImage] = useState()
@@ -116,15 +117,14 @@ let uploadCounter = 0;
       if(response.data.success){
         console.log("Fetched the Photo");
         toast.success("Fetched Data");
-        setCurrentImage(response.data.getImage)
+        setCurrentImage(response.data.getImage || null);
       }
 
     } catch (err:any) {
       console.log("Error in getting Image.")
       toast.error("Error in Data");
-      
-
-      
+    } finally {
+      setFetching(false)
     }
   }
 
@@ -238,7 +238,9 @@ let uploadCounter = 0;
   //     setLoading(false)
   //   }
   // }
-  return (
+  return fetching ? (
+    <StudentPanelSkeleton variant="settings" showHeader={false} />
+  ) : (
     <>
   <div
     className="
@@ -367,7 +369,7 @@ let uploadCounter = 0;
         
       
       <img
-  src={ `${currentImage}`}
+  src={currentImage || "/campus1.jpg"}
   alt="Profile"
   className="
     h-28

@@ -7,6 +7,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Clock, MapPin, Play, Users } from "lucide-react";
 import { formatTimeRange12h } from "@/lib/faculty/time";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
 
 type ClassRow = {
   id: string;
@@ -301,14 +302,23 @@ export default function FacultyClassesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                    Loading…
+                  <td colSpan={6}>
+                    <IllustrationState
+                      situation="loading"
+                      size="sm"
+                      title="Loading classes"
+                    />
                   </td>
                 </tr>
               ) : classes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                    No classes assigned yet
+                  <td colSpan={6}>
+                    <IllustrationState
+                      situation="empty"
+                      size="sm"
+                      title="No classes yet"
+                      description="No classes have been assigned to you."
+                    />
                   </td>
                 </tr>
               ) : (
@@ -339,11 +349,18 @@ export default function FacultyClassesPage() {
 
         <div className="mt-4 grid grid-cols-1 gap-3 lg:hidden">
           {loading ? (
-            <p className="px-4 py-8 text-center text-sm text-slate-500">Loading…</p>
+            <IllustrationState
+              situation="loading"
+              size="sm"
+              title="Loading classes"
+            />
           ) : classes.length === 0 ? (
-            <p className="rounded-2xl border border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
-              No classes assigned yet
-            </p>
+            <IllustrationState
+              situation="empty"
+              size="sm"
+              title="No classes yet"
+              description="No classes have been assigned to you."
+            />
           ) : (
             classes.map((cls) => (
               <ClassMobileCard

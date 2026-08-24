@@ -1,5 +1,5 @@
 "use client"
-import { Bell, Clock, Search, SquarePen } from 'lucide-react'
+import { Clock, Search, SquarePen } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -12,6 +12,8 @@ import QRScanner from "@/components/users/attendance/QRScanner";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 type TodayClass = {
   heading: string;
@@ -184,9 +186,7 @@ const fetchUsername = async () => {
               </div>
 
               {/* Notification Button */}
-              <button className="p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg sm:rounded-xl transition-all shrink-0 flex items-center justify-center">
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
 
               {/* Profile Button */}
               <button
@@ -198,6 +198,10 @@ const fetchUsername = async () => {
             </div>
           </div>
 
+        {loading ? (
+          <StudentPanelSkeleton variant="attendance" showHeader={false} />
+        ) : (
+        <>
         {/* Main Content */}
 
             <div className="flex w-full min-w-0 flex-col gap-6 xl:flex-row mt-8">
@@ -570,7 +574,7 @@ const fetchUsername = async () => {
 
                 {todaysClasses.length === 0 ? (
                     <p className="py-6 text-center text-sm text-slate-500">
-                      {loading ? "Loading today’s classes…" : "No classes scheduled today"}
+                      No classes scheduled today
                     </p>
                 ) : todaysClasses.map((classItem, index) => (
 
@@ -1282,7 +1286,7 @@ const fetchUsername = async () => {
 
                 {tableData.length === 0 ? (
                     <p className="px-6 py-10 text-center text-sm text-slate-500">
-                      {loading ? "Loading records…" : "No attendance sessions yet"}
+                      No attendance sessions yet
                     </p>
                 ) : tableData.map((item, index) => (
 
@@ -1434,7 +1438,7 @@ const fetchUsername = async () => {
 
                 )) : (
                     <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                      {loading ? "Loading records…" : "No attendance sessions yet"}
+                      No attendance sessions yet
                     </p>
                 )}
 
@@ -1446,6 +1450,9 @@ const fetchUsername = async () => {
                 </div>
 
             </div>
+
+    </>
+        )}
 
     </>
   )

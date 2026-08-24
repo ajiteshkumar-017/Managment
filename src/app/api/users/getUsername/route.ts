@@ -79,7 +79,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        username: user.username
+        username: user.username,
+        avatar: user.avatar || "",
       },
       {
         status: 200

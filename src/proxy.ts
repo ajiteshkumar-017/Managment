@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { homeForRole, isAuthEntryPath } from "@/lib/authHome";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -10,16 +11,12 @@ const userPublicPrefixRoutes = [
   "/about",
   "/contactUs",
   "/resources",
+  "/forgotPassword",
+  "/reset-password",
 ];
 
 /** Exact public paths (must not prefix-match panel routes like /faculty/dashboard). */
 const userPublicExactRoutes = ["/faculty"];
-
-/**
- * Marketing/auth entry only — logged-in users get sent to their dashboard.
- * Keep contact/about/courses/faculty reachable while authenticated.
- */
-const userAuthEntryRoutes = ["/landingPage"];
 
 const userProtectedRoutes = [
   "/dashboard",
@@ -29,6 +26,7 @@ const userProtectedRoutes = [
   "/setting",
   "/result",
   "/messages",
+  "/notifications",
   "/setUp",
   "/timetable",
   "/calendar",
@@ -46,10 +44,13 @@ const isPublicRoute = (pathname: string) =>
   pathname.startsWith("/api/users/login") ||
   pathname.startsWith("/api/users/signUp") ||
   pathname.startsWith("/api/users/check-email") ||
+  pathname.startsWith("/api/users/forgot-password") ||
+  pathname.startsWith("/api/users/reset-password") ||
   pathname.startsWith("/api/test-email") ||
   pathname.startsWith("/api/contact") ||
   pathname === "/api/faculty" ||
-  pathname.startsWith("/api/users/auth/google");
+  pathname.startsWith("/api/users/auth/google") ||
+  pathname.startsWith("/api/notification");
 
 const isAdminRoute = (pathname: string) => pathname.startsWith("/admin");
 
@@ -71,12 +72,6 @@ function withNoStore(response: NextResponse) {
   );
   response.headers.set("Pragma", "no-cache");
   return response;
-}
-
-function homeForRole(role: string) {
-  if (role === "admin") return "/admin/dashboard";
-  if (role === "faculty") return "/faculty/dashboard";
-  return "/dashboard";
 }
 
 /** Block unauthenticated access: APIs get 401, pages get redirect. */
@@ -102,6 +97,8 @@ export async function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/api/users/login") ||
     pathname.startsWith("/api/users/signUp") ||
+    pathname.startsWith("/api/users/forgot-password") ||
+    pathname.startsWith("/api/users/reset-password") ||
     pathname.startsWith("/api/users/auth/google")
   ) {
     return NextResponse.next();
@@ -168,7 +165,7 @@ export async function proxy(request: NextRequest) {
           NextResponse.redirect(new URL("/admin/dashboard", request.url)),
         );
       }
-      if (routeMatcher(userAuthEntryRoutes, pathname)) {
+      if (isAuthEntryPath(pathname)) {
         return withNoStore(
           NextResponse.redirect(new URL("/admin/dashboard", request.url)),
         );
@@ -188,7 +185,7 @@ export async function proxy(request: NextRequest) {
           NextResponse.redirect(new URL("/faculty/dashboard", request.url)),
         );
       }
-      if (routeMatcher(userAuthEntryRoutes, pathname)) {
+      if (isAuthEntryPath(pathname)) {
         return withNoStore(
           NextResponse.redirect(new URL("/faculty/dashboard", request.url)),
         );
@@ -204,8 +201,8 @@ export async function proxy(request: NextRequest) {
       );
     }
 
-    // Logged-in student on landing → dashboard (other public pages stay open)
-    if (routeMatcher(userAuthEntryRoutes, pathname)) {
+    // Logged-in student on login/landing/reset → dashboard
+    if (isAuthEntryPath(pathname)) {
       return withNoStore(
         NextResponse.redirect(new URL("/dashboard", request.url)),
       );

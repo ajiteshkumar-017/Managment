@@ -17,6 +17,7 @@ import {
   X,
   School,
 } from "lucide-react"
+import { PanelIdentity } from "@/components/navigation/PanelIdentity"
 
 const navigation = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, link: "/admin/dashboard" },
@@ -78,10 +79,10 @@ const navigation = [
     <>
      
       {open ? (
-        <aside className="hidden lg:flex flex-col sticky top-0 min-h-screen w-56 shrink-0 border-r border-slate-100 shadow-sm bg-white px-4 py-5 self-stretch">
+        <aside className="hidden lg:flex flex-col sticky top-0 h-dvh w-56 shrink-0 overflow-hidden border-r border-slate-100 shadow-sm bg-white px-4 py-5">
           
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2 text-indigo-600 ml-8">
+          <div className="flex items-center justify-between mb-5 shrink-0">
+            <div className="ml-1 flex items-center gap-2 text-indigo-600">
               <TrendingUp size={24} />
               <h2 className="font-comfortaa font-bold text-base text-slate-800">Bubble</h2>
             </div>
@@ -94,15 +95,19 @@ const navigation = [
           </div>
 
           
-          <nav className="flex flex-col gap-1">
+          <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
             {navigation.map((info) => (
               <NavItem key={info.link} info={info} />
             ))}
           </nav>
+
+          <div className="mt-3 shrink-0 pt-3">
+            <PanelIdentity role="admin" />
+          </div>
         </aside>
       ) : (
-        <aside className="hidden lg:flex flex-col sticky top-0 min-h-screen w-14 shrink-0 border-r border-slate-100 shadow-sm bg-white px-2 py-5 self-stretch">
-          <div className="flex flex-col items-center mb-6">
+        <aside className="hidden lg:flex flex-col sticky top-0 h-dvh w-14 shrink-0 overflow-hidden border-r border-slate-100 shadow-sm bg-white px-2 py-5">
+          <div className="flex flex-col items-center mb-6 shrink-0">
             <button
               onClick={() => setOpen(true)}
               title="Expand sidebar"
@@ -112,11 +117,15 @@ const navigation = [
             </button>
           </div>
 
-          <nav className="flex flex-col gap-1 items-center">
+          <nav className="flex min-h-0 flex-1 flex-col gap-1 items-center overflow-y-auto overscroll-contain">
             {navigation.map((info) => (
               <NavItem key={info.link} info={info} collapsed />
             ))}
           </nav>
+
+          <div className="mt-3 flex shrink-0 justify-center pt-3">
+            <PanelIdentity role="admin" compact />
+          </div>
         </aside>
       )}
 
@@ -144,10 +153,10 @@ const navigation = [
           />
 
          
-          <div className="relative z-10 flex flex-col w-64 max-w-[80vw] bg-white h-full shadow-xl px-4 py-5">
+          <div className="relative z-10 flex h-full w-64 max-w-[80vw] flex-col overflow-hidden bg-white px-4 py-5 shadow-xl">
 
             
-            <div className="flex items-center justify-between mb-8">
+            <div className="mb-5 flex shrink-0 items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600">
                 <TrendingUp size={22} />
                 <h2 className="font-comfortaa font-bold text-base text-slate-800">Bubble</h2>
@@ -161,11 +170,15 @@ const navigation = [
             </div>
 
             {/* Nav */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
               {navigation.map((info) => (
                 <NavItem key={info.link} info={info} />
               ))}
             </nav>
+
+            <div className="mt-3 shrink-0 pt-3">
+              <PanelIdentity role="admin" />
+            </div>
           </div>
         </div>
       )}

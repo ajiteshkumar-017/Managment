@@ -14,6 +14,11 @@ export {
 } from "./templates/contactThankYou";
 export { renderContactThankYouEmail } from "./renderContactThankYou";
 export {
+  ForgotPasswordEmail,
+  type ForgotPasswordEmailProps,
+} from "./templates/forgotPassword";
+export { renderForgotPasswordEmail } from "./renderForgotPassword";
+export {
   BaseLayout,
   EmailHeader,
   EmailFooter,

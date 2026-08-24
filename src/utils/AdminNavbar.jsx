@@ -9,11 +9,13 @@ import {
   ClipboardList,
   X,
   Menu,
+  Bell,
 } from "lucide-react";
 import { CalendarCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation";
 import axios from "axios";
+import { PanelIdentity } from "@/components/navigation/PanelIdentity";
 
 export default function AdminNavbar() {
   const [mobileView, setMobileView] = useState(false);
@@ -26,6 +28,7 @@ export default function AdminNavbar() {
     { name: "Courses", icon: <BookOpen size={18} />, link: "/course" },
     { name: "Assignments", icon: <ClipboardList size={18} />, link: "/assignments" },
     { name: "Messages", icon: <MessageCircle size={18} />, link: "/messages" },
+    { name: "Notifications", icon: <Bell size={18} />, link: "/notifications" },
     { name: "Attendance", icon: <CalendarCheck size={18} />, link: "/attendance" },
     { name: "Results", icon: <BarChart3 size={18} />, link: "/result" },
     { name: "Timetable", icon: <CalendarDays size={18} />, link: "/timetable" },
@@ -75,7 +78,7 @@ export default function AdminNavbar() {
   return (
     <>
       {/* ================= MOBILE TOP BAR ================= */}
-      <header className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-4 shadow-sm lg:hidden">
+      <header className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-4 shadow-sm lg:hidden">
         <div className="flex items-center gap-2">
           <img
             src="/campus1.jpg"
@@ -98,12 +101,12 @@ export default function AdminNavbar() {
       {/* ================= DESKTOP SIDEBAR (matches admin Bar: w-56) ================= */}
       <aside
         className="
-          sticky top-0 hidden min-h-screen w-56 shrink-0
-          flex-col self-stretch border-r border-slate-100
+          hidden h-dvh w-56 shrink-0
+          flex-col overflow-hidden border-r border-slate-100
           bg-white px-4 py-5 shadow-sm lg:flex
         "
       >
-        <div className="mb-8 flex items-center gap-2">
+        <div className="mb-5 flex shrink-0 items-center gap-2">
           <img
             src="/campus1.jpg"
             className="h-8 w-8 rounded-lg object-cover"
@@ -114,14 +117,15 @@ export default function AdminNavbar() {
           </h2>
         </div>
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
           {panelData.map((panel) => (
             <NavButton key={panel.link} panel={panel} />
           ))}
         </nav>
 
-        <div className="mt-auto pt-6">
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3.5 text-center">
+        <div className="mt-3 shrink-0 space-y-2.5 pt-3">
+          <PanelIdentity role="student" />
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3 text-center">
             <h3 className="text-xs font-bold text-slate-800">Academic Calendar</h3>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
               Exams, holidays & events
@@ -129,7 +133,7 @@ export default function AdminNavbar() {
             <button
               type="button"
               onClick={() => router.push("/calendar")}
-              className="mt-3 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+              className="mt-2.5 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
             >
               View Calendar
             </button>
@@ -155,12 +159,12 @@ export default function AdminNavbar() {
               exit={{ x: "-100%" }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="
-                fixed top-0 left-0 z-50 flex h-screen w-64
-                max-w-[80vw] flex-col bg-white px-4 py-5
+                fixed top-0 left-0 z-50 flex h-dvh w-64
+                max-w-[80vw] flex-col overflow-hidden bg-white px-4 py-5
                 shadow-xl lg:hidden
               "
             >
-              <div className="mb-8 flex items-center justify-between">
+              <div className="mb-5 flex shrink-0 items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img
                     src="/campus1.jpg"
@@ -180,7 +184,7 @@ export default function AdminNavbar() {
                 </button>
               </div>
 
-              <nav className="flex flex-col gap-1">
+              <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
                 {panelData.map((panel) => (
                   <NavButton
                     key={panel.link}
@@ -190,8 +194,9 @@ export default function AdminNavbar() {
                 ))}
               </nav>
 
-              <div className="mt-auto pt-6">
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3.5 text-center">
+              <div className="mt-3 shrink-0 space-y-2.5 pt-3">
+                <PanelIdentity role="student" />
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-3 py-3 text-center">
                   <h3 className="text-xs font-bold text-slate-800">Academic Calendar</h3>
                   <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
                     Exams, holidays & events
@@ -202,7 +207,7 @@ export default function AdminNavbar() {
                       router.push("/calendar");
                       setMobileView(false);
                     }}
-                    className="mt-3 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                    className="mt-2.5 w-full rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
                   >
                     View Calendar
                   </button>

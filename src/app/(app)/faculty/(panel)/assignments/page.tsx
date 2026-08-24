@@ -6,6 +6,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { FileSpreadsheet, FileText, Plus, Upload, X } from "lucide-react";
 import { Suspense } from "react";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
 import AdminModal, {
   adminFieldClass,
   adminFormGridClass,
@@ -241,11 +242,17 @@ function AssignmentsContent() {
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center text-sm text-slate-500">Loading assignments…</p>
+        <IllustrationState
+          situation="loading"
+          title="Loading assignments"
+          description="Fetching assignments for your classes."
+        />
       ) : assignments.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-          No assignments yet
-        </p>
+        <IllustrationState
+          situation="empty"
+          title="No assignments yet"
+          description="Create and publish an assignment for your class."
+        />
       ) : (
         <>
           <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 lg:block">
@@ -528,7 +535,10 @@ export default function FacultyAssignmentsPage() {
   return (
     <Suspense
       fallback={
-        <p className="py-10 text-center text-sm text-slate-500">Loading…</p>
+        <IllustrationState
+          situation="loading"
+          title="Loading assignments"
+        />
       }
     >
       <AssignmentsContent />

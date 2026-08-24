@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Bell,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -18,11 +17,14 @@ import {
   type AcademicEventType,
 } from "@/data/academicCalendar";
 import { downloadAcademicCalendarPdf } from "@/lib/academicCalendarPdf";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function CalendarPage() {
   const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(2025, 6, 1));
   const [selectedDate, setSelectedDate] = useState(() => new Date(2025, 6, 21));
   const [downloading, setDownloading] = useState(false);
@@ -35,6 +37,8 @@ function CalendarPage() {
         setUsername(data.username ?? "");
       } catch (err) {
         console.log(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchUsername();
@@ -112,15 +116,14 @@ function CalendarPage() {
                   placeholder="Search..."
                 />
               </div>
-              <button
-                type="button"
-                className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 p-2.5 text-white transition-all hover:bg-indigo-700 sm:rounded-xl sm:p-3"
-              >
-                <Bell size={18} />
-              </button>
+              <NotificationBell />
             </div>
           </div>
 
+          {loading ? (
+            <StudentPanelSkeleton variant="calendar" showHeader={false} />
+          ) : (
+          <>
           {/* Title + download */}
           <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-between md:mt-10">
             <div>
@@ -341,6 +344,8 @@ function CalendarPage() {
             Dates are indicative and may be updated by the Academic Office. Check
             Messages for official notices.
           </p>
+          </>
+          )}
     </>
   );
 }

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Bell, ClipboardList, Download, Search } from "lucide-react";
+import { ClipboardList, Download, Search } from "lucide-react";
+import { IllustrationState } from "@/components/illustrations/IllustrationState";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentPanelSkeleton } from "@/components/loading/GlassSkeleton";
 
 type AssignmentRow = {
   id: string;
@@ -99,23 +102,18 @@ export default function StudentAssignmentsPage() {
               placeholder="Search..."
             />
           </div>
-          <button
-            type="button"
-            className="flex items-center justify-center rounded-xl bg-indigo-600 p-3 text-white transition-all hover:bg-indigo-700"
-          >
-            <Bell size={18} />
-          </button>
+          <NotificationBell />
         </div>
       </div>
 
       {loading ? (
-        <p className="mt-8 text-center text-sm text-slate-500">
-          Loading assignments…
-        </p>
+        <StudentPanelSkeleton variant="table" showHeader={false} />
       ) : assignments.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-          No assignments published for your class yet
-        </p>
+        <IllustrationState
+          situation="empty"
+          title="No assignments yet"
+          description="Nothing has been published for your class yet."
+        />
       ) : (
         <>
           <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 lg:block">

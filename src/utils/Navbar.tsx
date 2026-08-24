@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Menu, X, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDebounce } from "react-use";
+import { PUBLIC_LOGO } from "@/lib/publicLogo";
+import { homeForRole } from "@/lib/authHome";
 
 function GoogleIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -42,7 +44,6 @@ function Navbar() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const router = useRouter();
 
   const navLinks = [
     { label: "Home", href: "/landingPage" },
@@ -85,14 +86,11 @@ function Navbar() {
       toast.success(res?.data?.message || "Login successful");
       resetForm();
       closeAuth();
-      if (res.data.ProfileStatus === true) {
-        const role = res.data.role as string | undefined;
-        if (role === "admin") router.push("/admin/dashboard");
-        else if (role === "faculty") router.push("/faculty/dashboard");
-        else router.push("/dashboard");
-      } else {
-        router.push("/setUp");
-      }
+      const dest =
+        res.data.ProfileStatus === true
+          ? homeForRole(res.data.role)
+          : "/setUp";
+      window.location.replace(dest);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(
@@ -152,11 +150,11 @@ function Navbar() {
         <div className="flex items-center justify-between px-4 py-4 sm:px-6 md:px-10 md:py-5">
           <div className="shrink-0">
             <img
-              src="/iitblogo.png"
-              alt="logo"
-              width={50}
-              height={50}
-              className="h-12 w-12 sm:h-14 sm:w-14"
+              src={PUBLIC_LOGO.mark}
+              alt={PUBLIC_LOGO.alt}
+              width={180}
+              height={180}
+              className="h-24 w-24 object-contain sm:h-20 sm:w-20"
             />
           </div>
 
@@ -264,9 +262,9 @@ function Navbar() {
                 <div className="relative">
                   <div className="flex items-center gap-3">
                     <img
-                      src="/iitblogo.png"
+                      src={PUBLIC_LOGO.markOnDark}
                       alt=""
-                      className="h-11 w-11 rounded-xl bg-white/15 object-cover ring-1 ring-white/25"
+                      className="h-12 w-12 object-contain"
                     />
                     <div>
                       <p className="font-comfortaa text-lg font-bold tracking-tight">
@@ -399,12 +397,25 @@ function Navbar() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="login-password"
-                        className="mb-1.5 block text-sm font-medium text-slate-700"
-                      >
-                        Password
-                      </label>
+                      <div className="mb-1.5 flex items-center justify-between gap-3">
+                        <label
+                          htmlFor="login-password"
+                          className="block text-sm font-medium text-slate-700"
+                        >
+                          Password
+                        </label>
+                        <Link
+                          href={
+                            email.trim()
+                              ? `/forgotPassword?email=${encodeURIComponent(email.trim())}`
+                              : "/forgotPassword"
+                          }
+                          onClick={closeAuth}
+                          className="text-sm font-medium text-[#786EFE] hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <div className="relative">
                         <input
                           id="login-password"

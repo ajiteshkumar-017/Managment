@@ -7,6 +7,7 @@ import { Subject } from "@/models/subject.model";
 import { ResultBatch } from "@/models/resultBatch.model";
 import { SemesterResult } from "@/models/semesterResult";
 import { SubjectResult } from "@/models/subjectResult";
+import { notifyResultPublished } from "@/services/notification/notifyEvent";
 
 export type MarksheetRowError = {
   row: number;
@@ -509,6 +510,14 @@ export async function publishMarksheet(buffer: Buffer): Promise<{
   batch.status = "published";
   batch.title = title;
   await batch.save();
+
+  await notifyResultPublished({
+    department: header.department,
+    semester: header.semester,
+    batch: header.batch,
+    exam: header.exam,
+    subjectCode: header.subjectCode,
+  });
 
   return {
     success: true,
