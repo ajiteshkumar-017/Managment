@@ -3,6 +3,8 @@ import { Class } from "@/models/class.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername, resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -54,6 +56,14 @@ export async function POST(request: NextRequest) {
     });
 
     requestLogger.info({ facultyUsername, subjectCode, classCode }, "Faculty assigned to class successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.FACULTY_ASSIGN_CLASS,
+      entityType: AUDIT_ENTITY_TYPE.CLASS,
+      entityId: classRecord._id,
+      description: `Assigned ${facultyUsername} to class ${classCode}`,
+      metadata: { facultyUsername, subjectCode, classCode, room: room || "" },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: "Faculty assigned to class successfully",

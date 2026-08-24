@@ -3,6 +3,8 @@ import { Faculty } from "@/models/faculty.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function PATCH(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -43,6 +45,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     requestLogger.info({ facultyUsername, status }, "Faculty status updated successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.FACULTY_STATUS_UPDATE,
+      entityType: AUDIT_ENTITY_TYPE.FACULTY,
+      entityId: updated._id,
+      description: `Updated faculty ${facultyUsername} status to ${status}`,
+      metadata: { facultyUsername, status },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: "Faculty status updated successfully",

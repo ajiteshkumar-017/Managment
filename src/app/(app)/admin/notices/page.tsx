@@ -21,13 +21,18 @@ import {
 import toast from "react-hot-toast";
 import axios from "axios";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { NOTICE_AUDIENCE_UI, NOTICE_TOPICS } from "@/constant/notice";
+import { todayIsoDate } from "@/lib/notices/parseDate";
 
 type NoticeRow = {
+  _id: string;
   title: string;
   type: string;
   audience: string;
   publishedDate: string;
+  publishedDateIso: string;
   expiryDate: string;
+  expiryDateIso: string;
   status: "Active" | "Expired" | "Upcoming";
   description?: string;
 };
@@ -40,9 +45,9 @@ type NoticeStats = {
 };
 
 const filterOptions = [
-  { key: "Topic", options: ["Academic Management", "Exam", "Fest", "Cultural", "Holiday", "Important", "General"] },
+  { key: "Topic", options: [...NOTICE_TOPICS] },
   { key: "Status", options: ["Active", "Expired", "Upcoming"] },
-  { key: "Audience", options: ["All", "Students", "Faculty", "Admin"] },
+  { key: "Audience", options: [...NOTICE_AUDIENCE_UI] },
 ];
 
 const PAGE_SIZE = 5;
@@ -56,187 +61,27 @@ function statusClass(status: NoticeRow["status"]) {
   return map[status];
 }
 
-function AdminNotices() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [open, setOpen] = useState(true);
-  const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [largeScreen, setLargeScreen] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [edit, setEdit] = useState(false);
-  const [view, setView] = useState(false);
-  const [selectedNotice, setSelectedNotice] = useState<NoticeRow | null>(null);
-  const [tableData, setTableData] = useState<NoticeRow[]>([]);
-  const [stats, setStats] = useState<NoticeStats>({
-    total: 0,
-    active: 0,
-    expired: 0,
-    upcoming: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
-    title: "",
-    type: "Important",
-    audience: "All",
-    publishedDate: "",
-    expiryDate: "",
-    body: "",
-  });
+const defaultForm = {
+  title: "",
+  type: "Important",
+  audience: "All",
+  publishedDate: "",
+  expiryDate: "",
+  body: "",
+};
 
-  const openAdd = () => {
-    setForm({
-      title: "",
-      type: "Important",
-      audience: "All",
-      publishedDate: "",
-      expiryDate: "",
-      body: "",
-    });
-    setShowModal(true);
-  };
+type NoticeFormState = typeof defaultForm;
 
-  useEffect(() => {
-    const onResize = () => setLargeScreen(window.innerWidth >= 1024);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (searchParams.get("add") !== "1") return;
-    openAdd();
-    router.replace(pathname, { scroll: false });
-  }, [searchParams, pathname, router]);
-
-  useEffect(() => {
-    const fetchNotices = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get("/api/admin/notices");
-        if (!res.data?.success) {
-          toast.error(res.data?.message || "Failed to load notices");
-          return;
-        }
-        setTableData(res.data.data || []);
-        setStats(res.data.stats || { total: 0, active: 0, expired: 0, upcoming: 0 });
-      } catch (error: any) {
-        toast.error(error?.response?.data?.message || "Failed to load notices");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotices();
-  }, []);
-
-  const noticeStats = useMemo(
-    () => [
-      { label: "Total Notices", value: String(stats.total), hint: "All time", icon: <Megaphone size={20} />, color: "bg-indigo-100 text-indigo-600" },
-      { label: "Active Notices", value: String(stats.active), hint: "Currently visible", icon: <Bell size={20} />, color: "bg-emerald-100 text-emerald-600" },
-      { label: "Expired", value: String(stats.expired), hint: "Past expiry date", icon: <CalendarClock size={20} />, color: "bg-amber-100 text-amber-600" },
-      { label: "Upcoming", value: String(stats.upcoming), hint: "Scheduled to publish", icon: <Bell size={20} />, color: "bg-violet-100 text-violet-600" },
-    ],
-    [stats],
-  );
-
-  const filteredRows = useMemo(() => {
-    return tableData.filter((row) => {
-      const query = search.trim().toLowerCase();
-      const matchesSearch =
-        !query ||
-        row.title.toLowerCase().includes(query) ||
-        row.type.toLowerCase().includes(query);
-
-      const matchesDate = !dateFilter || row.publishedDate.includes(dateFilter) || row.expiryDate.includes(dateFilter);
-
-      const matchesFilters = Object.entries(selectedFilter).every(([key, value]) => {
-        if (!value) return true;
-        if (key === "Topic") return row.type === value;
-        if (key === "Status") return row.status === value;
-        if (key === "Audience") return row.audience === value;
-        return true;
-      });
-
-      return matchesSearch && matchesDate && matchesFilters;
-    });
-  }, [search, selectedFilter, dateFilter, tableData]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
-  const paginatedRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [currentPage, totalPages]);
-
-  const handleFilterChange = (filterName: string, value: string) => {
-    setSelectedFilter((prev) => ({ ...prev, [filterName]: value }));
-    setCurrentPage(1);
-  };
-
-  const clearFilter = (key: string) => {
-    setSelectedFilter((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-    setCurrentPage(1);
-  };
-
-  const hasActiveFilters = useMemo(
-    () => Object.values(selectedFilter).some(Boolean) || search.trim().length > 0 || dateFilter.length > 0,
-    [selectedFilter, search, dateFilter],
-  );
-
-  const clearAllFilters = () => {
-    setSelectedFilter({});
-    setSearch("");
-    setDateFilter("");
-    setCurrentPage(1);
-  };
-
-  const populateForm = (row: NoticeRow) => {
-    setForm({
-      title: row.title,
-      type: row.type,
-      audience: row.audience,
-      publishedDate: row.publishedDate,
-      expiryDate: row.expiryDate,
-      body: row.description || "",
-    });
-  };
-
-  const openView = (row: NoticeRow) => {
-    setSelectedNotice(row);
-    populateForm(row);
-    setView(true);
-  };
-
-  const openEdit = (row: NoticeRow) => {
-    setSelectedNotice(row);
-    populateForm(row);
-    setEdit(true);
-  };
-
-  const getPagination = (page: number, total: number) => {
-    const pages: (number | string)[] = [];
-    const siblingCount = largeScreen ? 2 : 1;
-    const safePage = Math.max(1, Math.min(page, total));
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    pages.push(1);
-    if (safePage <= 4) return [...pages, 2, 3, 4, 5, "...", total];
-    if (safePage >= total - 3) return [...pages, "...", total - 4, total - 3, total - 2, total - 1, total];
-    pages.push("...");
-    for (let i = safePage - siblingCount; i <= safePage + siblingCount; i++) {
-      if (i > 1 && i < total) pages.push(i);
-    }
-    pages.push("...", total);
-    return pages;
-  };
-
-  const NoticeFormFields = ({ disabled = false }: { disabled?: boolean }) => (
+function NoticeFormFields({
+  disabled = false,
+  form,
+  setForm,
+}: {
+  disabled?: boolean;
+  form: NoticeFormState;
+  setForm: React.Dispatch<React.SetStateAction<NoticeFormState>>;
+}) {
+  return (
     <div className="space-y-5">
       <div>
         <label className={adminLabelClass}>Notice Title</label>
@@ -290,27 +135,263 @@ function AdminNotices() {
           <label className={adminLabelClass}>Published Date</label>
           <input
             disabled={disabled}
-            type="text"
+            type="date"
             value={form.publishedDate}
             onChange={(e) => setForm((p) => ({ ...p, publishedDate: e.target.value }))}
             className={adminFieldClass}
-            placeholder="12 May 2026"
           />
         </div>
         <div>
           <label className={adminLabelClass}>Expiry Date</label>
           <input
             disabled={disabled}
-            type="text"
+            type="date"
             value={form.expiryDate}
             onChange={(e) => setForm((p) => ({ ...p, expiryDate: e.target.value }))}
             className={adminFieldClass}
-            placeholder="25 May 2026"
           />
         </div>
       </div>
     </div>
   );
+}
+
+function AdminNotices() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [open, setOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<Record<string, string>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [largeScreen, setLargeScreen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [view, setView] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<NoticeRow | null>(null);
+  const [tableData, setTableData] = useState<NoticeRow[]>([]);
+  const [stats, setStats] = useState<NoticeStats>({
+    total: 0,
+    active: 0,
+    expired: 0,
+    upcoming: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(defaultForm);
+
+  const openAdd = () => {
+    setForm({ ...defaultForm, publishedDate: todayIsoDate() });
+    setShowModal(true);
+  };
+
+  useEffect(() => {
+    const onResize = () => setLargeScreen(window.innerWidth >= 1024);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("add") !== "1") return;
+    openAdd();
+    router.replace(pathname, { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  const fetchNotices = async () => {
+    const res = await axios.get("/api/admin/notices");
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || "Failed to load notices");
+    }
+    setTableData(res.data.data || []);
+    setStats(res.data.stats || { total: 0, active: 0, expired: 0, upcoming: 0 });
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        await fetchNotices();
+      } catch (error: unknown) {
+        toast.error(
+          axios.isAxiosError(error)
+            ? error.response?.data?.message || "Failed to load notices"
+            : "Failed to load notices",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const noticeStats = useMemo(
+    () => [
+      { label: "Total Notices", value: String(stats.total), hint: "All time", icon: <Megaphone size={20} />, color: "bg-indigo-100 text-indigo-600" },
+      { label: "Active Notices", value: String(stats.active), hint: "Currently visible", icon: <Bell size={20} />, color: "bg-emerald-100 text-emerald-600" },
+      { label: "Expired", value: String(stats.expired), hint: "Past expiry date", icon: <CalendarClock size={20} />, color: "bg-amber-100 text-amber-600" },
+      { label: "Upcoming", value: String(stats.upcoming), hint: "Scheduled to publish", icon: <Bell size={20} />, color: "bg-violet-100 text-violet-600" },
+    ],
+    [stats],
+  );
+
+  const filteredRows = useMemo(() => {
+    return tableData.filter((row) => {
+      const query = search.trim().toLowerCase();
+      const matchesSearch =
+        !query ||
+        row.title.toLowerCase().includes(query) ||
+        row.type.toLowerCase().includes(query);
+
+      const matchesDate =
+        !dateFilter ||
+        row.publishedDateIso === dateFilter ||
+        row.expiryDateIso === dateFilter;
+
+      const matchesFilters = Object.entries(selectedFilter).every(([key, value]) => {
+        if (!value) return true;
+        if (key === "Topic") return row.type.toLowerCase() === value.toLowerCase();
+        if (key === "Status") return row.status.toLowerCase() === value.toLowerCase();
+        if (key === "Audience") return row.audience.toLowerCase() === value.toLowerCase();
+        return true;
+      });
+
+      return matchesSearch && matchesDate && matchesFilters;
+    });
+  }, [search, selectedFilter, dateFilter, tableData]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const paginatedRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const handleFilterChange = (filterName: string, value: string) => {
+    setSelectedFilter((prev) => ({ ...prev, [filterName]: value }));
+    setCurrentPage(1);
+  };
+
+  const clearFilter = (key: string) => {
+    setSelectedFilter((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = useMemo(
+    () => Object.values(selectedFilter).some(Boolean) || search.trim().length > 0 || dateFilter.length > 0,
+    [selectedFilter, search, dateFilter],
+  );
+
+  const clearAllFilters = () => {
+    setSelectedFilter({});
+    setSearch("");
+    setDateFilter("");
+    setCurrentPage(1);
+  };
+
+  const populateForm = (row: NoticeRow) => {
+    setForm({
+      title: row.title,
+      type: row.type,
+      audience: row.audience,
+      publishedDate: row.publishedDateIso || "",
+      expiryDate: row.expiryDateIso || "",
+      body: row.description || "",
+    });
+  };
+
+  const openView = (row: NoticeRow) => {
+    setSelectedNotice(row);
+    populateForm(row);
+    setView(true);
+  };
+
+  const openEdit = (row: NoticeRow) => {
+    setSelectedNotice(row);
+    populateForm(row);
+    setEdit(true);
+  };
+
+  const noticePayload = () => ({
+    title: form.title.trim(),
+    body: form.body.trim(),
+    type: form.type,
+    audience: form.audience,
+    publishedDate: form.publishedDate,
+    expiryDate: form.expiryDate || null,
+  });
+
+  const handlePublish = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const res = await axios.post("/api/admin/notices", noticePayload());
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Failed to publish notice");
+      }
+      toast.success("Notice published");
+      setShowModal(false);
+      await fetchNotices();
+    } catch (error: unknown) {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message || "Failed to publish notice"
+          : error instanceof Error
+            ? error.message
+            : "Failed to publish notice",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (saving || !selectedNotice?._id) return;
+    setSaving(true);
+    try {
+      const res = await axios.patch("/api/admin/notices", {
+        _id: selectedNotice._id,
+        ...noticePayload(),
+      });
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Failed to update notice");
+      }
+      toast.success("Notice updated");
+      setEdit(false);
+      await fetchNotices();
+    } catch (error: unknown) {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message || "Failed to update notice"
+          : error instanceof Error
+            ? error.message
+            : "Failed to update notice",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getPagination = (page: number, total: number) => {
+    const pages: (number | string)[] = [];
+    const siblingCount = largeScreen ? 2 : 1;
+    const safePage = Math.max(1, Math.min(page, total));
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    pages.push(1);
+    if (safePage <= 4) return [...pages, 2, 3, 4, 5, "...", total];
+    if (safePage >= total - 3) return [...pages, "...", total - 4, total - 3, total - 2, total - 1, total];
+    pages.push("...");
+    for (let i = safePage - siblingCount; i <= safePage + siblingCount; i++) {
+      if (i > 1 && i < total) pages.push(i);
+    }
+    pages.push("...", total);
+    return pages;
+  };
 
   const emptyMessage =
     tableData.length === 0
@@ -404,7 +485,7 @@ function AdminNotices() {
               <div className="px-4 py-12 text-center text-sm text-slate-500">{emptyMessage}</div>
             ) : (
               paginatedRows.map((row, index) => (
-                <div key={`${row.title}-${index}`} className="grid grid-cols-[0.4fr_1.2fr_0.8fr_0.7fr_0.9fr_0.9fr_0.7fr_0.8fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
+                <div key={row._id} className="grid grid-cols-[0.4fr_1.2fr_0.8fr_0.7fr_0.9fr_0.9fr_0.7fr_0.8fr] items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-sm transition hover:bg-slate-50/80 last:border-b-0">
                   <div className="text-center text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</div>
                   <div className="truncate text-left font-medium text-slate-900">{row.title}</div>
                   <div className="truncate text-center text-slate-600">{row.type}</div>
@@ -430,7 +511,7 @@ function AdminNotices() {
               <li className="px-4 py-12 text-center text-sm text-slate-500">{emptyMessage}</li>
             ) : (
               paginatedRows.map((row, index) => (
-                <li key={`${row.title}-mobile-${index}`} className="p-3 sm:p-4">
+                <li key={row._id} className="p-3 sm:p-4">
                   <article className="overflow-hidden rounded-2xl border border-slate-200 border-l-[3px] border-l-indigo-500 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -479,18 +560,16 @@ function AdminNotices() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                toast.success("Notice published (connect API when ready)");
-                setShowModal(false);
-              }}
+              disabled={saving}
+              onClick={handlePublish}
               className={adminPrimaryBtnClass}
             >
-              Publish Notice
+              {saving ? "Publishing..." : "Publish Notice"}
             </button>
           </div>
         }
       >
-        <NoticeFormFields />
+        <NoticeFormFields form={form} setForm={setForm} />
       </AdminModal>
 
       <AdminModal
@@ -506,18 +585,16 @@ function AdminNotices() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                toast.success("Notice updated (connect API when ready)");
-                setEdit(false);
-              }}
+              disabled={saving || !selectedNotice?._id}
+              onClick={handleUpdate}
               className={adminPrimaryBtnClass}
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         }
       >
-        <NoticeFormFields />
+        <NoticeFormFields form={form} setForm={setForm} />
       </AdminModal>
 
       <AdminModal
@@ -532,7 +609,7 @@ function AdminNotices() {
           </button>
         }
       >
-        <NoticeFormFields disabled />
+        <NoticeFormFields disabled form={form} setForm={setForm} />
       </AdminModal>
     </div>
   );

@@ -1,62 +1,89 @@
-import mongoose, {Document, Schema, models, model} from "mongoose"
-
-
+import mongoose, { Document, Schema, models, model } from "mongoose";
+import { NOTICE_AUDIENCE_DB } from "@/constant/notice";
 
 export interface INotice extends Document {
-    title: string;
-    description: string;
-    date: Date;
-    type: 'assignment' | 'announcement' | 'event' | 'placement' | 'general' | 'holiday';
-    createdBy: mongoose.Types.ObjectId;
-    IsImportant: boolean;
-    expiryDate: Date
+  title: string;
+  description: string;
+  date: Date;
+  type: string;
+  createdBy: mongoose.Types.ObjectId;
+  IsImportant: boolean;
+  expiryDate: Date | null;
+  attachment?: boolean;
+  audience: (typeof NOTICE_AUDIENCE_DB)[number];
 }
 
-
-const NoticeSchema = new Schema({
+const NoticeSchema = new Schema(
+  {
     title: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
     },
     description: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
+      maxlength: 10000,
     },
     date: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now,
     },
     type: {
-        type: String,
-        enum: ['assignment', 'announcement', 'event', 'placement', 'general', 'holiday'],
-        required: true,
-        default: 'general'
+      type: String,
+      required: true,
+      default: "general",
+      lowercase: true,
+      trim: true,
     },
     createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     IsImportant: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     expiryDate: {
-        type: Date,
-        default: null,
-        required: false
+      type: Date,
+      default: null,
+      required: false,
     },
     attachment: {
-        type: Boolean,
-        required: false
+      type: Boolean,
+      required: false,
     },
     audience: {
-        type : String,
-        enum : ["Faculty Only", "All", "Student Only", "Admin Only"],
-        default: "All"
-    }
-}, {timestamps: true});
+      type: String,
+      enum: NOTICE_AUDIENCE_DB,
+      default: "All",
+      required: true,
+      index: true,
+    },
+  },
+  { timestamps: true },
+);
 
+NoticeSchema.index({ audience: 1, date: -1, expiryDate: 1 });
 
-export const Notice = models.Notice as mongoose.Model<INotice> || model<INotice>('Notice', NoticeSchema);
+export const Notice =
+  (models.Notice as mongoose.Model<INotice>) ||
+  model<INotice>("Notice", NoticeSchema);
 
+/**
+ * Next.js keeps the first compiled Notice model in memory. That copy still
+ * has the old type enum (`general`, not `General`). App code already
+ * allowlists topics; drop the stale mongoose enum so saves match the form.
+ */
+const typePath = Notice.schema.path("type") as mongoose.SchemaType & {
+  enumValues?: unknown[];
+  validators?: Array<{ type?: string; kind?: string }>;
+};
+if (typePath) {
+  typePath.validators = (typePath.validators ?? []).filter(
+    (validator) => validator.type !== "enum" && validator.kind !== "enum",
+  );
+  typePath.enumValues = [];
+}

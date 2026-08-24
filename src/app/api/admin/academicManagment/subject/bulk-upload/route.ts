@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import z from "zod";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 type TrackedSubjectRow = z.infer<typeof subjectUploadSchema> & { __originalRow: number };
 
@@ -186,6 +188,13 @@ export async function POST(request: NextRequest) {
     await Subject.insertMany(preparedSubjects);
 
     requestLogger.info({ importedCount: finalValidRows.length }, "Subject bulk upload completed successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.SUBJECT_BULK_UPLOAD,
+      entityType: AUDIT_ENTITY_TYPE.SUBJECT,
+      description: `Bulk uploaded ${finalValidRows.length} subjects`,
+      metadata: { importedCount: finalValidRows.length },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: `${finalValidRows.length} subjects imported successfully`,

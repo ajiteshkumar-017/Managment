@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import z from "zod";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 type TrackedFacultyRow = z.infer<typeof facultyUploadSchema> & { __originalRow: number };
 
@@ -196,6 +198,13 @@ export async function POST(request: NextRequest) {
     await Faculty.insertMany(preparedFaculty);
 
     requestLogger.info({ importedCount: finalValidRows.length }, "Faculty bulk upload completed successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.FACULTY_BULK_UPLOAD,
+      entityType: AUDIT_ENTITY_TYPE.FACULTY,
+      description: `Bulk uploaded ${finalValidRows.length} faculty records`,
+      metadata: { importedCount: finalValidRows.length },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: `${finalValidRows.length} faculty records imported successfully`,

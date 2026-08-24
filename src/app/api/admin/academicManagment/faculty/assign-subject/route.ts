@@ -3,6 +3,8 @@ import { SubjectFacultyAssignment } from "@/models/subjectFacultyAssignment.mode
 import { NextRequest, NextResponse } from "next/server";
 import { resolveFacultyByUsername, resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 import { SemesterType } from "@/constant/Constant";
 
 export async function POST(request: NextRequest) {
@@ -65,6 +67,14 @@ export async function POST(request: NextRequest) {
       { facultyUsername, subjectCode, semester, department, academicYear },
       "Faculty assigned to subject successfully",
     );
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.FACULTY_ASSIGN_SUBJECT,
+      entityType: AUDIT_ENTITY_TYPE.SUBJECT_FACULTY_ASSIGNMENT,
+      entityId: assignment._id,
+      description: `Assigned ${facultyUsername} to subject ${subjectCode}`,
+      metadata: { facultyUsername, subjectCode, semester, department, academicYear, section: section || "ALL" },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: "Faculty assigned to subject successfully",

@@ -13,6 +13,8 @@ import {
 } from "@/constant/Constant";
 import mongoose from "mongoose";
 import { notifyResultPublished } from "@/services/notification/notifyEvent";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function GET(request: NextRequest) {
   const logger = createRequestLogger();
@@ -188,6 +190,17 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      await writeAuditFromRequest(request, {
+        action: publish ? AUDIT_ACTION.RESULT_BATCH_PUBLISH : AUDIT_ACTION.RESULT_BATCH_UPDATE,
+        entityType: AUDIT_ENTITY_TYPE.RESULT_BATCH,
+        entityId: existing._id,
+        description: publish
+          ? `Published result batch for ${cls.department} semester ${cls.semester}`
+          : `Updated result batch for ${cls.department} semester ${cls.semester}`,
+        metadata: { classId: String(cls._id), examType, academicYear, publish },
+        severity: "high",
+      });
+
       return NextResponse.json({
         success: true,
         message: publish ? "Result published" : "Result batch updated",
@@ -218,6 +231,17 @@ export async function POST(request: NextRequest) {
         exam: examType,
       });
     }
+
+    await writeAuditFromRequest(request, {
+      action: publish ? AUDIT_ACTION.RESULT_BATCH_PUBLISH : AUDIT_ACTION.RESULT_BATCH_CREATE,
+      entityType: AUDIT_ENTITY_TYPE.RESULT_BATCH,
+      entityId: batch._id,
+      description: publish
+        ? `Published result batch for ${cls.department} semester ${cls.semester}`
+        : `Created result batch for ${cls.department} semester ${cls.semester}`,
+      metadata: { classId: String(cls._id), examType, academicYear, publish },
+      severity: "high",
+    });
 
     return NextResponse.json({
       success: true,
@@ -302,6 +326,15 @@ export async function PATCH(request: NextRequest) {
         });
       }
 
+      await writeAuditFromRequest(request, {
+        action: AUDIT_ACTION.RESULT_BATCH_PUBLISH,
+        entityType: AUDIT_ENTITY_TYPE.RESULT_BATCH,
+        entityId: batch._id,
+        description: `Published result batch ${resultBatchId}`,
+        metadata: { resultBatchId },
+        severity: "high",
+      });
+
       return NextResponse.json({
         success: true,
         message: "Result published",
@@ -348,6 +381,15 @@ export async function PATCH(request: NextRequest) {
           exam: batch.ExamType,
         });
       }
+
+      await writeAuditFromRequest(request, {
+        action: AUDIT_ACTION.RESULT_BATCH_PUBLISH,
+        entityType: AUDIT_ENTITY_TYPE.RESULT_BATCH,
+        entityId: batch._id,
+        description: `Published result batch for class ${classId}`,
+        metadata: { classId },
+        severity: "high",
+      });
 
       return NextResponse.json({
         success: true,

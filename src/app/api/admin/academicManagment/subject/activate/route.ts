@@ -3,6 +3,8 @@ import { Subject } from "@/models/subject.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function PATCH(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -43,6 +45,15 @@ export async function PATCH(request: NextRequest) {
     }
 
     requestLogger.info({ subjectCode, status: status || "active" }, "Subject activated successfully");
+    const nextStatus = status || "active";
+    await writeAuditFromRequest(request, {
+      action: nextStatus === "inactive" ? AUDIT_ACTION.SUBJECT_DEACTIVATE : AUDIT_ACTION.SUBJECT_ACTIVATE,
+      entityType: AUDIT_ENTITY_TYPE.SUBJECT,
+      entityId: updated._id,
+      description: `Set subject ${subjectCode} status to ${nextStatus}`,
+      metadata: { subjectCode, status: nextStatus },
+      severity: "high",
+    });
     return NextResponse.json({
       success: true,
       message: "Subject activated successfully",

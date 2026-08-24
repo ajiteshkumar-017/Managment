@@ -8,6 +8,8 @@ import {
     type DepartmentType,
     type SemesterType,
 } from "@/constant/Constant";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 
 export async function POST(request:NextRequest) {
@@ -74,6 +76,13 @@ export async function POST(request:NextRequest) {
             { semester, section, department, batch, modifiedCount: user.modifiedCount },
             "Students promoted successfully",
         );
+        await writeAuditFromRequest(request, {
+            action: AUDIT_ACTION.STUDENT_PROMOTE_SEMESTER,
+            entityType: AUDIT_ENTITY_TYPE.STUDENT,
+            description: `Promoted students in ${departmentTyped} semester ${semesterTyped} batch ${batch}`,
+            metadata: { semester: semesterTyped, section, department: departmentTyped, batch, modifiedCount: user.modifiedCount },
+            severity: "high",
+        });
         return NextResponse.json(
             {
                 success: true,

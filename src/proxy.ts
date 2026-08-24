@@ -155,6 +155,17 @@ export async function proxy(request: NextRequest) {
       return nextResponse();
     }
 
+    // Page matcher `/admin` does not cover `/api/admin`. Enforce role here so
+    // students/faculty cannot list or mutate admin-only resources.
+    if (pathname.startsWith("/api/admin") && role !== "admin") {
+      return withNoStore(
+        NextResponse.json(
+          { success: false, message: "Forbidden" },
+          { status: 403 },
+        ),
+      );
+    }
+
     // Admin cannot open student / faculty panel routes; auth entry → admin home
     if (role === "admin") {
       if (

@@ -3,6 +3,8 @@ import { Subject } from "@/models/subject.model";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveSubjectByCode } from "@/app/api/admin/academicManagment/utils";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function PATCH(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -43,6 +45,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     requestLogger.info({ subjectCode, semester }, "Subject assigned to semester successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.SUBJECT_ASSIGN_SEMESTER,
+      entityType: AUDIT_ENTITY_TYPE.SUBJECT,
+      entityId: updated._id,
+      description: `Assigned subject ${subjectCode} to semester ${semester}`,
+      metadata: { subjectCode, semester },
+      severity: "medium",
+    });
     return NextResponse.json({
       success: true,
       message: "Subject assigned to semester successfully",

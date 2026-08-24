@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import z from "zod";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 type TrackedStudentRow = z.infer<typeof studentUploadSchema> & { __originalRow: number };
 
@@ -322,6 +324,13 @@ const uniqueRollNumbers = tempValidRows.map((student) => student.rollNo);
       { importedCount: finalValidRows.length, totalRows: normalizedRows.length },
       "Student bulk upload completed successfully",
     );
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.STUDENT_BULK_UPLOAD,
+      entityType: AUDIT_ENTITY_TYPE.STUDENT,
+      description: `Bulk uploaded ${normalizedRows.length} students`,
+      metadata: { importedCount: finalValidRows.length, totalRows: normalizedRows.length },
+      severity: "high",
+    });
     return Response.json({
       success: true,
       preview: false,

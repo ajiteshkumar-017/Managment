@@ -3,6 +3,8 @@ import { Student } from "@/models/student.model";
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { SEMESTER, type SemesterType } from "@/constant/Constant";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger();
@@ -59,6 +61,14 @@ export async function POST(request: NextRequest) {
       { rollNumber, from: currentSemester, to: student.semester },
       "Student promoted successfully",
     );
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.STUDENT_PROMOTE,
+      entityType: AUDIT_ENTITY_TYPE.STUDENT,
+      entityId: student._id,
+      description: `Promoted ${rollNumber} from semester ${currentSemester} to ${student.semester}`,
+      metadata: { rollNumber, from: currentSemester, to: student.semester },
+      severity: "high",
+    });
 
     return NextResponse.json({
       success: true,

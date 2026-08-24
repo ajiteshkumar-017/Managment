@@ -8,6 +8,8 @@ import { Faculty } from "@/models/faculty.model";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { Class } from "@/models";
 import { decodeResourceId, encodeResourceId } from "@/lib/idToken";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 function generateSessionCode() {
   return Math.floor(100000 + Math.random() * 900000);
@@ -120,6 +122,15 @@ export async function GET(request: NextRequest) {
       { sessionId: session._id, classId: classData._id, facultyId: faculty._id },
       "Attendance session started",
     );
+
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.ATTENDANCE_SESSION_START,
+      entityType: AUDIT_ENTITY_TYPE.ATTENDANCE_SESSION,
+      entityId: session._id,
+      description: `Started attendance session for class ${classData.classCode}`,
+      metadata: { classId: String(classData._id), classCode: classData.classCode },
+      severity: "medium",
+    });
 
     return NextResponse.json({
       success: true,

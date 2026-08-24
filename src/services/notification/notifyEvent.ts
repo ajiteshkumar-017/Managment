@@ -2,9 +2,13 @@ import { Types } from "mongoose";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { Student } from "@/models/student.model";
 import { Class } from "@/models/class.model";
+import { User } from "@/models/user";
 import { createNotification } from "./createNotification";
 import { resolveClassStudentUserIds } from "./resolveAudience";
+import type { NoticeAudienceDb } from "@/constant/notice";
+import { notificationRolesForAudience } from "@/lib/notices/audience";
 import type { StudentNotificationKind } from "./notification.types";
+import type { AdminNotificationKind, FacultyNotificationKind } from "@/types/notification";
 
 type IdLike = Types.ObjectId | string;
 
@@ -147,4 +151,53 @@ export async function notifyResultPublished(opts: {
     targetId: classId ?? userIds[0],
     recipientUserIds: userIds,
   });
+}
+
+/**
+ * Fan out a notice only to the selected audience roles.
+ * Recipients are resolved from User.role in the database — never from the client.
+ */
+export async function notifyNoticePublished(opts: {
+  title: string;
+  description: string;
+  audience: NoticeAudienceDb;
+}) {
+  const logger = createRequestLogger();
+  try {
+    const roles = notificationRolesForAudience(opts.audience);
+    const message =
+      opts.description.length > 180
+        ? `${opts.description.slice(0, 177).trimEnd()}...`
+        : opts.description;
+
+    for (const role of roles) {
+      const users = await User.find({ role }).select("_id").lean();
+      const recipientUserIds = uniqueUserIds(users.map((user) => user._id));
+      if (recipientUserIds.length === 0) continue;
+
+      const kind =
+        role === "admin"
+          ? ("notice_update" satisfies AdminNotificationKind)
+          : ("notice" satisfies StudentNotificationKind | FacultyNotificationKind);
+
+      const link =
+        role === "student"
+          ? "/messages"
+          : role === "faculty"
+            ? "/faculty/dashboard"
+            : "/admin/notices";
+
+      await safeNotify({
+        kind,
+        title: opts.title,
+        message,
+        link,
+        audience: role,
+        targetId: recipientUserIds[0],
+        recipientUserIds,
+      });
+    }
+  } catch (err) {
+    logger.error({ err, audience: opts.audience }, "Failed to notify notice audience");
+  }
 }

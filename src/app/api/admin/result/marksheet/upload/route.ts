@@ -4,6 +4,8 @@ import {
   publishMarksheet,
   validateMarksheet,
 } from "@/lib/Admin/Resultpublication/marksheetUpload";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 /**
  * POST /api/admin/result/marksheet/upload?validateOnly=true|false
@@ -65,6 +67,14 @@ export async function POST(request: NextRequest) {
       { students: published.studentCount, batchId: published.batchId },
       "Marksheet published",
     );
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.RESULT_BATCH_UPLOAD_MARKSHEET,
+      entityType: AUDIT_ENTITY_TYPE.RESULT_BATCH,
+      entityId: published.batchId,
+      description: `Uploaded and published marksheet for ${published.studentCount} students`,
+      metadata: { students: published.studentCount, batchId: published.batchId },
+      severity: "high",
+    });
     return NextResponse.json(published);
   } catch (error) {
     logger.error({ err: error }, "Marksheet upload failed");

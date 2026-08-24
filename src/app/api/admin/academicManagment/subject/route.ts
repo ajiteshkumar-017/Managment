@@ -3,6 +3,8 @@ import { Subject } from "@/models/subject.model";
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
 import { SemesterType } from "@/constant/Constant";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 export async function GET() {
   const requestLogger = createRequestLogger();
@@ -65,6 +67,14 @@ export async function POST(request: NextRequest) {
     });
 
     requestLogger.info({ subjectCode, department, semester }, "Subject added successfully");
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.SUBJECT_CREATE,
+      entityType: AUDIT_ENTITY_TYPE.SUBJECT,
+      entityId: subject._id,
+      description: `Created subject ${subjectCode}`,
+      metadata: { subjectCode, department, semester },
+      severity: "medium",
+    });
     return NextResponse.json({
       success: true,
       message: "Subject added successfully",

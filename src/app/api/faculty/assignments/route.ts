@@ -10,6 +10,8 @@ import { Class } from "@/models/class.model";
 import cloudinary from "@/lib/cloudinary";
 import mongoose from "mongoose";
 import { notifyAssignmentPublished } from "@/services/notification/notifyEvent";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 async function uploadAssignmentFile(file: File) {
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -222,6 +224,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    await writeAuditFromRequest(request, {
+      action: publish ? AUDIT_ACTION.ASSIGNMENT_PUBLISH : AUDIT_ACTION.ASSIGNMENT_CREATE,
+      entityType: AUDIT_ENTITY_TYPE.ASSIGNMENT,
+      entityId: assignment._id,
+      description: publish
+        ? `Published assignment "${assignment.title}"`
+        : `Created assignment draft "${assignment.title}"`,
+      metadata: { classId: String(cls._id), status: assignment.status, publish },
+      severity: publish ? "high" : "medium",
+    });
+
     return NextResponse.json({
       success: true,
       message: publish ? "Assignment published" : "Assignment saved as draft",
@@ -299,6 +312,15 @@ export async function PATCH(request: NextRequest) {
         dueDate: assignment.dueDate,
       });
     }
+
+    await writeAuditFromRequest(request, {
+      action: AUDIT_ACTION.ASSIGNMENT_PUBLISH,
+      entityType: AUDIT_ENTITY_TYPE.ASSIGNMENT,
+      entityId: assignment._id,
+      description: `Published assignment "${assignment.title}"`,
+      metadata: { assignmentId },
+      severity: "high",
+    });
 
     return NextResponse.json({
       success: true,

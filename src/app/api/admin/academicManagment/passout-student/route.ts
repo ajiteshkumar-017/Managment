@@ -2,6 +2,8 @@ import Connect from "@/dbConnect/connect";
 import { Student } from "@/models/student.model";
 import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger } from "@/lib/requestLogger";
+import { AUDIT_ACTION, AUDIT_ENTITY_TYPE } from "@/constant/audit";
+import { writeAuditFromRequest } from "@/lib/systemUses/audit/writeAuditFromRequest";
 
 
 
@@ -75,6 +77,13 @@ export async function POST(request:NextRequest) {
             { semester, department, batch, modifiedCount: result.modifiedCount },
             "Students passed out successfully",
         );
+        await writeAuditFromRequest(request, {
+            action: AUDIT_ACTION.STUDENT_PASSOUT,
+            entityType: AUDIT_ENTITY_TYPE.STUDENT,
+            description: `Passed out students in ${department} semester ${semester} batch ${batch}`,
+            metadata: { semester, department, batch, modifiedCount: result.modifiedCount },
+            severity: "high",
+        });
                 return NextResponse.json(
                     {
                         success: true,
