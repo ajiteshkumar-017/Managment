@@ -7,6 +7,10 @@ import Connect from "@/dbConnect/connect";
 import { decodeResourceId } from "@/lib/idToken";
 import mongoose from "mongoose";
 import { notifyAttendanceMarked } from "@/services/notification/notifyEvent";
+import {
+  sessionMarkError,
+  studentBelongsToClass,
+} from "@/lib/attendance/markRules";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,30 +74,19 @@ export async function POST(request: NextRequest) {
       );
     };
 
-    if (sessionData.status !== "active" || !sessionData.isActive) {
-      return NextResponse.json(
-        { success: false, message: "Session is not active" },
-        { status: 400 },
-      );
-    }
-
-    if (sessionData.expiryTime < new Date()) {
+    const markError = sessionMarkError(sessionData, { token });
+    if (markError === "Session has expired") {
       await AttendanceSession.findByIdAndUpdate(sessionData._id, {
         isActive: false,
         status: "expired",
       });
+    }
+    if (markError) {
       return NextResponse.json(
-        { success: false, message: "Session has expired" },
+        { success: false, message: markError },
         { status: 400 },
       );
     }
-
-    if (sessionData.sessionToken !== token) {
-      return NextResponse.json(
-        { success: false, message: "Invalid token" },
-        { status: 400 },
-      );
-    };
 
     const classData = await Class.findOne({_id: sessionData.classId});
 
@@ -104,11 +97,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if(String(classData.semester) !== String(studentData.semester) || String(classData.department) !== String(studentData.department) || String(classData.section) !== String(studentData.section) ){
-      console.log("Student is not part of this class");
+    if (!studentBelongsToClass(studentData, classData)) {
       return NextResponse.json(
-        { success: false, message: "Student is not part of this class", data: {
-        } },
+        { success: false, message: "Student is not part of this class" },
         { status: 400 },
       );
     }

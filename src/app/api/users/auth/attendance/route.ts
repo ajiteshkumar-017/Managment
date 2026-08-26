@@ -7,6 +7,7 @@ import { Student } from "@/models/student.model";
 import { AttendanceRecord } from "@/models/attendance.model";
 import { AttendanceSession } from "@/models/attendanceSession";
 import { getStudentAttendanceData, findStudentClasses } from "@/lib/student/attendance";
+import { parseAttendanceCode, sessionMarkError } from "@/lib/attendance/markRules";
 
 export async function GET(_request: NextRequest) {
   const logger = createRequestLogger();
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const sessionCode = Number(String(body.sessionCode || "").trim());
-    if (!Number.isInteger(sessionCode) || sessionCode < 100000 || sessionCode > 999999) {
+    const sessionCode = parseAttendanceCode(body.sessionCode);
+    if (sessionCode == null) {
       return NextResponse.json(
         { success: false, message: "Enter a valid 6-digit attendance code" },
         { status: 400 },
@@ -131,19 +132,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (session.expiryTime < new Date()) {
+    const markError = sessionMarkError(session);
+    if (markError === "Session has expired") {
       session.isActive = false;
       session.status = "expired";
       await session.save();
-      return NextResponse.json(
-        { success: false, message: "Session has expired" },
-        { status: 400 },
-      );
     }
-
-    if (session.status !== "active" || !session.isActive) {
+    if (markError) {
       return NextResponse.json(
-        { success: false, message: "Session is not active" },
+        { success: false, message: markError },
         { status: 400 },
       );
     }

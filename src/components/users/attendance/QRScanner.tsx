@@ -3,6 +3,7 @@
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
 import { useRef, useState } from "react";
+import { parseAttendanceQrPayload } from "@/lib/attendance/markRules";
 
 type MarkResult = {
   ok: boolean;
@@ -64,13 +65,7 @@ export default function QRScanner({ onMarked }: { onMarked?: () => void }) {
 
           try {
             setStatus("QR detected — marking present…");
-            const qrData = JSON.parse(decodedText);
-            const sessionId = qrData.sessionId;
-            const token = qrData.token ?? qrData.sessionToken;
-
-            if (!sessionId || !token) {
-              throw new Error("QR missing sessionId or token");
-            }
+            const { sessionId, token } = parseAttendanceQrPayload(decodedText);
 
             await stopScanner();
             const data = await markPresent(sessionId, token);
