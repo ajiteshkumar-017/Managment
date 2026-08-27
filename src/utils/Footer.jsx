@@ -41,12 +41,15 @@ function Footer() {
                               </p>
       
                               <div className="flex gap-3">
-                                  {socialMediaHandle.length > 0 && socialMediaHandle.map((data, idx) => (
+
+                                  {socialMediaHandle.filter((data) => data.link).map((data) => (
                                       <Link
                                       href={data.link}
-                                      key={idx}
+                                      key={data.label}
                                       className='w-8 h-8 sm:w-10 sm:h-10 p-2 sm:p-3 rounded-full bg-white border border-gray-200 text-[#4B5563] hover:text-[#786EFE] hover:-translate-y-1 transition-all duration-300 cursor-pointer'
                                       rel="noopener noreferrer"
+                                      target="_blank"
+                                      aria-label={data.label}
                                       >
                                         <data.icon className="w-full h-full" />
                                     </Link>

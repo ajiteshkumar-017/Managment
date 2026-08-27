@@ -7,6 +7,7 @@ import { FaInstagram, FaFacebookF, FaLinkedinIn, FaTwitter } from "react-icons/f
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import Image from "next/image";
 import Navbar from '@/utils/Navbar';
 import Footer from "@/utils/Footer"
 import { PUBLIC_LOGO, PUBLIC_LOGO_SMALL } from "@/lib/publicLogo";
@@ -20,15 +21,15 @@ const languages = [
 ];
 
 const images = [
-    "insitutuion.jpeg",
-    "campus1.jpg",
-    "campus2.jpg",
-    "campus3.jpg",
-    "campus4.jpg",
-    "campus5.jpg",
-    "campus6.jpg",
-    "campus7.jpg",
-    "campus8.jpg",
+    { src: "/hero/institution.webp", alt: "IIT Dholakpur main academic building" },
+    { src: "/hero/campus1.webp", alt: "IIT Dholakpur campus in Komna, Nuapada" },
+    { src: "/hero/campus2.webp", alt: "Academic block at IIT Dholakpur" },
+    { src: "/hero/campus3.webp", alt: "Campus lawns and walkways at IIT Dholakpur" },
+    { src: "/hero/campus4.webp", alt: "Institute buildings at IIT Dholakpur" },
+    { src: "/hero/campus5.webp", alt: "Residential and academic campus view" },
+    { src: "/hero/campus6.webp", alt: "IIT Dholakpur campus at dusk" },
+    { src: "/hero/campus7.webp", alt: "Campus architecture at IIT Dholakpur" },
+    { src: "/hero/campus8.webp", alt: "Open spaces on the IIT Dholakpur campus" },
 ];
 
 const events = [
@@ -279,22 +280,29 @@ function LandingPage() {
                 <div className='relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden'>
                     {/* Image Carousel */}
                     <div className='absolute inset-0 w-full overflow-hidden'>
-                        {images.map((image, i) => (
-                            <motion.img
-                                key={image}
-                                src={image}
-                                alt=""
-                                className="absolute inset-0 w-full h-full object-cover"
-                                animate={{
-                                    opacity: i === imageIndex ? 1 : 0,
-                                    scale: i === imageIndex ? 1.05 : 1,
-                                }}
+                        <AnimatePresence initial={false}>
+                            <motion.div
+                                key={images[imageIndex].src}
+                                className="absolute inset-0"
+                                initial={{ opacity: 0, scale: 1 }}
+                                animate={{ opacity: 1, scale: 1.05 }}
+                                exit={{ opacity: 0 }}
                                 transition={{
                                     opacity: { duration: 1 },
                                     scale: { duration: 6 },
                                 }}
-                            />
-                        ))}
+                            >
+                                <Image
+                                    src={images[imageIndex].src}
+                                    alt={images[imageIndex].alt}
+                                    fill
+                                    sizes="100vw"
+                                    quality={75}
+                                    priority={imageIndex === 0}
+                                    className="object-cover"
+                                />
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
 
                     <div className="absolute inset-0 bg-black/25" />
